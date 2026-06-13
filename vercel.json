@@ -1,8 +1,6 @@
-﻿{
-  "outputDirectory": ".",
-  "routes": [
-    { "src": "^/$", "dest": "/index.html" },
-    { "src": "^/admin$", "dest": "/admin.html" },
-    { "src": ".*", "status": 404, "dest": "/index.html" }
+{
+  "rewrites": [
+    { "source": "/admin", "destination": "/admin.html" },
+    { "source": "/", "destination": "/index.html" }
   ]
 }
