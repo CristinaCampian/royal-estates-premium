@@ -819,6 +819,8 @@
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     document.getElementById('page-' + name).classList.add('active');
     if (el) el.classList.add('active');
+    // Repopulate type select whenever add/edit page is shown
+    if (name === 'add') populateTypeSelect();
   }
 
   // ── HELPERS ──
