@@ -155,6 +155,23 @@
     .modal-overlay.open { opacity: 1; pointer-events: all; }
     .detail-modal { background: var(--bg); width: 100%; max-width: 960px; max-height: 90vh; overflow-y: auto; position: relative; display: grid; grid-template-columns: 1fr 1fr; }
 
+
+    .fs-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.96); z-index:600; align-items:center; justify-content:center; flex-direction:column; }
+    .fs-overlay.open { display:flex; }
+    .fs-main { max-width:92vw; max-height:82vh; object-fit:contain; display:block; }
+    .fs-close { position:absolute; top:1.2rem; right:1.5rem; background:none; border:none; color:#fff; font-size:2rem; cursor:pointer; line-height:1; opacity:0.7; transition:opacity 0.15s; }
+    .fs-close:hover { opacity:1; }
+    .fs-arrow { position:absolute; top:50%; transform:translateY(-50%); background:rgba(255,255,255,0.12); border:none; color:#fff; font-size:2rem; width:52px; height:52px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background 0.15s; }
+    .fs-arrow:hover { background:rgba(255,255,255,0.25); }
+    .fs-arrow.left { left:1rem; }
+    .fs-arrow.right { right:1rem; }
+    .fs-counter { position:absolute; bottom:1.5rem; left:50%; transform:translateX(-50%); color:rgba(255,255,255,0.5); font-size:0.7rem; letter-spacing:0.12em; }
+    .fs-thumbs { display:flex; gap:0.5rem; margin-top:1rem; overflow-x:auto; max-width:92vw; padding-bottom:0.3rem; }
+    .fs-thumb { width:60px; height:44px; object-fit:cover; cursor:pointer; opacity:0.45; transition:opacity 0.15s; flex-shrink:0; border:1px solid transparent; }
+    .fs-thumb.active, .fs-thumb:hover { opacity:1; border-color:rgba(255,255,255,0.4); }
+    .fullscreen-btn { position:absolute; bottom:0.7rem; right:0.7rem; background:rgba(255,255,255,0.85); border:none; font-size:0.6rem; letter-spacing:0.1em; text-transform:uppercase; padding:0.3rem 0.7rem; cursor:pointer; color:#1c1a17; transition:background 0.15s; z-index:2; }
+    .fullscreen-btn:hover { background:#fff; }
+
     .gallery { display:flex; height:100%; background:#1c1a17; }
     .gallery-main-wrap { position:relative; flex:1; min-height:300px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
     .gallery #gallery-main { width:100%; height:100%; object-fit:cover; display:block; }
@@ -163,7 +180,7 @@
     .gallery-arrow.left { left:0.6rem; }
     .gallery-arrow.right { right:0.6rem; }
     .gallery-counter { position:absolute; bottom:0.6rem; right:0.6rem; background:rgba(28,26,23,0.7); color:#fff; font-size:0.62rem; letter-spacing:0.1em; padding:0.25rem 0.6rem; }
-    .gallery-thumbs { display:flex; flex-direction:column; gap:0.4rem; padding:0.5rem; background:#141210; overflow-y:auto; width:76px; flex-shrink:0; }
+    .gallery-thumbs { display:none; }
     .gallery-thumb { width:100%; height:52px; object-fit:cover; cursor:pointer; opacity:0.5; transition:opacity 0.15s; flex-shrink:0; }
     .gallery-thumb:hover, .gallery-thumb.active { opacity:1; }
     @media (max-width:860px) {
@@ -415,9 +432,9 @@
     <button class="pw-close" onclick="closePw()">×</button>
     <p class="pw-eyebrow">Private portfolio</p>
     <h2 class="pw-title">Enter your access code</h2>
-    <p class="pw-sub">This listing is reserved for verified buyers. Enter your access code to reveal full details and pricing.</p>
+    <p class="pw-sub">This listing is reserved for verified buyers. Enter your access code to reveal the full details and pricing for this listing.</p>
     <input class="pw-input" type="password" id="pw-input" placeholder="ACCESS CODE" onkeydown="if(event.key==='Enter') checkPw()" autocomplete="off" />
-    <button class="pw-btn" onclick="checkPw()">Unlock listings</button>
+    <button class="pw-btn" onclick="checkPw()">Unlock listing</button>
     <p class="pw-error" id="pw-error">Incorrect code. Please try again or request access below.</p>
   </div>
 </div>
@@ -478,10 +495,11 @@
     const hasVid = !!p.youtube_id;
     const loc = splitLocation(p);
 
-    const mediaInner = locked
-      ? `<div class="prop-img-placeholder"><span>Private listing</span></div>
-         <div class="lock-badge"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="1"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>`
-      : hasImg
+    const mediaInner = hasImg
+      ? `${!locked && hasVid ? '<span class="video-badge">Video tour</span>' : ''}${locked ? '<div class="lock-badge"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke-width=\"2\"><rect x=\"3\" y=\"11\" width=\"18\" height=\"11\" rx=\"1\"/><path d=\"M7 11V7a5 5 0 0 1 10 0v4\"/></svg></div>' : ''}<img src="${imgUrl(coverImg)}" alt="${p.title}" loading="lazy" style="${locked ? 'filter:grayscale(70%);opacity:0.75;' : ''}" />`
+      : locked
+      ? `<div class="prop-img-placeholder"><span>Private listing</span></div><div class="lock-badge"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="1"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>`
+      : `${hasVid ? '<span class="video-badge">Video tour</span>' : ''}<div class="prop-img-placeholder"><span>${loc.city || ''}</span></div>`
         ? `${hasVid ? '<span class="video-badge">Video tour</span>' : ''}<img src="${imgUrl(coverImg)}" alt="${p.title}" loading="lazy" />`
         : `${hasVid ? '<span class="video-badge">Video tour</span>' : ''}<div class="prop-img-placeholder"><span>${loc.city || ''}</span></div>`;
 
@@ -523,18 +541,18 @@
             <button class="gallery-arrow left" onclick="galleryNav(-1)">‹</button>
             <button class="gallery-arrow right" onclick="galleryNav(1)">›</button>
             <span class="gallery-counter" id="gallery-counter">1 / ${gallery.length}</span>
-          </div>
-          <div class="gallery-thumbs">
-            ${gallery.map((img, i) => `<img src="${imgUrl(img)}" class="gallery-thumb${i===0?' active':''}" onclick="galleryGo(${i})" />`).join('')}
+            <button class="fullscreen-btn" onclick="openFs(0)">⤢ Fullscreen</button>
           </div>
         </div>`;
     } else if (gallery.length === 1) {
-      mediaHTML = `<img src="${imgUrl(gallery[0])}" alt="${p.title}" />`;
+      window._galleryImgs = [imgUrl(gallery[0])];
+      window._galleryIdx = 0;
+      mediaHTML = `<div class="gallery-main-wrap" style="flex:1;position:relative;min-height:300px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#1c1a17"><img src="${imgUrl(gallery[0])}" alt="${p.title}" style="width:100%;height:100%;object-fit:cover;" /><button class="fullscreen-btn" onclick="openFs(0)">⤢ Fullscreen</button></div>`;
     } else {
       mediaHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#1c1a17"><span style="font-family:'Cormorant Garamond',serif;font-style:italic;color:#4a463f">${p.location||''}</span></div>`;
     }
     const vid = ytId(p.youtube_id);
-    const videoHTML = vid ? `<div><p class="detail-video-label">Property video tour</p><div class="video-wrap"><iframe src="https://www.youtube.com/embed/${vid}?rel=0&modestbranding=1" allowfullscreen loading="lazy"></iframe></div></div>` : '';
+    const videoHTML = vid ? `<div><p class="detail-video-label">Video</p><div class="video-wrap"><iframe src="https://www.youtube.com/embed/${vid}?rel=0&modestbranding=1" allowfullscreen loading="lazy"></iframe></div></div>` : '';
     document.getElementById('detail-content').innerHTML = `
       <div class="detail-media">${mediaHTML}</div>
       <div class="detail-body">
@@ -583,6 +601,39 @@
     }
     return s;
   }
+
+  function openFs(i) {
+    const imgs = window._galleryImgs || [];
+    if (!imgs.length) return;
+    window._fsIdx = i;
+    const overlay = document.getElementById('fs-overlay');
+    overlay.classList.add('open');
+    updateFs();
+  }
+
+  function updateFs() {
+    const imgs = window._galleryImgs || [];
+    const i = window._fsIdx || 0;
+    const main = document.getElementById('fs-main');
+    const counter = document.getElementById('fs-counter');
+    const thumbs = document.getElementById('fs-thumbs');
+    if (main) main.src = imgs[i];
+    if (counter) counter.textContent = `${i+1} / ${imgs.length}`;
+    if (thumbs) {
+      thumbs.innerHTML = imgs.map((src, ti) => `<img src="${src}" class="fs-thumb${ti===i?' active':''}" onclick="fsGo(${ti})" />`).join('');
+    }
+    // sync gallery too
+    const gMain = document.getElementById('gallery-main');
+    const gCounter = document.getElementById('gallery-counter');
+    if (gMain) gMain.src = imgs[i];
+    if (gCounter) gCounter.textContent = `${i+1} / ${imgs.length}`;
+    document.querySelectorAll('.gallery-thumb').forEach((t,ti) => t.classList.toggle('active', ti===i));
+    window._galleryIdx = i;
+  }
+
+  function fsGo(i) { window._fsIdx = i; updateFs(); }
+  function fsNav(dir) { const imgs = window._galleryImgs||[]; window._fsIdx = ((window._fsIdx||0)+dir+imgs.length)%imgs.length; updateFs(); }
+  function closeFs() { document.getElementById('fs-overlay').classList.remove('open'); }
 
   function galleryGo(i) {
     const imgs = window._galleryImgs || [];
@@ -641,7 +692,7 @@
     document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
     btn.classList.add('active');
     activeFilter = type;
-    const filtered = type === 'all' ? allProperties : allProperties.filter(p => p.type === type || p.region === type);
+    const filtered = type === 'all' ? allProperties : allProperties.filter(p => (p.type||'').toLowerCase() === type.toLowerCase() || (p.region||'').toLowerCase() === type.toLowerCase());
     renderGrid(filtered);
   }
 
@@ -675,7 +726,7 @@
       closePw();
       const filtered = activeFilter === 'all' ? allProperties : allProperties.filter(p => p.type === activeFilter || p.region === activeFilter);
       renderGrid(filtered);
-      showToast('Access granted — all listings unlocked');
+      showToast('Access granted — listing unlocked');
     } else {
       document.getElementById('pw-error').classList.add('show');
       document.getElementById('pw-input').value = '';
@@ -698,7 +749,7 @@
 
   function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3200); }
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { closePw(); closeDetail(); }
+    if (e.key === 'Escape') { closePw(); closeDetail(); closeFs(); }
     if (e.ctrlKey && e.shiftKey && e.key === 'A') {
       e.preventDefault();
       window.location.href = 'admin.html';
@@ -724,6 +775,17 @@
   }
 
 </script>
+
+
+<!-- FULLSCREEN OVERLAY -->
+<div class="fs-overlay" id="fs-overlay">
+  <button class="fs-close" onclick="closeFs()">×</button>
+  <button class="fs-arrow left" onclick="fsNav(-1)">‹</button>
+  <img class="fs-main" id="fs-main" src="" alt="" />
+  <button class="fs-arrow right" onclick="fsNav(1)">›</button>
+  <div class="fs-thumbs" id="fs-thumbs"></div>
+  <span class="fs-counter" id="fs-counter"></span>
+</div>
 
 <!-- LEGAL PAGES OVERLAY -->
 <div class="legal-overlay" id="legal-overlay">
