@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Royal Estates Premium</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #f0ebe2;
+      --bg-deep: #e9e3d8;
+      --ink: #1c1a17;
+      --mid: #8a8479;
+      --rule: #cfc7b8;
+      --accent: #9c7c4f;
+    }
+    html { font-size: 16px; scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--ink); font-family: 'Inter', sans-serif; font-weight: 300; min-height: 100vh; }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(240,235,226,0.94); backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--rule);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2.5rem; height: 70px;
+    }
+    .nav-logo { display: flex; flex-direction: column; line-height: 1; }
+    .nav-logo .name { font-family: 'Cormorant Garamond', serif; font-weight: 500; font-size: 1.35rem; letter-spacing: 0.16em; text-transform: uppercase; }
+    .nav-logo .name span { color: var(--accent); }
+    .nav-logo .tagline { font-size: 0.54rem; letter-spacing: 0.28em; text-transform: uppercase; color: var(--mid); margin-top: 0.35rem; }
+    .nav-links { display: flex; align-items: center; gap: 1.6rem; }
+    .nav-links a { font-size: 0.7rem; letter-spacing: 0.08em; color: var(--mid); text-decoration: none; transition: color 0.15s; }
+    .nav-links a:hover, .nav-links a.active { color: var(--ink); }
+    .nav-sep { width: 1px; height: 14px; background: var(--rule); }
+
+    /* ── FILTERS (pill rows) ── */
+    .filters {
+      margin-top: 70px; padding: 2.5rem 2.5rem 2rem;
+      display: flex; flex-direction: column; align-items: center; gap: 0.7rem;
+    }
+    .filter-row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; justify-content: center; }
+    .filter-label {
+      font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--mid);
+      background: var(--bg-deep); padding: 0.55rem 1.3rem; min-width: 130px; text-align: center;
+    }
+    .pill {
+      font-size: 0.66rem; letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 0.55rem 1.4rem; border: 1px solid var(--rule);
+      cursor: pointer; background: transparent; color: var(--ink);
+      transition: all 0.15s; white-space: nowrap;
+    }
+    .pill:hover { border-color: var(--accent); color: var(--accent); }
+    .pill.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+    /* ── GRID ── */
+    .listings-wrap { padding: 1.5rem 2.5rem 3rem; }
+    .listings-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      border-top: 1px solid var(--rule);
+    }
+    .property {
+      cursor: pointer; padding: 2.2rem 2rem 2.4rem; position: relative;
+      border-bottom: 1px solid var(--rule);
+      display: flex; flex-direction: column;
+    }
+    /* vertical rules between columns */
+    .property:not(:nth-child(3n)) { border-right: 1px solid var(--rule); }
+
+    .prop-title {
+      font-family: 'Cormorant Garamond', serif; font-weight: 500;
+      font-size: 1.7rem; line-height: 1.08; letter-spacing: 0.01em;
+      text-transform: uppercase; margin-bottom: 1rem; transition: color 0.2s;
+    }
+    .property:hover .prop-title { color: var(--accent); }
+
+    .prop-desc-rule { height: 1px; background: var(--rule); margin-bottom: 1rem; }
+    .prop-desc { font-size: 0.78rem; line-height: 1.65; color: #6b6459; margin-bottom: 1.4rem; min-height: 2.6em; }
+
+    .prop-loc-row {
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--mid); margin-bottom: 1rem;
+    }
+    .prop-loc-row .neighbourhood { color: var(--accent); }
+
+    .prop-image-wrap {
+      position: relative; width: 100%; aspect-ratio: 3/4;
+      overflow: hidden; background: var(--bg-deep); margin-top: auto;
+    }
+    .prop-image-wrap img {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+      transition: transform 0.8s cubic-bezier(0.2,0,0.1,1);
+    }
+    .property:hover .prop-image-wrap img { transform: scale(1.04); }
+
+    .prop-img-placeholder {
+      width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+      background: var(--bg-deep); position: relative; overflow: hidden;
+    }
+    .prop-img-placeholder::after {
+      content: ''; position: absolute; inset: 0;
+      background: repeating-linear-gradient(45deg, transparent, transparent 24px, rgba(0,0,0,0.02) 24px, rgba(0,0,0,0.02) 25px);
+    }
+    .prop-img-placeholder span { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 0.9rem; color: var(--mid); z-index: 1; }
+
+    /* locked */
+    .property.locked .prop-image-wrap { background: #1c1a17; }
+    .property.locked .prop-img-placeholder { background: #1c1a17; }
+    .property.locked .prop-img-placeholder::after { background: repeating-linear-gradient(45deg, transparent, transparent 24px, rgba(255,255,255,0.03) 24px, rgba(255,255,255,0.03) 25px); }
+    .property.locked .prop-img-placeholder span { color: #4a463f; }
+    .property.locked .prop-title { filter: blur(6px); user-select: none; }
+    .property.locked .prop-desc { filter: blur(4px); user-select: none; }
+    .property.locked .prop-loc-row .neighbourhood { filter: blur(3px); user-select: none; }
+
+    .lock-badge {
+      position: absolute; top: 1rem; right: 1rem; background: var(--bg);
+      width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; z-index: 2;
+    }
+    .lock-badge svg { width: 14px; height: 14px; stroke: var(--ink); }
+    .video-badge {
+      position: absolute; bottom: 1rem; left: 1rem; background: rgba(28,26,23,0.78); color: #fff;
+      font-size: 0.56rem; letter-spacing: 0.14em; text-transform: uppercase; padding: 0.3rem 0.7rem;
+      display: flex; align-items: center; gap: 0.4rem; backdrop-filter: blur(4px); z-index: 2;
+    }
+    .video-badge::before { content: '▶'; font-size: 0.48rem; }
+
+    /* price/cta below image */
+    .prop-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 1.1rem;
+    }
+    .prop-price { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 400; }
+    .property.locked .prop-price { filter: blur(5px); user-select: none; }
+    .prop-meta-specs { font-size: 0.64rem; letter-spacing: 0.06em; color: var(--mid); }
+    .prop-cta { font-size: 0.62rem; letter-spacing: 0.13em; text-transform: uppercase; color: var(--mid); display: flex; align-items: center; gap: 0.3rem; transition: color 0.2s; }
+    .property:hover .prop-cta { color: var(--ink); }
+    .prop-cta::after { content: '→'; }
+    .prop-cta.unlock { color: var(--accent); }
+
+    /* states */
+    .loading-state, .empty-state { grid-column: 1/-1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 5rem; gap: 1rem; text-align: center; }
+    .loading-state p, .empty-state p { font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--mid); }
+    .empty-state h3 { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 1.6rem; }
+
+    /* ── MODALS ── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(28,26,23,0.8); z-index: 200;
+      display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none;
+      transition: opacity 0.25s; backdrop-filter: blur(6px); padding: 1.5rem;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .detail-modal { background: var(--bg); width: 100%; max-width: 960px; max-height: 90vh; overflow-y: auto; position: relative; display: grid; grid-template-columns: 1fr 1fr; }
+
+    .gallery { display:flex; height:100%; background:#1c1a17; }
+    .gallery-main-wrap { position:relative; flex:1; min-height:300px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+    .gallery #gallery-main { width:100%; height:100%; object-fit:cover; display:block; }
+    .gallery-arrow { position:absolute; top:50%; transform:translateY(-50%); background:rgba(255,255,255,0.85); border:none; width:38px; height:38px; font-size:1.4rem; line-height:1; cursor:pointer; color:#1c1a17; display:flex; align-items:center; justify-content:center; transition:background 0.15s; }
+    .gallery-arrow:hover { background:#fff; }
+    .gallery-arrow.left { left:0.6rem; }
+    .gallery-arrow.right { right:0.6rem; }
+    .gallery-counter { position:absolute; bottom:0.6rem; right:0.6rem; background:rgba(28,26,23,0.7); color:#fff; font-size:0.62rem; letter-spacing:0.1em; padding:0.25rem 0.6rem; }
+    .gallery-thumbs { display:flex; flex-direction:column; gap:0.4rem; padding:0.5rem; background:#141210; overflow-y:auto; width:76px; flex-shrink:0; }
+    .gallery-thumb { width:100%; height:52px; object-fit:cover; cursor:pointer; opacity:0.5; transition:opacity 0.15s; flex-shrink:0; }
+    .gallery-thumb:hover, .gallery-thumb.active { opacity:1; }
+    @media (max-width:860px) {
+      .gallery { flex-direction:column; }
+      .gallery-thumbs { flex-direction:row; width:100%; overflow-x:auto; }
+      .gallery-thumb { width:60px; }
+    }
+
+    .detail-media { position: relative; min-height: 480px; background: #1c1a17; }
+    .detail-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .detail-body { padding: 3rem 2.6rem; display: flex; flex-direction: column; gap: 1.1rem; overflow-y: auto; }
+    .detail-close { position: absolute; top: 1rem; right: 1rem; background: var(--bg); border: none; width: 34px; height: 34px; font-size: 1.2rem; cursor: pointer; color: var(--mid); display: flex; align-items: center; justify-content: center; z-index: 10; transition: color 0.15s; }
+    .detail-close:hover { color: var(--ink); }
+    .detail-eyebrow { font-size: 0.62rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); }
+    .detail-title { font-family: 'Cormorant Garamond', serif; font-weight: 500; font-size: 2.1rem; line-height: 1.05; text-transform: uppercase; }
+    .detail-location { font-size: 0.72rem; color: var(--mid); letter-spacing: 0.08em; text-transform: uppercase; }
+    .detail-specs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; padding: 1.2rem 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+    .spec-item { display: flex; flex-direction: column; gap: 0.15rem; }
+    .spec-val { font-size: 0.85rem; font-weight: 400; }
+    .spec-lbl { font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--mid); }
+    .detail-price { font-family: 'Cormorant Garamond', serif; font-size: 2.2rem; font-weight: 400; }
+    .detail-desc { font-size: 0.8rem; line-height: 1.9; color: #6b6459; }
+    .detail-video-label { font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--mid); margin-bottom: 0.7rem; }
+    .video-wrap { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; background: #000; }
+    .video-wrap iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
+
+    /* ── ENQUIRY FORM ── */
+    .enquiry-form { display:none; flex-direction:column; gap:0.9rem; margin-top:1rem; padding-top:1rem; border-top:1px solid var(--rule); }
+    .enquiry-form.open { display:flex; }
+    .enquiry-field { display:flex; flex-direction:column; gap:0.3rem; }
+    .enquiry-field label { font-size:0.6rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--mid); }
+    .enquiry-field input, .enquiry-field textarea { border:none; border-bottom:1px solid var(--rule); padding:0.5rem 0; font-family:'Inter',sans-serif; font-size:0.82rem; font-weight:300; background:transparent; outline:none; color:var(--ink); transition:border-color 0.15s; }
+    .enquiry-field input:focus, .enquiry-field textarea:focus { border-bottom-color:var(--ink); }
+    .enquiry-field textarea { resize:none; min-height:70px; }
+    .enquiry-actions { display:flex; gap:0.8rem; align-items:center; }
+    .enquiry-submit { background:var(--ink); color:var(--bg); border:none; padding:0.8rem 1.5rem; font-family:'Inter',sans-serif; font-size:0.66rem; letter-spacing:0.18em; text-transform:uppercase; cursor:pointer; transition:opacity 0.15s; }
+    .enquiry-submit:hover { opacity:0.85; }
+    .enquiry-cancel { background:none; border:none; font-size:0.66rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--mid); cursor:pointer; transition:color 0.15s; }
+    .enquiry-cancel:hover { color:var(--ink); }
+
+    .detail-enquire { background: var(--ink); color: var(--bg); border: none; padding: 0.95rem; font-family: 'Inter', sans-serif; font-size: 0.66rem; letter-spacing: 0.18em; text-transform: uppercase; cursor: pointer; width: 100%; transition: opacity 0.15s; margin-top: auto; }
+    .detail-enquire:hover { opacity: 0.85; }
+
+    .pw-box { background: var(--bg); width: 100%; max-width: 400px; padding: 3rem; position: relative; }
+    .pw-close { position: absolute; top: 1.1rem; right: 1.4rem; background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--mid); }
+    .pw-close:hover { color: var(--ink); }
+    .pw-eyebrow { font-size: 0.62rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin-bottom: 1rem; }
+    .pw-title { font-family: 'Cormorant Garamond', serif; font-weight: 400; font-size: 1.9rem; margin-bottom: 0.5rem; line-height: 1.15; }
+    .pw-sub { font-size: 0.78rem; color: #6b6459; margin-bottom: 2rem; line-height: 1.75; }
+    .pw-input { width: 100%; border: none; border-bottom: 1px solid var(--ink); padding: 0.6rem 0; font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 300; background: transparent; outline: none; letter-spacing: 0.15em; color: var(--ink); margin-bottom: 1.8rem; }
+    .pw-input::placeholder { color: var(--mid); }
+    .pw-btn { width: 100%; background: var(--ink); color: var(--bg); border: none; padding: 0.9rem; font-family: 'Inter', sans-serif; font-size: 0.66rem; letter-spacing: 0.18em; text-transform: uppercase; cursor: pointer; transition: opacity 0.15s; }
+    .pw-btn:hover { opacity: 0.85; }
+    .pw-error { font-size: 0.72rem; color: #a33; margin-top: 0.8rem; display: none; }
+    .pw-error.show { display: block; }
+
+    /* ── REQUEST ACCESS ── */
+    .access-section { background: var(--bg-deep); padding: 5rem 2.5rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: start; }
+    .access-inner { max-width: 1100px; margin: 0 auto; display: contents; }
+    .access-copy h2 { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 2.2rem; line-height: 1.15; margin-bottom: 1rem; }
+    .access-copy p { font-size: 0.79rem; color: #6b6459; line-height: 1.85; max-width: 340px; }
+    .access-form { display: flex; flex-direction: column; gap: 1.1rem; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .field { display: flex; flex-direction: column; gap: 0.35rem; }
+    .field label { font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--mid); }
+    .field input, .field select { border: none; border-bottom: 1px solid var(--rule); padding: 0.55rem 0; font-family: 'Inter', sans-serif; font-size: 0.82rem; font-weight: 300; background: transparent; outline: none; color: var(--ink); -webkit-appearance: none; transition: border-color 0.15s; }
+    .field input:focus, .field select:focus { border-bottom-color: var(--ink); }
+    .form-submit { background: var(--ink); color: var(--bg); border: none; padding: 0.9rem 2.2rem; font-family: 'Inter', sans-serif; font-size: 0.66rem; letter-spacing: 0.18em; text-transform: uppercase; cursor: pointer; transition: opacity 0.15s; align-self: flex-start; margin-top: 0.5rem; }
+    .form-submit:hover { opacity: 0.85; }
+
+    /* ── FOOTER ── */
+    footer { border-top: 1px solid var(--rule); }
+    .footer-main { display: grid; grid-template-columns: repeat(2, 1fr); padding: 3rem 2.5rem; gap: 2rem; border-bottom: 1px solid var(--rule); }
+    .footer-col { display: flex; flex-direction: column; gap: 0.6rem; }
+    .footer-col-label { font-size: 0.62rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--mid); margin-bottom: 0.3rem; }
+    .footer-col-val { font-size: 0.78rem; color: var(--ink); text-decoration: none; transition: color 0.15s; letter-spacing: 0.02em; }
+    .footer-col-val:hover { color: var(--accent); }
+    .footer-bottom { display: flex; align-items: center; justify-content: space-between; padding: 1.4rem 2.5rem; }
+    .footer-mark { font-family: 'Cormorant Garamond', serif; font-size: 0.95rem; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 500; }
+    .footer-mark span { color: var(--accent); }
+    .footer-links { display: flex; gap: 2rem; }
+    .footer-links a { font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--mid); text-decoration: none; transition: color 0.15s; }
+    .footer-links a:hover { color: var(--ink); }
+    .footer-legal { font-size: 0.62rem; color: var(--mid); letter-spacing: 0.04em; }
+
+    /* ── TOAST ── */
+    .toast { position: fixed; bottom: 2.5rem; left: 50%; transform: translateX(-50%) translateY(0.8rem); background: var(--ink); color: var(--bg); padding: 0.8rem 1.8rem; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0; transition: all 0.3s; z-index: 500; pointer-events: none; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── RESPONSIVE ── */
+
+    /* ── LEGAL OVERLAY ── */
+    .legal-overlay { display:none; position:fixed; inset:0; background:var(--bg); z-index:300; overflow-y:auto; }
+    .legal-overlay.open { display:block; }
+    .legal-overlay-inner { max-width:860px; margin:0 auto; padding:2rem 2.5rem 5rem; }
+    .legal-overlay-close { background:none; border:none; font-size:0.66rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--mid); cursor:pointer; padding:1.5rem 0; display:flex; align-items:center; gap:0.5rem; transition:color 0.2s; margin-bottom:1rem; }
+    .legal-overlay-close:hover { color:var(--ink); }
+    .lang-toggle { display:flex; gap:0.4rem; padding:0 0 0.5rem; }
+    .lang-btn { font-size:0.64rem; letter-spacing:0.12em; text-transform:uppercase; padding:0.4rem 1rem; border:1px solid var(--rule); background:transparent; color:var(--mid); cursor:pointer; transition:all 0.15s; }
+    .lang-btn.active { background:var(--ink); color:var(--bg); border-color:var(--ink); }
+    .lang-section { display:none; }
+    .lang-section.active { display:block; }
+    .doc-eyebrow { font-size:0.64rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--accent); margin-bottom:1rem; }
+    .doc-title { font-family:'Cormorant Garamond',serif; font-weight:300; font-size:clamp(2rem,4vw,3rem); line-height:1.05; margin-bottom:0.8rem; }
+    .doc-updated { font-size:0.72rem; color:var(--mid); letter-spacing:0.04em; margin-bottom:2.5rem; padding-bottom:2rem; border-bottom:1px solid var(--rule); }
+    .doc h2 { font-family:'Cormorant Garamond',serif; font-weight:500; font-size:1.4rem; margin:2.5rem 0 0.9rem; }
+    .doc p { font-size:0.85rem; line-height:1.85; color:#4a463f; margin-bottom:1rem; }
+    .doc ul { margin:0 0 1rem 1.4rem; }
+    .doc li { font-size:0.85rem; line-height:1.8; color:#4a463f; margin-bottom:0.4rem; }
+    .doc a { color:var(--accent); text-decoration:none; }
+    .doc a:hover { text-decoration:underline; }
+
+    @media (max-width: 980px) {
+      .listings-grid { grid-template-columns: repeat(2, 1fr); }
+      .property:not(:nth-child(3n)) { border-right: none; }
+      .property:not(:nth-child(2n)) { border-right: 1px solid var(--rule); }
+      .detail-modal { grid-template-columns: 1fr; }
+      .detail-media { min-height: 260px; max-height: 320px; }
+      .access-section { grid-template-columns: 1fr; gap: 2.5rem; }
+    }
+    @media (max-width: 640px) {
+      nav { padding: 0 1.3rem; height: 64px; }
+      .nav-logo .name { font-size: 1.1rem; }
+      .nav-links a:not(.active) { display: none; }
+      .filters { margin-top: 64px; padding: 1.8rem 1.3rem 1.5rem; }
+      .filter-row { gap: 0.4rem; }
+      .filter-label { min-width: auto; padding: 0.5rem 1rem; }
+      .pill { padding: 0.5rem 1rem; }
+      .listings-wrap { padding: 1rem 1.3rem 2rem; }
+      .listings-grid { grid-template-columns: 1fr; }
+      .property:not(:nth-child(2n)) { border-right: none; }
+      .property { padding: 2rem 0.5rem 2.2rem; }
+      .access-section, footer { padding-left: 1.3rem; padding-right: 1.3rem; }
+      footer { flex-direction: column; gap: 1.2rem; text-align: center; }
+      .footer-links { justify-content: center; flex-wrap: wrap; }
+      .form-row { grid-template-columns: 1fr; }
+      .detail-body { padding: 1.8rem; }
+    }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">
+    <span class="name">Royal Estates <span>Premium</span></span>
+    <span class="tagline">Properties Collection</span>
+  </div>
+  <div class="nav-links">
+    <a href="https://royalestates.luxe" target="_blank">Royal Estates</a>
+    <a href="#" class="active">Collection</a>
+    <a href="#contact">Contact</a>
+    <div class="nav-sep"></div>
+    <a href="#">EN</a>
+  </div>
+</nav>
+
+<!-- FILTERS -->
+<div class="filters">
+  <div class="filter-row">
+    <span class="filter-label">Collection</span>
+    <button class="pill active" onclick="filterListings('all', this)">All</button>
+    <button class="pill" onclick="filterListings('apartment', this)">Apartment</button>
+    <button class="pill" onclick="filterListings('villa', this)">Villa</button>
+    <button class="pill" onclick="filterListings('townhouse', this)">Townhouse</button>
+  </div>
+  <div class="filter-row">
+    <span class="filter-label">Location</span>
+    <button class="pill" onclick="filterListings('lisbon', this)">Lisbon</button>
+    <button class="pill" onclick="filterListings('cascais', this)">Cascais</button>
+    <button class="pill" onclick="filterListings('algarve', this)">Algarve</button>
+  </div>
+</div>
+
+<!-- LISTINGS -->
+<div class="listings-wrap">
+  <div class="listings-grid" id="listings-grid">
+    <div class="loading-state"><p>Loading properties…</p></div>
+  </div>
+</div>
+
+<!-- REQUEST ACCESS -->
+<section class="access-section" id="contact">
+  <div class="access-copy">
+    <h2>Request access</h2>
+    <p>This selection is shared on a private basis. Leave your details and we will be in touch directly within 48 hours.</p>
+  </div>
+  <div class="access-form">
+    <div class="form-row">
+      <div class="field"><label>First name</label><input type="text" id="req-first" placeholder="Ana" /></div>
+      <div class="field"><label>Last name</label><input type="text" id="req-last" placeholder="Ferreira" /></div>
+    </div>
+    <div class="field"><label>Email</label><input type="email" id="req-email" placeholder="ana@email.com" /></div>
+    <div class="form-row">
+      <div class="field">
+        <label>Role</label>
+        <select id="req-role">
+          <option value="">Select</option>
+          <option>Private buyer</option>
+          <option>Investor</option>
+          <option>Real estate agent</option>
+          <option>Wealth manager</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Budget range</label>
+        <select id="req-budget">
+          <option value="">Select</option>
+          <option>€500k – €750k</option>
+          <option>€750k – €1.2M</option>
+          <option>€1.2M – €2M</option>
+          <option>€2M+</option>
+        </select>
+      </div>
+    </div>
+    <button class="form-submit" onclick="submitRequest()">Request access</button>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-main">
+    <div class="footer-col">
+      <p class="footer-col-label">Contact us</p>
+      <a href="tel:+351964480190" class="footer-col-val">(+351) 964 480 190</a>
+      <a href="mailto:info@royalestates.pt" class="footer-col-val">info@royalestates.pt</a>
+    </div>
+    <div class="footer-col">
+      <p class="footer-col-label">Website</p>
+      <a href="https://royalestates.luxe" target="_blank" class="footer-col-val">Royal Estates</a>
+      <a href="#" class="footer-col-val">Collection</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-mark">Royal Estates <span>Premium</span></div>
+    <div class="footer-links">
+      <a href="#" onclick="openLegal('privacy'); return false;">Privacy</a>
+      <a href="#" onclick="openLegal('terms'); return false;">Terms</a>
+    </div>
+    <span class="footer-legal">AMI · Licensed Broker · Portugal · © 2026</span>
+  </div>
+</footer>
+
+<!-- PASSWORD MODAL -->
+<div class="modal-overlay" id="pw-overlay" onclick="closePwOutside(event)">
+  <div class="pw-box">
+    <button class="pw-close" onclick="closePw()">×</button>
+    <p class="pw-eyebrow">Private portfolio</p>
+    <h2 class="pw-title">Enter your access code</h2>
+    <p class="pw-sub">This listing is reserved for verified buyers. Enter your access code to reveal full details and pricing.</p>
+    <input class="pw-input" type="password" id="pw-input" placeholder="ACCESS CODE" onkeydown="if(event.key==='Enter') checkPw()" autocomplete="off" />
+    <button class="pw-btn" onclick="checkPw()">Unlock listings</button>
+    <p class="pw-error" id="pw-error">Incorrect code. Please try again or request access below.</p>
+  </div>
+</div>
+
+<!-- LISTING DETAIL MODAL -->
+<div class="modal-overlay" id="detail-overlay" onclick="closeDetailOutside(event)">
+  <div class="detail-modal" id="detail-content"></div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  const SUPABASE_URL  = 'https://mejkdoabupmfwcldysgd.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1lamtkb2FidXBtZndjbGR5c2dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjAwNTQsImV4cCI6MjA5NjY5NjA1NH0.xX4Tmm9ZXtAt-uMtIcsjYxbuLHPPR569zl-z5nv5TWk';
+  const ACCESS_CODE   = 'premium2025';
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  const { createClient } = supabase;
+  const db = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+  let allProperties = [];
+  let activeFilter  = 'all';
+  let isUnlocked    = sessionStorage.getItem('rep_unlocked') === 'true';
+
+  async function init() {
+    const { data, error } = await db.from('properties').select('*').eq('active', true).order('created_at', { ascending: false });
+    if (error) {
+      document.getElementById('listings-grid').innerHTML = '<div class="empty-state"><h3>Unable to load</h3><p>Please refresh the page.</p></div>';
+      return;
+    }
+    allProperties = data || [];
+    renderGrid(allProperties);
+  }
+
+  function imgUrl(path) { return `${SUPABASE_URL}/storage/v1/object/public/property-images/${path}`; }
+  function fmtPrice(p) { return p ? '€ ' + Number(p).toLocaleString('de-DE') : 'Price on request'; }
+  function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+  function splitLocation(p) {
+    if (p.location && p.location.includes('·')) {
+      const parts = p.location.split('·').map(s => s.trim());
+      return { neighbourhood: parts[0], city: parts[1] || cap(p.region) };
+    }
+    return { neighbourhood: p.location || '', city: cap(p.region) };
+  }
+
+  function renderGrid(list) {
+    const el = document.getElementById('listings-grid');
+    if (!list.length) { el.innerHTML = '<div class="empty-state"><h3>No properties found</h3><p>Try a different filter.</p></div>'; return; }
+    el.innerHTML = list.map(p => propertyHTML(p)).join('');
+  }
+
+  function propertyHTML(p) {
+    const locked = p.is_locked && !isUnlocked && !unlockedProperties.has(p.id);
+    const coverImg = (p.images && p.images.length) ? p.images[0] : p.image_url;
+    const hasImg = !!coverImg;
+    const hasVid = !!p.youtube_id;
+    const loc = splitLocation(p);
+
+    const mediaInner = locked
+      ? `<div class="prop-img-placeholder"><span>Private listing</span></div>
+         <div class="lock-badge"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="1"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>`
+      : hasImg
+        ? `${hasVid ? '<span class="video-badge">Video tour</span>' : ''}<img src="${imgUrl(coverImg)}" alt="${p.title}" loading="lazy" />`
+        : `${hasVid ? '<span class="video-badge">Video tour</span>' : ''}<div class="prop-img-placeholder"><span>${loc.city || ''}</span></div>`;
+
+    const priceText = locked ? '€ ●●● ●●●' : fmtPrice(p.price);
+    const cta = locked ? '<span class="prop-cta unlock">Unlock</span>' : '<span class="prop-cta">View</span>';
+    const onclick = locked ? `onclick="openPw(${p.id})"` : `onclick="openDetail(${p.id})"`;
+    const specsLine = [p.typology, p.area ? p.area + ' m²' : null].filter(Boolean).join(' · ');
+
+    return `
+    <article class="property${locked ? ' locked' : ''}" data-type="${p.type||''}" data-region="${p.region||''}" ${onclick}>
+      <h2 class="prop-title">${p.title}</h2>
+      <div class="prop-desc-rule"></div>
+      <p class="prop-desc">${p.description || ''}</p>
+      <div class="prop-loc-row">
+        <span class="neighbourhood">${loc.neighbourhood || ''}</span>
+        <span>${loc.city || ''}</span>
+      </div>
+      <div class="prop-image-wrap">${mediaInner}</div>
+      <div class="prop-footer">
+        <span class="prop-price">${priceText}</span>
+        ${specsLine && !locked ? `<span class="prop-meta-specs">${specsLine}</span>` : ''}
+        ${cta}
+      </div>
+    </article>`;
+  }
+
+  function openDetail(id) {
+    const p = allProperties.find(x => x.id === id);
+    if (!p) return;
+    const gallery = (p.images && p.images.length) ? p.images : (p.image_url ? [p.image_url] : []);
+    let mediaHTML;
+    if (gallery.length > 1) {
+      window._galleryImgs = gallery.map(imgUrl);
+      window._galleryIdx = 0;
+      mediaHTML = `
+        <div class="gallery">
+          <div class="gallery-main-wrap">
+            <img id="gallery-main" src="${imgUrl(gallery[0])}" alt="${p.title}" />
+            <button class="gallery-arrow left" onclick="galleryNav(-1)">‹</button>
+            <button class="gallery-arrow right" onclick="galleryNav(1)">›</button>
+            <span class="gallery-counter" id="gallery-counter">1 / ${gallery.length}</span>
+          </div>
+          <div class="gallery-thumbs">
+            ${gallery.map((img, i) => `<img src="${imgUrl(img)}" class="gallery-thumb${i===0?' active':''}" onclick="galleryGo(${i})" />`).join('')}
+          </div>
+        </div>`;
+    } else if (gallery.length === 1) {
+      mediaHTML = `<img src="${imgUrl(gallery[0])}" alt="${p.title}" />`;
+    } else {
+      mediaHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#1c1a17"><span style="font-family:'Cormorant Garamond',serif;font-style:italic;color:#4a463f">${p.location||''}</span></div>`;
+    }
+    const vid = ytId(p.youtube_id);
+    const videoHTML = vid ? `<div><p class="detail-video-label">Property video tour</p><div class="video-wrap"><iframe src="https://www.youtube.com/embed/${vid}?rel=0&modestbranding=1" allowfullscreen loading="lazy"></iframe></div></div>` : '';
+    document.getElementById('detail-content').innerHTML = `
+      <div class="detail-media">${mediaHTML}</div>
+      <div class="detail-body">
+        <button class="detail-close" onclick="closeDetail()">×</button>
+        <p class="detail-eyebrow">${cap(p.type)}${p.label ? ' · ' + p.label : ''}</p>
+        <h2 class="detail-title">${p.title}</h2>
+        <p class="detail-location">${p.location || ''}</p>
+        <div class="detail-specs">
+          ${p.typology ? `<div class="spec-item"><span class="spec-val">${p.typology}</span><span class="spec-lbl">Typology</span></div>` : ''}
+          ${p.area     ? `<div class="spec-item"><span class="spec-val">${p.area} m²</span><span class="spec-lbl">Area</span></div>` : ''}
+          ${p.feature  ? `<div class="spec-item"><span class="spec-val">${p.feature}</span><span class="spec-lbl">Feature</span></div>` : ''}
+          ${p.year     ? `<div class="spec-item"><span class="spec-val">${p.year}</span><span class="spec-lbl">Year</span></div>` : ''}
+        </div>
+        <p class="detail-price">${fmtPrice(p.price)}</p>
+        ${p.description ? `<p class="detail-desc">${p.description}</p>` : ''}
+        ${videoHTML}
+        <button class="detail-enquire" id="enquire-btn" onclick="toggleEnquiryForm(${p.id}, '${p.title}')">Enquire about this property</button>
+        <div class="enquiry-form" id="enquiry-form">
+          <div class="enquiry-field"><label>Your name *</label><input type="text" id="enq-name" placeholder="Ana Ferreira" /></div>
+          <div class="enquiry-field"><label>Email address *</label><input type="email" id="enq-email" placeholder="ana@email.com" /></div>
+          <div class="enquiry-field"><label>Phone (optional)</label><input type="tel" id="enq-phone" placeholder="+351 900 000 000" /></div>
+          <div class="enquiry-field"><label>Message (optional)</label><textarea id="enq-message" placeholder="I would like more information about this property…"></textarea></div>
+          <div class="enquiry-actions">
+            <button class="enquiry-submit" onclick="submitEnquiry()">Send enquiry</button>
+            <button class="enquiry-cancel" onclick="toggleEnquiryForm()">Cancel</button>
+          </div>
+        </div>
+      </div>`;
+    document.getElementById('detail-overlay').classList.add('open');
+  }
+  function ytId(input) {
+    if (!input) return '';
+    const s = input.trim();
+    // Already just an ID (no slashes or dots)
+    if (!/[\/.]/.test(s)) return s;
+    // Try various URL patterns
+    const patterns = [
+      /[?&]v=([^&]+)/,           // watch?v=ID
+      /youtu\.be\/([^?&]+)/,    // youtu.be/ID
+      /embed\/([^?&]+)/,         // embed/ID
+      /shorts\/([^?&]+)/         // shorts/ID
+    ];
+    for (const re of patterns) {
+      const m = s.match(re);
+      if (m) return m[1];
+    }
+    return s;
+  }
+
+  function galleryGo(i) {
+    const imgs = window._galleryImgs || [];
+    if (!imgs.length) return;
+    window._galleryIdx = (i + imgs.length) % imgs.length;
+    const idx = window._galleryIdx;
+    document.getElementById('gallery-main').src = imgs[idx];
+    const counter = document.getElementById('gallery-counter');
+    if (counter) counter.textContent = `${idx+1} / ${imgs.length}`;
+    document.querySelectorAll('.gallery-thumb').forEach((t, ti) => t.classList.toggle('active', ti === idx));
+  }
+  function galleryNav(dir) {
+    galleryGo((window._galleryIdx || 0) + dir);
+  }
+
+  function closeDetail() { document.getElementById('detail-overlay').classList.remove('open'); }
+  function closeDetailOutside(e) { if (e.target === document.getElementById('detail-overlay')) closeDetail(); }
+  let currentEnquiryPropertyId = null;
+  let currentEnquiryPropertyTitle = null;
+
+  function toggleEnquiryForm(id, title) {
+    const form = document.getElementById('enquiry-form');
+    const btn  = document.getElementById('enquire-btn');
+    if (!form) return;
+    if (id) {
+      currentEnquiryPropertyId    = id;
+      currentEnquiryPropertyTitle = title;
+      form.classList.add('open');
+      btn.style.display = 'none';
+      setTimeout(() => document.getElementById('enq-name').focus(), 100);
+    } else {
+      form.classList.remove('open');
+      btn.style.display = '';
+    }
+  }
+
+  async function submitEnquiry() {
+    const name    = document.getElementById('enq-name').value.trim();
+    const email   = document.getElementById('enq-email').value.trim();
+    const phone   = document.getElementById('enq-phone').value.trim();
+    const message = document.getElementById('enq-message').value.trim();
+    if (!name || !email) { showToast('Please fill in your name and email'); return; }
+    const { error } = await db.from('enquiries').insert([{
+      property_id: currentEnquiryPropertyId,
+      property:    currentEnquiryPropertyTitle,
+      name, email, phone, message
+    }]);
+    if (error) { showToast('Something went wrong — please try again'); return; }
+    closeDetail();
+    showToast('Enquiry received — we will be in touch shortly');
+    currentEnquiryPropertyId    = null;
+    currentEnquiryPropertyTitle = null;
+  }
+
+  function filterListings(type, btn) {
+    document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    activeFilter = type;
+    const filtered = type === 'all' ? allProperties : allProperties.filter(p => p.type === type || p.region === type);
+    renderGrid(filtered);
+  }
+
+  let unlockedProperties = new Set(JSON.parse(sessionStorage.getItem('rep_unlocked_ids') || '[]'));
+
+  function openPw(propertyId) { pendingUnlockPropertyId = propertyId || null; document.getElementById('pw-overlay').classList.add('open'); setTimeout(() => document.getElementById('pw-input').focus(), 100); }
+  function closePw() { document.getElementById('pw-overlay').classList.remove('open'); document.getElementById('pw-error').classList.remove('show'); document.getElementById('pw-input').value = ''; }
+  function closePwOutside(e) { if (e.target === document.getElementById('pw-overlay')) closePw(); }
+  let pendingUnlockPropertyId = null;
+
+  function checkPw() {
+    const val = document.getElementById('pw-input').value.trim();
+
+    // Check per-property password first
+    if (pendingUnlockPropertyId) {
+      const prop = allProperties.find(p => p.id === pendingUnlockPropertyId);
+      if (prop && prop.password && val === prop.password) {
+        unlockedProperties.add(pendingUnlockPropertyId);
+        sessionStorage.setItem('rep_unlocked_ids', JSON.stringify([...unlockedProperties]));
+        closePw();
+        renderGrid(activeFilter === 'all' ? allProperties : allProperties.filter(p => p.type === activeFilter || p.region === activeFilter));
+        showToast('Listing unlocked');
+        return;
+      }
+    }
+
+    // Fall back to global password
+    if (val === ACCESS_CODE) {
+      isUnlocked = true;
+      sessionStorage.setItem('rep_unlocked', 'true');
+      closePw();
+      const filtered = activeFilter === 'all' ? allProperties : allProperties.filter(p => p.type === activeFilter || p.region === activeFilter);
+      renderGrid(filtered);
+      showToast('Access granted — all listings unlocked');
+    } else {
+      document.getElementById('pw-error').classList.add('show');
+      document.getElementById('pw-input').value = '';
+      document.getElementById('pw-input').focus();
+    }
+  }
+
+  async function submitRequest() {
+    const first = document.getElementById('req-first').value.trim();
+    const email = document.getElementById('req-email').value.trim();
+    if (!first || !email) { showToast('Please fill in your name and email'); return; }
+    const { error } = await db.from('access_requests').insert([{
+      first_name: first, last_name: document.getElementById('req-last').value.trim(),
+      email, role: document.getElementById('req-role').value, budget: document.getElementById('req-budget').value,
+    }]);
+    if (error) { showToast('Something went wrong — please try again'); return; }
+    showToast('Request received — we\'ll be in touch within 48h');
+    ['req-first','req-last','req-email'].forEach(id => document.getElementById(id).value = '');
+  }
+
+  function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3200); }
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closePw(); closeDetail(); }
+    if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+      e.preventDefault();
+      window.location.href = 'admin.html';
+    }
+  });
+  init();
+
+  function openLegal(page) {
+    document.querySelectorAll('.legal-page').forEach(p => p.style.display = 'none');
+    document.getElementById('legal-' + page).style.display = 'block';
+    document.getElementById('legal-overlay').classList.add('open');
+    window.scrollTo(0, 0);
+  }
+  function closeLegal() {
+    document.getElementById('legal-overlay').classList.remove('open');
+  }
+  function setLang(lang, btn) {
+    const page = btn.closest('.legal-page');
+    page.querySelectorAll('.lang-section').forEach(s => s.classList.remove('active'));
+    page.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+    page.querySelector('#lang-' + lang).classList.add('active');
+    btn.classList.add('active');
+  }
+
+</script>
+
+<!-- LEGAL PAGES OVERLAY -->
+<div class="legal-overlay" id="legal-overlay">
+  <div class="legal-overlay-inner">
+    <button class="legal-overlay-close" onclick="closeLegal()">← Back to collection</button>
+    <div id="legal-privacy" class="legal-page" style="display:none">
+<div class="lang-toggle">
+  <button class="lang-btn active" onclick="setLang('en', this)">EN</button>
+  <button class="lang-btn" onclick="setLang('pt', this)">PT</button>
+</div>
+
+<!-- ───────────── ENGLISH ───────────── -->
+<div class="doc lang-section active" id="lang-en">
+  <p class="doc-eyebrow">Legal</p>
+  <h1 class="doc-title">Privacy Policy</h1>
+  <p class="doc-updated">Last updated: June 2026</p>
+<h2>1. Who we are</h2>
+  <p>This website ("Royal Estates Premium") is operated by Royal Estates Lda, a real estate brokerage licensed under AMI no. 23635, with registered office at Rua da Fonte, n.º 7, Paço, Peniche, Portugal, holding tax number (NIPC) 516 503 545 (hereinafter "we", "us", or the "Controller").</p>
+  <p>We are the data controller responsible for the personal data collected through this website. For any questions about this policy or your data, contact us at <a href="mailto:info@royalestates.pt">info@royalestates.pt</a> or (+351) 964 480 190.</p>
+
+  <h2>2. What data we collect</h2>
+  <p>We collect personal data that you provide directly through the access request form on this website, namely:</p>
+  <ul>
+    <li>First and last name;</li>
+    <li>Email address;</li>
+    <li>Professional role or capacity (e.g. private buyer, investor, intermediary);</li>
+    <li>Indicative budget range;</li>
+    <li>Any further information you choose to provide in correspondence with us.</li>
+  </ul>
+  <p>We may also collect limited technical data automatically, such as your browser type and general usage information, for the purpose of operating and securing the website.</p>
+
+  <h2>3. Why we process your data and legal basis</h2>
+  <p>We process your personal data for the following purposes and on the following legal bases under the General Data Protection Regulation (Regulation (EU) 2016/679, "GDPR"):</p>
+  <ul>
+    <li><strong>To respond to your access request and provide property information</strong> — on the basis of steps taken at your request prior to entering into a contract (Art. 6(1)(b) GDPR);</li>
+    <li><strong>To contact you regarding properties that may interest you</strong> — on the basis of our legitimate interest in conducting our brokerage activity (Art. 6(1)(f) GDPR), or your consent where required;</li>
+    <li><strong>To comply with legal obligations</strong>, including those applicable to licensed real estate intermediaries and anti-money-laundering legislation — on the basis of compliance with a legal obligation (Art. 6(1)(c) GDPR).</li>
+  </ul>
+
+  <h2>4. How long we keep your data</h2>
+  <p>We retain your personal data only for as long as necessary to fulfil the purposes for which it was collected, including to satisfy any legal, accounting, or regulatory requirements. Access request data is retained for 24 months from your last contact with us, unless a longer period is required by law.</p>
+
+  <h2>5. Who we share your data with</h2>
+  <p>We do not sell your personal data. We may share it with:</p>
+  <ul>
+    <li>Service providers who help us operate the website and our business (such as hosting and database providers), acting as processors under our instructions;</li>
+    <li>Public authorities or regulators where required by law;</li>
+    <li>Professional advisors (legal, accounting) where necessary.</li>
+  </ul>
+  <p>Some providers may process data outside the European Economic Area. Where this occurs, we ensure appropriate safeguards are in place in accordance with the GDPR.</p>
+
+  <h2>6. Cookies</h2>
+  <p>This website uses only essential technical storage necessary for the site to function (for example, to remember that you have entered a valid access code during your visit). We do not use advertising or third-party tracking cookies. Please update this section if analytics or other cookies are added in future.</p>
+
+  <h2>7. Your rights</h2>
+  <p>Under the GDPR, you have the right to access, rectify, erase, restrict, or object to the processing of your personal data, as well as the right to data portability and the right to withdraw consent at any time where processing is based on consent. To exercise these rights, contact us at <a href="mailto:info@royalestates.pt">info@royalestates.pt</a>.</p>
+  <p>You also have the right to lodge a complaint with the Portuguese supervisory authority, the Comissão Nacional de Proteção de Dados (CNPD), at <a href="https://www.cnpd.pt" target="_blank">www.cnpd.pt</a>.</p>
+
+  <h2>8. Changes to this policy</h2>
+  <p>We may update this policy from time to time. The current version will always be available on this page, with the date of last revision indicated above.</p>
+</div>
+
+<!-- ───────────── PORTUGUÊS ───────────── -->
+<div class="doc lang-section" id="lang-pt">
+  <p class="doc-eyebrow">Legal</p>
+  <h1 class="doc-title">Política de Privacidade</h1>
+  <p class="doc-updated">Última atualização: Junho 2026</p>
+<h2>1. Quem somos</h2>
+  <p>Este website ("Royal Estates Premium") é operado pela Royal Estates Lda, mediadora imobiliária licenciada com a licença AMI n.º 23635, com sede em Rua da Fonte, n.º 7, Paço, Peniche, Portugal, com o número de identificação de pessoa coletiva (NIPC) 516 503 545 (doravante "nós" ou "Responsável pelo Tratamento").</p>
+  <p>Somos o responsável pelo tratamento dos dados pessoais recolhidos através deste website. Para qualquer questão sobre esta política ou sobre os seus dados, contacte-nos através de <a href="mailto:info@royalestates.pt">info@royalestates.pt</a> ou (+351) 964 480 190.</p>
+
+  <h2>2. Que dados recolhemos</h2>
+  <p>Recolhemos os dados pessoais que nos fornece diretamente através do formulário de pedido de acesso deste website, nomeadamente:</p>
+  <ul>
+    <li>Nome próprio e apelido;</li>
+    <li>Endereço de correio eletrónico;</li>
+    <li>Função ou qualidade profissional (por exemplo, comprador particular, investidor, intermediário);</li>
+    <li>Intervalo de orçamento indicativo;</li>
+    <li>Quaisquer outras informações que opte por fornecer na correspondência connosco.</li>
+  </ul>
+  <p>Podemos também recolher automaticamente dados técnicos limitados, como o tipo de navegador e informações gerais de utilização, com a finalidade de operar e proteger o website.</p>
+
+  <h2>3. Porque tratamos os seus dados e fundamento jurídico</h2>
+  <p>Tratamos os seus dados pessoais para as seguintes finalidades e com os seguintes fundamentos jurídicos ao abrigo do Regulamento Geral sobre a Proteção de Dados (Regulamento (UE) 2016/679, "RGPD"):</p>
+  <ul>
+    <li><strong>Para responder ao seu pedido de acesso e prestar informações sobre imóveis</strong> — com base em diligências realizadas a seu pedido antes da celebração de um contrato (art. 6.º, n.º 1, al. b) do RGPD);</li>
+    <li><strong>Para o contactar relativamente a imóveis que possam ser do seu interesse</strong> — com base no nosso interesse legítimo no exercício da atividade de mediação (art. 6.º, n.º 1, al. f) do RGPD), ou no seu consentimento quando exigível;</li>
+    <li><strong>Para cumprir obrigações legais</strong>, incluindo as aplicáveis aos mediadores imobiliários licenciados e à legislação de prevenção do branqueamento de capitais — com base no cumprimento de uma obrigação jurídica (art. 6.º, n.º 1, al. c) do RGPD).</li>
+  </ul>
+
+  <h2>4. Durante quanto tempo conservamos os seus dados</h2>
+  <p>Conservamos os seus dados pessoais apenas durante o tempo necessário ao cumprimento das finalidades para que foram recolhidos, incluindo o cumprimento de quaisquer requisitos legais, contabilísticos ou regulamentares. Os dados do pedido de acesso são conservados durante 24 meses a contar do seu último contacto connosco, salvo se a lei exigir um período mais longo.</p>
+
+  <h2>5. Com quem partilhamos os seus dados</h2>
+  <p>Não vendemos os seus dados pessoais. Podemos partilhá-los com:</p>
+  <ul>
+    <li>Prestadores de serviços que nos auxiliam na operação do website e da nossa atividade (como fornecedores de alojamento e base de dados), atuando como subcontratantes segundo as nossas instruções;</li>
+    <li>Autoridades públicas ou reguladores, quando exigido por lei;</li>
+    <li>Consultores profissionais (jurídicos, contabilísticos), quando necessário.</li>
+  </ul>
+  <p>Alguns prestadores poderão tratar dados fora do Espaço Económico Europeu. Quando tal ocorra, asseguramos a existência de garantias adequadas em conformidade com o RGPD.</p>
+
+  <h2>6. Cookies</h2>
+  <p>Este website utiliza apenas o armazenamento técnico essencial necessário ao seu funcionamento (por exemplo, para memorizar que introduziu um código de acesso válido durante a sua visita). Não utilizamos cookies de publicidade ou de rastreio de terceiros. Atualizar esta secção caso sejam adicionados cookies de análise ou outros no futuro.</p>
+
+  <h2>7. Os seus direitos</h2>
+  <p>Ao abrigo do RGPD, tem o direito de aceder, retificar, apagar, limitar ou opor-se ao tratamento dos seus dados pessoais, bem como o direito à portabilidade dos dados e o direito de retirar o consentimento a qualquer momento quando o tratamento se baseie no consentimento. Para exercer estes direitos, contacte-nos através de <a href="mailto:info@royalestates.pt">info@royalestates.pt</a>.</p>
+  <p>Tem ainda o direito de apresentar reclamação junto da autoridade de controlo portuguesa, a Comissão Nacional de Proteção de Dados (CNPD), em <a href="https://www.cnpd.pt" target="_blank">www.cnpd.pt</a>.</p>
+
+  <h2>8. Alterações a esta política</h2>
+  <p>Podemos atualizar esta política periodicamente. A versão em vigor estará sempre disponível nesta página, com a data da última revisão indicada acima.</p>
+</div>
+    </div>
+    <div id="legal-terms" class="legal-page" style="display:none">
+<div class="lang-toggle">
+  <button class="lang-btn active" onclick="setLang('en', this)">EN</button>
+  <button class="lang-btn" onclick="setLang('pt', this)">PT</button>
+</div>
+
+<!-- ───────────── ENGLISH ───────────── -->
+<div class="doc lang-section active" id="lang-en">
+  <p class="doc-eyebrow">Legal</p>
+  <h1 class="doc-title">Terms of Use</h1>
+  <p class="doc-updated">Last updated: June 2026</p>
+<h2>1. About these terms</h2>
+  <p>These terms of use govern your access to and use of the Royal Estates Premium website (the "Website"), operated by Royal Estates Lda, a real estate brokerage licensed under AMI no. 23635, with registered office at Rua da Fonte, n.º 7, Paço, Peniche, Portugal. By accessing or using the Website, you agree to be bound by these terms.</p>
+
+  <h2>2. Nature of the information provided</h2>
+  <p>The Website presents a curated selection of properties for general information purposes. All property descriptions, areas, typologies, prices, images, and video content are provided for indicative purposes only and do not constitute a contractual offer, a binding proposal, or a guarantee of availability.</p>
+  <p>Property details may change without notice. Areas and measurements are approximate. Prices are indicative and may be subject to negotiation, taxes, and additional costs. No information on the Website should be relied upon as the sole basis for any purchase decision.</p>
+
+  <h2>3. Access to restricted listings</h2>
+  <p>Certain listings are protected and require an access code provided at our discretion. Access codes are personal, non-transferable, and intended solely for the qualified individuals to whom they are issued. We reserve the right to grant, refuse, or revoke access at any time without obligation to provide reasons.</p>
+
+  <h2>4. Intellectual property</h2>
+  <p>All content on the Website — including text, images, video, design, logos, and the "Royal Estates" and "Royal Estates Premium" names and marks — is owned by or licensed to us and is protected by intellectual property law. You may not reproduce, distribute, or use any content without our prior written consent.</p>
+
+  <h2>5. Acceptable use</h2>
+  <p>You agree not to:</p>
+  <ul>
+    <li>Use the Website for any unlawful purpose or in breach of these terms;</li>
+    <li>Attempt to gain unauthorised access to restricted areas, accounts, or systems;</li>
+    <li>Copy, scrape, or extract content for commercial use without authorisation;</li>
+    <li>Introduce any malicious code or interfere with the operation of the Website.</li>
+  </ul>
+
+  <h2>6. Limitation of liability</h2>
+  <p>To the fullest extent permitted by law, we accept no liability for any loss or damage arising from your use of, or reliance on, the Website or its content, including any inaccuracy in property information. Nothing in these terms excludes liability that cannot be excluded under Portuguese law.</p>
+
+  <h2>7. Third-party content and links</h2>
+  <p>The Website may include embedded video content (for example, from YouTube) and links to third-party websites. We are not responsible for the content, policies, or practices of third parties. Embedded video is subject to the terms and privacy policy of the relevant provider.</p>
+
+  <h2>8. Consumer dispute resolution</h2>
+  <p>In accordance with applicable Portuguese law, consumers may resort to an alternative dispute resolution entity. For disputes arising in connection with this Website, the competent alternative dispute resolution entity is the Centro de Arbitragem de Conflitos de Consumo do Distrito de Coimbra (CACRC), given the registered office location in Peniche (Leiria district). Further information at www.centroarbitragem.pt. More information is available at <a href="https://www.consumidor.gov.pt" target="_blank">www.consumidor.gov.pt</a>.</p>
+
+  <h2>9. Governing law and jurisdiction</h2>
+  <p>These terms are governed by Portuguese law. Any dispute arising in connection with the Website shall be subject to the competent Portuguese courts, without prejudice to any mandatory consumer protection rights.</p>
+
+  <h2>10. Changes to these terms</h2>
+  <p>We may revise these terms from time to time. The current version will always be available on this page, with the date of last revision indicated above.</p>
+</div>
+
+<!-- ───────────── PORTUGUÊS ───────────── -->
+<div class="doc lang-section" id="lang-pt">
+  <p class="doc-eyebrow">Legal</p>
+  <h1 class="doc-title">Termos e Condições de Utilização</h1>
+  <p class="doc-updated">Última atualização: Junho 2026</p>
+<h2>1. Sobre estes termos</h2>
+  <p>Os presentes termos e condições regulam o acesso e a utilização do website Royal Estates Premium (o "Website"), operado pela Royal Estates Lda, mediadora imobiliária licenciada com a licença AMI n.º 23635, com sede em Rua da Fonte, n.º 7, Paço, Peniche, Portugal. Ao aceder ou utilizar o Website, o utilizador aceita ficar vinculado a estes termos.</p>
+
+  <h2>2. Natureza da informação prestada</h2>
+  <p>O Website apresenta uma seleção criteriosa de imóveis para fins de informação geral. Todas as descrições, áreas, tipologias, preços, imagens e conteúdos de vídeo são fornecidos a título meramente indicativo e não constituem uma oferta contratual, uma proposta vinculativa ou uma garantia de disponibilidade.</p>
+  <p>Os detalhes dos imóveis podem ser alterados sem aviso prévio. As áreas e medidas são aproximadas. Os preços são indicativos e podem estar sujeitos a negociação, impostos e custos adicionais. Nenhuma informação do Website deve ser utilizada como única base para qualquer decisão de compra.</p>
+
+  <h2>3. Acesso a imóveis restritos</h2>
+  <p>Determinados imóveis são protegidos e exigem um código de acesso fornecido ao nosso critério. Os códigos de acesso são pessoais, intransmissíveis e destinam-se exclusivamente às pessoas qualificadas a quem são atribuídos. Reservamo-nos o direito de conceder, recusar ou revogar o acesso a qualquer momento, sem obrigação de apresentar justificação.</p>
+
+  <h2>4. Propriedade intelectual</h2>
+  <p>Todo o conteúdo do Website — incluindo textos, imagens, vídeos, design, logótipos e as denominações e marcas "Royal Estates" e "Royal Estates Premium" — é detido por nós ou licenciado a nós e está protegido pela legislação de propriedade intelectual. Não é permitida a reprodução, distribuição ou utilização de qualquer conteúdo sem o nosso consentimento prévio por escrito.</p>
+
+  <h2>5. Utilização aceitável</h2>
+  <p>O utilizador compromete-se a não:</p>
+  <ul>
+    <li>Utilizar o Website para qualquer finalidade ilícita ou em violação destes termos;</li>
+    <li>Tentar obter acesso não autorizado a áreas restritas, contas ou sistemas;</li>
+    <li>Copiar, extrair ou recolher conteúdo para fins comerciais sem autorização;</li>
+    <li>Introduzir qualquer código malicioso ou interferir com o funcionamento do Website.</li>
+  </ul>
+
+  <h2>6. Limitação de responsabilidade</h2>
+  <p>Na máxima medida permitida por lei, não assumimos qualquer responsabilidade por perdas ou danos decorrentes da utilização ou da confiança no Website ou no seu conteúdo, incluindo qualquer inexatidão na informação sobre imóveis. Nada nestes termos exclui a responsabilidade que não possa ser excluída ao abrigo da lei portuguesa.</p>
+
+  <h2>7. Conteúdos e ligações de terceiros</h2>
+  <p>O Website pode incluir conteúdos de vídeo incorporados (por exemplo, do YouTube) e ligações para websites de terceiros. Não somos responsáveis pelo conteúdo, políticas ou práticas de terceiros. Os vídeos incorporados estão sujeitos aos termos e à política de privacidade do respetivo fornecedor.</p>
+
+  <h2>8. Resolução alternativa de litígios de consumo</h2>
+  <p>Nos termos da legislação portuguesa aplicável, os consumidores podem recorrer a uma entidade de resolução alternativa de litígios. Para litígios relacionados com este Website, a entidade de resolução alternativa de litígios competente é o Centro de Arbitragem de Conflitos de Consumo do Distrito de Coimbra (CACRC), atendendo à sede social em Peniche (distrito de Leiria). Mais informações em www.centroarbitragem.pt. Mais informações em <a href="https://www.consumidor.gov.pt" target="_blank">www.consumidor.gov.pt</a>.</p>
+
+  <h2>9. Lei aplicável e foro</h2>
+  <p>Os presentes termos regem-se pela lei portuguesa. Qualquer litígio relacionado com o Website fica sujeito aos tribunais portugueses competentes, sem prejuízo de quaisquer direitos imperativos de proteção do consumidor.</p>
+
+  <h2>10. Alterações a estes termos</h2>
+  <p>Podemos rever estes termos periodicamente. A versão em vigor estará sempre disponível nesta página, com a data da última revisão indicada acima.</p>
+</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

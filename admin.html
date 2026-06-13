@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>REP Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --black: #0a0a0a; --white: #fafafa; --mid: #888; --rule: #d8d8d8; --accent: #c8a96e; --red: #c0392b; --green: #27ae60; }
+    html { font-size: 15px; }
+    body { background: #f0f0f0; color: var(--black); font-family: 'Inter', sans-serif; font-weight: 300; min-height: 100vh; }
+
+    /* AUTH SCREEN */
+    #auth-screen { position: fixed; inset: 0; background: var(--black); display: flex; align-items: center; justify-content: center; z-index: 999; }
+    .auth-box { background: var(--white); padding: 3rem; width: 100%; max-width: 380px; }
+    .auth-logo { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 1rem; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 0.4rem; }
+    .auth-logo span { color: var(--accent); }
+    .auth-sub { font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--mid); margin-bottom: 2rem; }
+    .auth-input { width: 100%; border: none; border-bottom: 1px solid var(--black); padding: 0.6rem 0; font-family: 'Inter', sans-serif; font-size: 0.88rem; background: transparent; outline: none; margin-bottom: 0.8rem; }
+    .auth-btn { width: 100%; background: var(--black); color: var(--white); border: none; padding: 0.85rem; font-family: 'Inter', sans-serif; font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; cursor: pointer; margin-top: 1rem; }
+    .auth-btn:hover { background: #222; }
+    .auth-error { font-size: 0.72rem; color: var(--red); margin-top: 0.6rem; display: none; }
+    .auth-error.show { display: block; }
+
+    /* LAYOUT */
+    #app { display: none; }
+    #app.visible { display: flex; min-height: 100vh; }
+
+    /* SIDEBAR */
+    .sidebar { width: 220px; background: var(--black); color: var(--white); flex-shrink: 0; display: flex; flex-direction: column; padding: 1.8rem 0; position: sticky; top: 0; height: 100vh; }
+    .sidebar-logo { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 0.88rem; letter-spacing: 0.2em; text-transform: uppercase; padding: 0 1.5rem; margin-bottom: 0.3rem; }
+    .sidebar-logo span { color: var(--accent); }
+    .sidebar-sub { font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; color: #555; padding: 0 1.5rem; margin-bottom: 2rem; }
+    .sidebar-nav { display: flex; flex-direction: column; gap: 0.15rem; padding: 0 0.8rem; flex: 1; }
+    .nav-item { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 0.6rem 0.8rem; cursor: pointer; color: #888; border-radius: 2px; transition: all 0.15s; display: flex; align-items: center; gap: 0.6rem; }
+    .nav-item:hover { color: var(--white); background: #1a1a1a; }
+    .nav-item.active { color: var(--white); background: #1e1e1e; }
+    .nav-item .dot { width: 5px; height: 5px; border-radius: 50%; background: #444; flex-shrink: 0; }
+    .nav-item.active .dot { background: var(--accent); }
+    .sidebar-footer { padding: 1rem 1.5rem; border-top: 1px solid #1a1a1a; }
+    .sidebar-logout { font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: #555; cursor: pointer; transition: color 0.15s; background: none; border: none; }
+    .sidebar-logout:hover { color: var(--white); }
+
+    /* MAIN */
+    .main { flex: 1; padding: 2rem 2.5rem; overflow-y: auto; }
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .page-header { margin-bottom: 2rem; display: flex; align-items: flex-end; justify-content: space-between; }
+    .page-title { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 2rem; }
+    .page-sub { font-size: 0.72rem; color: var(--mid); letter-spacing: 0.04em; margin-top: 0.2rem; }
+
+    /* BTN */
+    .btn { border: none; padding: 0.65rem 1.3rem; font-family: 'Inter', sans-serif; font-size: 0.68rem; letter-spacing: 0.15em; text-transform: uppercase; cursor: pointer; transition: background 0.15s; }
+    .btn-primary { background: var(--black); color: var(--white); }
+    .btn-primary:hover { background: #222; }
+    .btn-ghost { background: transparent; color: var(--black); border: 1px solid var(--rule); }
+    .btn-ghost:hover { border-color: var(--black); }
+    .btn-danger { background: transparent; color: var(--red); border: 1px solid #f0c0bb; font-size: 0.62rem; padding: 0.4rem 0.8rem; }
+    .btn-danger:hover { background: #fdf0ef; }
+    .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.62rem; }
+
+    /* CARDS */
+    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+    .stat-card { background: var(--white); padding: 1.4rem; border: 1px solid var(--rule); }
+    .stat-value { font-family: 'Cormorant Garamond', serif; font-size: 2.2rem; font-weight: 300; margin-bottom: 0.2rem; }
+    .stat-label { font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--mid); }
+
+    /* TABLE */
+    .table-wrap { background: var(--white); border: 1px solid var(--rule); overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th { font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--mid); padding: 0.9rem 1.2rem; text-align: left; border-bottom: 1px solid var(--rule); background: #fafafa; font-weight: 400; }
+    td { font-size: 0.78rem; padding: 0.85rem 1.2rem; border-bottom: 1px solid var(--rule); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafafa; }
+    .td-title { font-weight: 400; }
+    .td-price { font-family: 'Cormorant Garamond', serif; font-size: 0.95rem; }
+    .badge { display: inline-block; font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.2rem 0.6rem; }
+    .badge-lock { background: #111; color: #fff; }
+    .badge-public { background: #e8f5e9; color: #2e7d32; }
+    .badge-inactive { background: #f5f5f5; color: #999; }
+    .td-actions { display: flex; gap: 0.5rem; align-items: center; }
+    .thumb { width: 52px; height: 40px; object-fit: cover; filter: grayscale(60%); display: block; }
+    .thumb-placeholder { width: 52px; height: 40px; background: #e8e8e8; }
+
+    /* FORM PANEL */
+    .form-panel { background: var(--white); border: 1px solid var(--rule); padding: 2rem; margin-bottom: 2rem; }
+    .form-panel-title { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 1.4rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--rule); }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+    .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.2rem; }
+    .form-full { grid-column: 1 / -1; }
+    .field { display: flex; flex-direction: column; gap: 0.35rem; }
+    .field label { font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--mid); }
+    .field input, .field select, .field textarea { border: 1px solid var(--rule); padding: 0.55rem 0.7rem; font-family: 'Inter', sans-serif; font-size: 0.82rem; font-weight: 300; background: var(--white); outline: none; color: var(--black); transition: border-color 0.15s; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--black); }
+    .field textarea { resize: vertical; min-height: 90px; }
+    .field-hint { font-size: 0.62rem; color: var(--mid); margin-top: 0.2rem; }
+    .toggle-row { display: flex; align-items: center; gap: 0.8rem; }
+    .toggle { position: relative; width: 38px; height: 20px; cursor: pointer; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-track { position: absolute; inset: 0; background: #ccc; transition: background 0.2s; border-radius: 20px; }
+    .toggle input:checked + .toggle-track { background: var(--black); }
+    .toggle-track::after { content: ''; position: absolute; width: 14px; height: 14px; background: white; border-radius: 50%; top: 3px; left: 3px; transition: transform 0.2s; }
+    .toggle input:checked + .toggle-track::after { transform: translateX(18px); }
+    .toggle-label { font-size: 0.72rem; letter-spacing: 0.06em; }
+
+    /* IMAGE UPLOAD */
+    .upload-zone { border: 1px dashed var(--rule); padding: 1.5rem; text-align: center; cursor: pointer; transition: border-color 0.15s; position: relative; }
+    .upload-zone:hover { border-color: var(--black); }
+    .upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .upload-zone-label { font-size: 0.72rem; color: var(--mid); letter-spacing: 0.04em; }
+    .upload-preview { margin-top: 0.8rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .upload-preview img { width: 80px; height: 60px; object-fit: cover; filter: grayscale(40%); }
+
+    /* REQUESTS TABLE */
+    .request-row-new td { background: #fffef0; }
+
+    /* FORM ACTIONS */
+    .form-actions { display: flex; gap: 1rem; align-items: center; padding-top: 1.2rem; border-top: 1px solid var(--rule); margin-top: 1.5rem; }
+    .form-msg { font-size: 0.72rem; color: var(--green); display: none; }
+    .form-msg.show { display: block; }
+    .form-err { font-size: 0.72rem; color: var(--red); display: none; }
+    .form-err.show { display: block; }
+
+    /* TOAST */
+    .toast { position: fixed; bottom: 2rem; right: 2rem; background: var(--black); color: var(--white); padding: 0.75rem 1.5rem; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0; transition: all 0.3s; z-index: 500; pointer-events: none; }
+    .toast.show { opacity: 1; }
+
+    /* CONFIRM DIALOG */
+    .confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 600; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+    .confirm-overlay.open { opacity: 1; pointer-events: all; }
+    .confirm-box { background: var(--white); padding: 2rem; max-width: 360px; width: 100%; }
+    .confirm-title { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; margin-bottom: 0.5rem; }
+    .confirm-sub { font-size: 0.78rem; color: var(--mid); margin-bottom: 1.5rem; line-height: 1.6; }
+    .confirm-actions { display: flex; gap: 0.8rem; }
+
+
+
+    .photo-card { position:relative; width:120px; height:90px; border:1px solid var(--rule); background:#f0f0f0; cursor:grab; }
+    .photo-card img { width:100%; height:100%; object-fit:cover; display:block; }
+    .photo-card.cover { border:2px solid var(--black); }
+    .photo-card .photo-actions { position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.55); display:flex; justify-content:space-between; padding:0.2rem 0.3rem; opacity:0; transition:opacity 0.15s; }
+    .photo-card:hover .photo-actions { opacity:1; }
+    .photo-actions button { background:none; border:none; color:#fff; font-size:0.58rem; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer; }
+    .photo-cover-badge { position:absolute; top:0.2rem; left:0.2rem; background:var(--black); color:#fff; font-size:0.5rem; letter-spacing:0.1em; text-transform:uppercase; padding:0.15rem 0.4rem; }
+
+    .tag-item { display:flex; align-items:center; justify-content:space-between; padding:0.55rem 0.8rem; background:#f8f8f8; border:1px solid var(--rule); font-size:0.78rem; }
+    .tag-item-name { letter-spacing:0.02em; }
+    .tag-delete { background:none; border:none; color:var(--mid); cursor:pointer; font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; transition:color 0.15s; }
+    .tag-delete:hover { color:var(--red); }
+
+    @media (max-width: 900px) {
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .form-grid, .form-grid-3 { grid-template-columns: 1fr; }
+      .form-full { grid-column: 1; }
+    }
+    @media (max-width: 700px) {
+      .sidebar { display: none; }
+      .main { padding: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">Royal Estates <span>Premium</span></div>
+    <div class="auth-sub">Admin Panel</div>
+    <input class="auth-input" type="email" id="auth-email" placeholder="Email address" onkeydown="if(event.key==='Enter') document.getElementById('auth-pw').focus()" />
+    <input class="auth-input" type="password" id="auth-pw" placeholder="Password" onkeydown="if(event.key==='Enter') login()" />
+    <button class="auth-btn" onclick="login()">Sign in</button>
+    <p class="auth-error" id="auth-error">Invalid credentials. Please try again.</p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">Royal Estates <span>Premium</span></div>
+    <div class="sidebar-sub">Admin</div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" onclick="showPage('dashboard', this)"><span class="dot"></span>Dashboard</div>
+      <div class="nav-item" onclick="showPage('properties', this)"><span class="dot"></span>Properties</div>
+      <div class="nav-item" onclick="showPage('add', this)"><span class="dot"></span>Add property</div>
+      <div class="nav-item" onclick="showPage('requests', this)"><span class="dot"></span>Access requests</div>
+      <div class="nav-item" onclick="showPage('enquiries', this)"><span class="dot"></span>Enquiries</div>
+      <div class="nav-item" onclick="showPage('settings', this)"><span class="dot"></span>Settings</div>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="sidebar-logout" onclick="logout()">Sign out</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div><h1 class="page-title">Dashboard</h1><p class="page-sub" id="dash-date"></p></div>
+        <button class="btn btn-primary" onclick="showPage('add', document.querySelector('[onclick*=\"add\"]'))">+ Add property</button>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-value" id="stat-total">—</div><div class="stat-label">Total properties</div></div>
+        <div class="stat-card"><div class="stat-value" id="stat-locked">—</div><div class="stat-label">Locked listings</div></div>
+        <div class="stat-card"><div class="stat-value" id="stat-video">—</div><div class="stat-label">With video tour</div></div>
+        <div class="stat-card"><div class="stat-value" id="stat-requests">—</div><div class="stat-label">Access requests</div></div>
+        <div class="stat-card"><div class="stat-value" id="stat-enquiries">—</div><div class="stat-label">Enquiries</div></div>
+      </div>
+      <div class="table-wrap" id="dash-recent"></div>
+    </div>
+
+    <!-- PROPERTIES LIST -->
+    <div class="page" id="page-properties">
+      <div class="page-header">
+        <div><h1 class="page-title">Properties</h1><p class="page-sub">Manage all listings</p></div>
+        <button class="btn btn-primary" onclick="showPage('add', document.querySelector('[onclick*=\"add\"]'))">+ Add property</button>
+      </div>
+      <div class="table-wrap" id="properties-table"></div>
+    </div>
+
+    <!-- ADD / EDIT PROPERTY -->
+    <div class="page" id="page-add">
+      <div class="page-header">
+        <div><h1 class="page-title" id="form-page-title">Add property</h1><p class="page-sub">All fields marked * are required</p></div>
+      </div>
+      <div class="form-panel">
+        <input type="hidden" id="edit-id" value="" />
+        <div class="form-grid">
+          <div class="field form-full">
+            <label>Property title *</label>
+            <input type="text" id="f-title" placeholder="Estoril Line Villa" />
+          </div>
+          <div class="field">
+            <label>Type *</label>
+            <select id="f-type">
+              <option value="">Select type</option>
+            </select>
+            <span class="field-hint">Manage types in Settings</span>
+          </div>
+          <div class="field">
+            <label>Property password (optional)</label>
+            <input type="text" id="f-password" placeholder="Leave blank to use global password" />
+            <span class="field-hint">If set, this listing uses its own password instead of the global one</span>
+          </div>
+          <div class="field">
+            <label>Location (display) *</label>
+            <input type="text" id="f-location" placeholder="Cascais · São João do Estoril" />
+          </div>
+          <div class="field">
+            <label>Region (for filter) *</label>
+            <select id="f-region">
+              <option value="">Select region</option>
+              <option value="lisbon">Lisbon</option>
+              <option value="cascais">Cascais</option>
+              <option value="algarve">Algarve</option>
+              <option value="porto">Porto</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top:1.2rem;margin-bottom:1.2rem;border-top:1px solid var(--rule)"></div>
+        <div class="form-grid-3">
+          <div class="field">
+            <label>Typology</label>
+            <input type="text" id="f-typology" placeholder="T3, V4, T2+1…" />
+          </div>
+          <div class="field">
+            <label>Area (m²)</label>
+            <input type="number" id="f-area" placeholder="142" />
+          </div>
+          <div class="field">
+            <label>Feature</label>
+            <input type="text" id="f-feature" placeholder="Pool, Sea view, Garden…" />
+          </div>
+          <div class="field">
+            <label>Year built</label>
+            <input type="number" id="f-year" placeholder="2019" />
+          </div>
+          <div class="field">
+            <label>Price (€)</label>
+            <input type="number" id="f-price" placeholder="620000" />
+          </div>
+        </div>
+        <div style="margin-top:1.2rem;margin-bottom:1.2rem;border-top:1px solid var(--rule)"></div>
+        <div class="form-grid">
+          <div class="field form-full">
+            <label>Description</label>
+            <textarea id="f-desc" placeholder="A brief description of the property for the listing detail view…"></textarea>
+          </div>
+        </div>
+        <div style="margin-top:1.2rem;margin-bottom:1.2rem;border-top:1px solid var(--rule)"></div>
+        <div class="form-grid">
+          <div class="field">
+            <label>YouTube link or video ID</label>
+            <input type="text" id="f-youtube" placeholder="https://www.youtube.com/watch?v=..." />
+            <span class="field-hint">Paste the full YouTube link — we'll handle the rest</span>
+          </div>
+          <div class="field form-full" style="grid-column:1/-1">
+            <label>Photos</label>
+            <div class="upload-zone" onclick="document.getElementById('f-image-files').click()">
+              <input type="file" id="f-image-files" accept="image/*" multiple style="display:none" onchange="addPhotos(event)" />
+              <p class="upload-zone-label">Click to add photos · JPG or PNG · max 5 MB each · multiple allowed</p>
+            </div>
+            <div id="photo-grid" style="display:flex;flex-wrap:wrap;gap:0.8rem;margin-top:0.8rem;"></div>
+            <span class="field-hint">First photo (or pinned) is the cover. Drag to reorder.</span>
+          </div>
+        </div>
+        <div style="margin-top:1.2rem;margin-bottom:1.2rem;border-top:1px solid var(--rule)"></div>
+        <div style="display:flex; gap:2.5rem; flex-wrap:wrap; margin-top:0.5rem;">
+          <div class="toggle-row">
+            <label class="toggle"><input type="checkbox" id="f-locked" checked /><div class="toggle-track"></div></label>
+            <span class="toggle-label">Lock listing (password required)</span>
+          </div>
+          <div class="toggle-row">
+            <label class="toggle"><input type="checkbox" id="f-active" checked /><div class="toggle-track"></div></label>
+            <span class="toggle-label">Active (visible on site)</span>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" onclick="saveProperty()">Save property</button>
+          <button class="btn btn-ghost" onclick="resetForm()">Clear form</button>
+          <span class="form-msg" id="form-msg">Saved successfully</span>
+          <span class="form-err" id="form-err">Error saving — check fields</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACCESS REQUESTS -->
+    <div class="page" id="page-requests">
+      <div class="page-header">
+        <div><h1 class="page-title">Access requests</h1><p class="page-sub">Buyers who requested a private code</p></div>
+      </div>
+      <div class="table-wrap" id="requests-table"></div>
+    </div>
+
+
+
+    <!-- ENQUIRIES -->
+    <div class="page" id="page-enquiries">
+      <div class="page-header">
+        <div><h1 class="page-title">Enquiries</h1><p class="page-sub">Property enquiries submitted through the site</p></div>
+      </div>
+      <div class="table-wrap" id="enquiries-table"></div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+      <div class="page-header">
+        <div><h1 class="page-title">Settings</h1><p class="page-sub">Manage property types and tags</p></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:2rem;">
+
+        <!-- PROPERTY TYPES -->
+        <div class="form-panel">
+          <div class="form-panel-title" style="display:flex;align-items:center;justify-content:space-between">
+            Property types
+            <span style="font-size:0.65rem;color:var(--mid);font-weight:300;letter-spacing:0.06em">Used in the Type dropdown</span>
+          </div>
+          <div style="display:flex;gap:0.6rem;margin-bottom:1.2rem;">
+            <input type="text" id="new-type-input" class="auth-input" style="margin:0;flex:1;border:1px solid var(--rule);padding:0.5rem 0.7rem;font-size:0.82rem" placeholder="e.g. Penthouse" onkeydown="if(event.key==='Enter') addType()" />
+            <button class="btn btn-primary btn-sm" onclick="addType()">Add</button>
+          </div>
+          <div id="types-list" style="display:flex;flex-direction:column;gap:0.4rem;"></div>
+        </div>
+
+        <!-- TAGS -->
+        <div class="form-panel">
+          <div class="form-panel-title" style="display:flex;align-items:center;justify-content:space-between">
+            Tags / labels
+            <span style="font-size:0.65rem;color:var(--mid);font-weight:300;letter-spacing:0.06em">Used in the Label dropdown</span>
+          </div>
+          <div style="display:flex;gap:0.6rem;margin-bottom:1.2rem;">
+            <input type="text" id="new-tag-input" class="auth-input" style="margin:0;flex:1;border:1px solid var(--rule);padding:0.5rem 0.7rem;font-size:0.82rem" placeholder="e.g. Sea view" onkeydown="if(event.key==='Enter') addTag()" />
+            <button class="btn btn-primary btn-sm" onclick="addTag()">Add</button>
+          </div>
+          <div id="tags-list" style="display:flex;flex-direction:column;gap:0.4rem;"></div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- CONFIRM DIALOG -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <h3 class="confirm-title">Delete property?</h3>
+    <p class="confirm-sub">This will permanently remove the listing. This action cannot be undone.</p>
+    <div class="confirm-actions">
+      <button class="btn btn-danger" id="confirm-yes">Delete</button>
+      <button class="btn btn-ghost" onclick="closeConfirm()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // CONFIGURATION
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  const SUPABASE_URL  = 'https://mejkdoabupmfwcldysgd.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1lamtkb2FidXBtZndjbGR5c2dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjAwNTQsImV4cCI6MjA5NjY5NjA1NH0.xX4Tmm9ZXtAt-uMtIcsjYxbuLHPPR569zl-z5nv5TWk';
+  const BUCKET        = 'property-images';
+
+  const { createClient } = supabase;
+  const db = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+  let currentUser = null;
+  let properties  = [];
+  let requests    = [];
+  let pendingDeleteId = null;
+
+  // ── AUTH ──
+  async function login() {
+    const email = document.getElementById('auth-email').value.trim();
+    const pw    = document.getElementById('auth-pw').value;
+    const { data, error } = await db.auth.signInWithPassword({ email, password: pw });
+    if (error) { document.getElementById('auth-error').classList.add('show'); return; }
+    currentUser = data.user;
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('app').classList.add('visible');
+    loadAll();
+  }
+
+  async function logout() {
+    await db.auth.signOut();
+    location.reload();
+  }
+
+  // ── LOAD ALL ──
+  async function loadAll() {
+    document.getElementById('dash-date').textContent = new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    await Promise.all([loadProperties(), loadRequests(), loadTypes(), loadTags(), loadEnquiries()]);
+    renderDashboard();
+  }
+
+  async function loadProperties() {
+    const { data } = await db.from('properties').select('*').order('created_at', { ascending: false });
+    properties = data || [];
+    renderPropertiesTable();
+  }
+
+
+  async function loadRequests() {
+    const { data } = await db.from('access_requests').select('*').order('created_at', { ascending: false });
+    requests = data || [];
+    renderRequestsTable();
+  }
+
+  async function loadEnquiries() {
+    const { data } = await db.from('enquiries').select('*').order('created_at', { ascending: false });
+    enquiries = data || [];
+    renderEnquiriesTable();
+    const el = document.getElementById('stat-enquiries');
+    if (el) el.textContent = enquiries.length;
+  }
+
+  async function loadTypes() {
+    const { data } = await db.from('property_types').select('*').order('name');
+    propertyTypes = data || [];
+    renderTypesList();
+    populateTypeSelect();
+  }
+
+  async function loadTags() {
+    const { data } = await db.from('property_tags').select('*').order('name');
+    propertyTags = data || [];
+    renderTagsList();
+  }
+
+  function renderTypesList() {
+    const el = document.getElementById('types-list');
+    if (!el) return;
+    if (!propertyTypes.length) { el.innerHTML = '<p style="font-size:0.75rem;color:var(--mid);padding:0.5rem 0">No types yet — add one above.</p>'; return; }
+    el.innerHTML = propertyTypes.map(t => `
+      <div class="tag-item">
+        <span class="tag-item-name">${t.name}</span>
+        <button class="tag-delete" onclick="deleteType(${t.id}, '${t.name}')">Remove</button>
+      </div>`).join('');
+  }
+
+  function renderTagsList() {
+    const el = document.getElementById('tags-list');
+    if (!el) return;
+    if (!propertyTags.length) { el.innerHTML = '<p style="font-size:0.75rem;color:var(--mid);padding:0.5rem 0">No tags yet — add one above.</p>'; return; }
+    el.innerHTML = propertyTags.map(t => `
+      <div class="tag-item">
+        <span class="tag-item-name">${t.name}</span>
+        <button class="tag-delete" onclick="deleteTag(${t.id}, '${t.name}')">Remove</button>
+      </div>`).join('');
+  }
+
+  function populateTypeSelect() {
+    const sel = document.getElementById('f-type');
+    if (!sel) return;
+    const current = sel.value;
+    sel.innerHTML = '<option value="">Select type</option>' +
+      propertyTypes.map(t => `<option value="${t.name.toLowerCase()}">${t.name}</option>`).join('');
+    if (current) sel.value = current;
+  }
+
+  function populateTagSelect() { /* removed */ }
+
+  async function addType() {
+    const input = document.getElementById('new-type-input');
+    const name = input.value.trim();
+    if (!name) return;
+    const { error } = await db.from('property_types').insert([{ name }]);
+    if (error) { showToast('Error: ' + error.message); return; }
+    input.value = '';
+    await loadTypes();
+    showToast('Type added');
+  }
+
+  async function addTag() {
+    const input = document.getElementById('new-tag-input');
+    const name = input.value.trim();
+    if (!name) return;
+    const { error } = await db.from('property_tags').insert([{ name }]);
+    if (error) { showToast('Error: ' + error.message); return; }
+    input.value = '';
+    await loadTags();
+    showToast('Tag added');
+  }
+
+  async function deleteType(id, name) {
+    if (!confirm('Remove type "' + name + '"?')) return;
+    await db.from('property_types').delete().eq('id', id);
+    await loadTypes();
+    showToast('Type removed');
+  }
+
+  async function deleteTag(id, name) {
+    if (!confirm('Remove tag "' + name + '"?')) return;
+    await db.from('property_tags').delete().eq('id', id);
+    await loadTags();
+    showToast('Tag removed');
+  }
+
+  function renderEnquiriesTable() {
+    const el = document.getElementById('enquiries-table');
+    if (!el) return;
+    if (!enquiries.length) {
+      el.innerHTML = '<div style="padding:3rem;text-align:center;font-size:0.75rem;color:var(--mid);letter-spacing:0.08em;text-transform:uppercase">No enquiries yet</div>';
+      return;
+    }
+    el.innerHTML = `<table>
+      <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Property</th><th>Message</th><th>Date</th></tr></thead>
+      <tbody>${enquiries.map(e => `<tr>
+        <td class="td-title">${e.name||'—'}</td>
+        <td><a href="mailto:${e.email}" style="color:var(--black);text-decoration:none">${e.email}</a></td>
+        <td style="color:var(--mid)">${e.phone||'—'}</td>
+        <td style="color:var(--mid)">${e.property||'—'}</td>
+        <td style="color:var(--mid);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.message||'—'}</td>
+        <td style="color:var(--mid)">${new Date(e.created_at).toLocaleDateString('en-GB')}</td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+  }
+
+  // Settings vars
+  let propertyTypes = [];
+  let propertyTags  = [];
+  let enquiries     = [];
+
+  // ── DASHBOARD ──
+  function renderDashboard() {
+    document.getElementById('stat-total').textContent    = properties.length;
+    document.getElementById('stat-locked').textContent   = properties.filter(p => p.is_locked).length;
+    document.getElementById('stat-video').textContent    = properties.filter(p => p.youtube_id).length;
+    document.getElementById('stat-requests').textContent = requests.length;
+
+    const recent = properties.slice(0, 5);
+    document.getElementById('dash-recent').innerHTML = renderTableHTML(recent, true);
+  }
+
+  // ── PROPERTIES TABLE ──
+  function renderPropertiesTable() {
+    document.getElementById('properties-table').innerHTML = renderTableHTML(properties, false);
+  }
+
+  function renderTableHTML(list, compact) {
+    if (!list.length) return '<div style="padding:3rem;text-align:center;font-size:0.75rem;color:var(--mid);letter-spacing:0.08em;text-transform:uppercase">No properties yet</div>';
+    return `<table>
+      <thead><tr>
+        ${compact ? '' : '<th></th>'}
+        <th>Title</th>
+        <th>Type</th>
+        <th>Location</th>
+        <th>Price</th>
+        <th>Status</th>
+        <th>Video</th>
+        ${compact ? '' : '<th>Actions</th>'}
+      </tr></thead>
+      <tbody>
+        ${list.map(p => `<tr>
+          ${compact ? '' : `<td>${p.image_url ? `<img class="thumb" src="${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${p.image_url}" />` : '<div class="thumb-placeholder"></div>'}</td>`}
+          <td class="td-title">${p.title}</td>
+          <td>${p.type ? cap(p.type) : '—'}</td>
+          <td style="color:var(--mid)">${p.location || '—'}</td>
+          <td class="td-price">${p.price ? '€ ' + Number(p.price).toLocaleString('de-DE') : '—'}</td>
+          <td>
+            ${!p.active ? '<span class="badge badge-inactive">Inactive</span>'
+              : p.is_locked ? '<span class="badge badge-lock">Locked</span>'
+              : '<span class="badge badge-public">Public</span>'}
+          </td>
+          <td style="color:${p.youtube_id ? 'var(--green)' : 'var(--mid)'}; font-size:0.72rem">${p.youtube_id ? '▶ Yes' : '—'}</td>
+          ${compact ? '' : `<td><div class="td-actions">
+            <button class="btn btn-ghost btn-sm" onclick="editProperty(${p.id})">Edit</button>
+            <button class="btn btn-danger" onclick="confirmDelete(${p.id})">Delete</button>
+          </div></td>`}
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+  }
+
+  // ── REQUESTS TABLE ──
+  function renderRequestsTable() {
+    const el = document.getElementById('requests-table');
+    if (!requests.length) {
+      el.innerHTML = '<div style="padding:3rem;text-align:center;font-size:0.75rem;color:var(--mid);letter-spacing:0.08em;text-transform:uppercase">No requests yet</div>';
+      return;
+    }
+    el.innerHTML = `<table>
+      <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Budget</th><th>Date</th></tr></thead>
+      <tbody>
+        ${requests.map(r => `<tr>
+          <td class="td-title">${r.first_name || ''} ${r.last_name || ''}</td>
+          <td><a href="mailto:${r.email}" style="color:var(--black);text-decoration:none">${r.email}</a></td>
+          <td style="color:var(--mid)">${r.role || '—'}</td>
+          <td style="color:var(--mid)">${r.budget || '—'}</td>
+          <td style="color:var(--mid)">${new Date(r.created_at).toLocaleDateString('en-GB')}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+  }
+
+  // ── SAVE PROPERTY ──
+  // ── MULTI-PHOTO MANAGEMENT ──
+  let photoList = []; // { file, preview, path, isCover }
+
+  function addPhotos(e) {
+    const files = Array.from(e.target.files);
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        photoList.push({ file, preview: ev.target.result, path: null, isCover: photoList.length === 0 });
+        renderPhotoGrid();
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = '';
+  }
+
+  function renderPhotoGrid() {
+    const grid = document.getElementById('photo-grid');
+    if (!grid) return;
+    if (!photoList.length) { grid.innerHTML = ''; return; }
+    grid.innerHTML = photoList.map((p, i) => `
+      <div class="photo-card${p.isCover ? ' cover' : ''}" draggable="true"
+           ondragstart="dragStart(${i})" ondragover="dragOver(event,${i})" ondrop="dropPhoto(event,${i})">
+        <img src="${p.path ? (SUPABASE_URL + '/storage/v1/object/public/' + BUCKET + '/' + p.path) : p.preview}" />
+        ${p.isCover ? '<span class="photo-cover-badge">Cover</span>' : ''}
+        <div class="photo-actions">
+          ${!p.isCover ? `<button onclick="setCover(${i})">Set cover</button>` : '<span></span>'}
+          <button onclick="removePhoto(${i})">Remove</button>
+        </div>
+      </div>`).join('');
+  }
+
+  function setCover(i) {
+    const cover = photoList.splice(i, 1)[0];
+    photoList.unshift(cover);
+    photoList.forEach((p, idx) => p.isCover = idx === 0);
+    renderPhotoGrid();
+  }
+
+  function removePhoto(i) {
+    photoList.splice(i, 1);
+    if (photoList.length && !photoList.some(p => p.isCover)) photoList[0].isCover = true;
+    renderPhotoGrid();
+  }
+
+  let dragSrc = null;
+  function dragStart(i) { dragSrc = i; }
+  function dragOver(e, i) { e.preventDefault(); }
+  function dropPhoto(e, i) {
+    e.preventDefault();
+    if (dragSrc === null || dragSrc === i) return;
+    const moved = photoList.splice(dragSrc, 1)[0];
+    photoList.splice(i, 0, moved);
+    photoList.forEach((p, idx) => p.isCover = idx === 0);
+    dragSrc = null;
+    renderPhotoGrid();
+  }
+
+  async function saveProperty() {
+    const title = document.getElementById('f-title').value.trim();
+    if (!title) { showFormErr('Property title is required'); return; }
+
+    // Upload new photos
+    const newPhotos = photoList.filter(p => p.file && !p.path);
+    for (const photo of newPhotos) {
+      const ext  = photo.file.name.split('.').pop();
+      const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error: uploadErr } = await db.storage.from(BUCKET).upload(path, photo.file, { cacheControl: '3600', upsert: false });
+      if (uploadErr) { showFormErr('Image upload failed: ' + uploadErr.message); return; }
+      photo.path = path;
+    }
+    const imagePath = photoList.length > 0 ? photoList[0].path || photoList[0].preview : null;
+    const allImagePaths = photoList.map(p => p.path).filter(Boolean);
+
+    const payload = {
+      title,
+      type:        document.getElementById('f-type').value || null,
+      location:    document.getElementById('f-location').value.trim() || null,
+      region:      document.getElementById('f-region').value || null,
+      typology:    document.getElementById('f-typology').value.trim() || null,
+      area:        document.getElementById('f-area').value || null,
+      feature:     document.getElementById('f-feature').value.trim() || null,
+      year:        document.getElementById('f-year').value || null,
+      price:       document.getElementById('f-price').value || null,
+      description: document.getElementById('f-desc').value.trim() || null,
+      youtube_id:  document.getElementById('f-youtube').value.trim() || null,
+      password:    document.getElementById('f-password').value.trim() || null,
+      images:      allImagePaths.length ? allImagePaths : null,
+      is_locked:   document.getElementById('f-locked').checked,
+      active:      document.getElementById('f-active').checked,
+    };
+    if (imagePath) payload.image_url = imagePath;
+
+    const editId = document.getElementById('edit-id').value;
+    let error;
+
+    if (editId) {
+      ({ error } = await db.from('properties').update(payload).eq('id', editId));
+    } else {
+      ({ error } = await db.from('properties').insert([payload]));
+    }
+
+    if (error) { showFormErr(error.message); return; }
+
+    showFormMsg('Saved successfully');
+    resetForm();
+    await loadProperties();
+    renderDashboard();
+  }
+
+  // ── EDIT ──
+  function editProperty(id) {
+    const p = properties.find(x => x.id === id);
+    if (!p) return;
+
+    showPage('add', document.querySelector('[onclick*="\'add\'"]'));
+    document.getElementById('form-page-title').textContent = 'Edit property';
+    document.getElementById('edit-id').value = id;
+
+    document.getElementById('f-title').value    = p.title || '';
+    document.getElementById('f-type').value     = p.type || '';
+    // label field removed
+    document.getElementById('f-location').value = p.location || '';
+    document.getElementById('f-region').value   = p.region || '';
+    document.getElementById('f-typology').value = p.typology || '';
+    document.getElementById('f-area').value     = p.area || '';
+    document.getElementById('f-feature').value  = p.feature || '';
+    document.getElementById('f-year').value     = p.year || '';
+    document.getElementById('f-price').value    = p.price || '';
+    document.getElementById('f-desc').value     = p.description || '';
+    document.getElementById('f-youtube').value  = p.youtube_id || '';
+    document.getElementById('f-password').value = p.password || '';
+    document.getElementById('f-locked').checked = p.is_locked;
+    document.getElementById('f-active').checked = p.active;
+
+    // Load existing photos
+    photoList = [];
+    const existing = (p.images && p.images.length) ? p.images : (p.image_url ? [p.image_url] : []);
+    existing.forEach((path, idx) => {
+      photoList.push({ file: null, preview: null, path, isCover: idx === 0 });
+    });
+    renderPhotoGrid();
+  }
+
+  // ── DELETE ──
+  function confirmDelete(id) {
+    pendingDeleteId = id;
+    document.getElementById('confirm-overlay').classList.add('open');
+    document.getElementById('confirm-yes').onclick = async () => {
+      await db.from('properties').delete().eq('id', pendingDeleteId);
+      closeConfirm();
+      await loadProperties();
+      renderDashboard();
+      showToast('Property deleted');
+    };
+  }
+  function closeConfirm() { document.getElementById('confirm-overlay').classList.remove('open'); pendingDeleteId = null; }
+
+  // ── RESET FORM ──
+  function resetForm() {
+    document.getElementById('edit-id').value = '';
+    document.getElementById('form-page-title').textContent = 'Add property';
+    ['f-title','f-location','f-typology','f-area','f-feature','f-year','f-price','f-desc','f-youtube','f-password'].forEach(id => document.getElementById(id).value = '');
+    photoList = []; renderPhotoGrid();
+    document.getElementById('f-type').value   = '';
+    document.getElementById('f-region').value = '';
+    document.getElementById('f-locked').checked = true;
+    document.getElementById('f-active').checked = true;
+  }
+
+  // ── PAGE NAV ──
+  function showPage(name, el) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    if (el) el.classList.add('active');
+  }
+
+  // ── HELPERS ──
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  function showFormMsg(msg) {
+    const el = document.getElementById('form-msg');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 3000);
+  }
+  function showFormErr(msg) {
+    const el = document.getElementById('form-err');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 4000);
+  }
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeConfirm();
+  });
+</script>
+</body>
+</html>
