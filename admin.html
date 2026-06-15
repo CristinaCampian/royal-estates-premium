@@ -138,13 +138,20 @@
 
 
 
-    .photo-card { position:relative; width:120px; height:90px; border:1px solid var(--rule); background:#f0f0f0; cursor:grab; }
-    .photo-card img { width:100%; height:100%; object-fit:cover; display:block; }
+    .photo-card { position:relative; width:120px; height:90px; border:1px solid var(--rule); background:#f0f0f0; cursor:grab; transition:transform 0.15s, box-shadow 0.15s, opacity 0.15s; }
+    .photo-card:active { cursor:grabbing; }
+    .photo-card img { width:100%; height:100%; object-fit:cover; display:block; pointer-events:none; }
     .photo-card.cover { border:2px solid var(--black); }
-    .photo-card .photo-actions { position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.55); display:flex; justify-content:space-between; padding:0.2rem 0.3rem; opacity:0; transition:opacity 0.15s; }
+    .photo-card.dragging { opacity:0.4; transform:scale(0.95); }
+    .photo-card.drag-over { box-shadow:-3px 0 0 var(--accent); transform:translateX(3px); }
+    .photo-card .photo-actions { position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.6); display:flex; justify-content:space-between; align-items:center; padding:0.25rem 0.4rem; opacity:0; transition:opacity 0.15s; }
     .photo-card:hover .photo-actions { opacity:1; }
-    .photo-actions button { background:none; border:none; color:#fff; font-size:0.58rem; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer; }
-    .photo-cover-badge { position:absolute; top:0.2rem; left:0.2rem; background:var(--black); color:#fff; font-size:0.5rem; letter-spacing:0.1em; text-transform:uppercase; padding:0.15rem 0.4rem; }
+    .photo-actions button { background:none; border:none; color:#fff; font-size:0.58rem; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer; padding:0; }
+    .photo-actions button:hover { color:var(--accent); }
+    .photo-cover-badge { position:absolute; top:0.3rem; left:0.3rem; background:var(--black); color:#fff; font-size:0.5rem; letter-spacing:0.1em; text-transform:uppercase; padding:0.15rem 0.4rem; pointer-events:none; }
+    .photo-order { position:absolute; top:0.3rem; left:0.3rem; background:rgba(255,255,255,0.9); color:var(--black); font-size:0.55rem; font-weight:500; width:18px; height:18px; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+    .drag-handle { position:absolute; top:0.3rem; right:0.3rem; color:#fff; font-size:0.7rem; letter-spacing:-2px; text-shadow:0 0 3px rgba(0,0,0,0.6); opacity:0; transition:opacity 0.15s; pointer-events:none; }
+    .photo-card:hover .drag-handle { opacity:0.85; }
 
     .lang-tab { background:transparent; border:none; padding:0.45rem 1rem; font-family:'Inter',sans-serif; font-size:0.68rem; letter-spacing:0.06em; cursor:pointer; color:var(--mid); transition:all 0.15s; }
     .lang-tab.active { background:var(--black); color:var(--white); }
@@ -690,13 +697,15 @@
     if (!grid) return;
     if (!photoList.length) { grid.innerHTML = ''; return; }
     grid.innerHTML = photoList.map((p, i) => `
-      <div class="photo-card${p.isCover ? ' cover' : ''}" draggable="true"
-           ondragstart="dragStart(${i})" ondragover="dragOver(event,${i})" ondrop="dropPhoto(event,${i})">
-        <img src="${p.path ? (SUPABASE_URL + '/storage/v1/object/public/' + BUCKET + '/' + p.path) : p.preview}" />
-        ${p.isCover ? '<span class="photo-cover-badge">Cover</span>' : ''}
+      <div class="photo-card${p.isCover ? ' cover' : ''}" draggable="true" data-idx="${i}"
+           ondragstart="dragStart(event,${i})" ondragend="dragEnd(event)"
+           ondragover="dragOver(event,${i})" ondragleave="dragLeave(event,${i})" ondrop="dropPhoto(event,${i})">
+        <img src="${p.path ? (SUPABASE_URL + '/storage/v1/object/public/' + BUCKET + '/' + p.path) : p.preview}" draggable="false" />
+        ${p.isCover ? '<span class="photo-cover-badge">Cover</span>' : '<span class="photo-order">' + (i+1) + '</span>'}
+        <span class="drag-handle" title="Drag to reorder">⋮⋮</span>
         <div class="photo-actions">
-          ${!p.isCover ? `<button onclick="setCover(${i})">Set cover</button>` : '<span></span>'}
-          <button onclick="removePhoto(${i})">Remove</button>
+          ${!p.isCover ? `<button type="button" onclick="setCover(${i})">Set cover</button>` : '<span style="font-size:0.55rem;color:#ccc;letter-spacing:0.08em">COVER</span>'}
+          <button type="button" onclick="removePhoto(${i})">Remove</button>
         </div>
       </div>`).join('');
   }
@@ -715,11 +724,33 @@
   }
 
   let dragSrc = null;
-  function dragStart(i) { dragSrc = i; }
-  function dragOver(e, i) { e.preventDefault(); }
+  function dragStart(e, i) {
+    dragSrc = i;
+    e.dataTransfer.effectAllowed = 'move';
+    // slight delay so the dragged element gets the dragging class after the drag image is captured
+    setTimeout(() => {
+      const card = document.querySelector(`.photo-card[data-idx="${i}"]`);
+      if (card) card.classList.add('dragging');
+    }, 0);
+  }
+  function dragEnd(e) {
+    document.querySelectorAll('.photo-card').forEach(c => { c.classList.remove('dragging'); c.classList.remove('drag-over'); });
+  }
+  function dragOver(e, i) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragSrc === null || dragSrc === i) return;
+    const card = document.querySelector(`.photo-card[data-idx="${i}"]`);
+    if (card) card.classList.add('drag-over');
+  }
+  function dragLeave(e, i) {
+    const card = document.querySelector(`.photo-card[data-idx="${i}"]`);
+    if (card) card.classList.remove('drag-over');
+  }
   function dropPhoto(e, i) {
     e.preventDefault();
-    if (dragSrc === null || dragSrc === i) return;
+    document.querySelectorAll('.photo-card').forEach(c => c.classList.remove('drag-over'));
+    if (dragSrc === null || dragSrc === i) { dragSrc = null; return; }
     const moved = photoList.splice(dragSrc, 1)[0];
     photoList.splice(i, 0, moved);
     photoList.forEach((p, idx) => p.isCover = idx === 0);
