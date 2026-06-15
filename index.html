@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Royal Estates Premium</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
@@ -470,6 +470,7 @@
   const db = createClient(SUPABASE_URL, SUPABASE_ANON);
 
   let allProperties = [];
+  let currentLang = 'en';
   let activeFilter  = 'all';
   let isUnlocked    = sessionStorage.getItem('rep_unlocked') === 'true';
 
@@ -500,6 +501,11 @@
     el.innerHTML = list.map(p => propertyHTML(p)).join('');
   }
 
+  function propDesc(p) {
+    if (typeof currentLang !== 'undefined' && currentLang === 'pt' && p.description_pt) return p.description_pt;
+    return p.description || '';
+  }
+
   function propertyHTML(p) {
     const locked = p.is_locked && !isUnlocked && !unlockedProperties.has(p.id);
     const coverImg = (p.images && p.images.length) ? p.images[0] : p.image_url;
@@ -524,7 +530,7 @@
     <article class="property${locked ? ' locked' : ''}" data-type="${p.type||''}" data-region="${p.region||''}" ${onclick}>
       <h2 class="prop-title">${p.title}</h2>
       <div class="prop-desc-rule"></div>
-      <p class="prop-desc">${p.description || ''}</p>
+      <p class="prop-desc">${propDesc(p)}</p>
       <div class="prop-loc-row">
         <span class="neighbourhood">${loc.neighbourhood || ''}</span>
         <span>${loc.city || ''}</span>
@@ -579,7 +585,7 @@
           ${p.year     ? `<div class="spec-item"><span class="spec-val">${p.year}</span><span class="spec-lbl">Year</span></div>` : ''}
         </div>
         <p class="detail-price">${fmtPrice(p.price)}</p>
-        ${p.description ? `<p class="detail-desc">${p.description}</p>` : ''}
+        ${propDesc(p) ? `<p class="detail-desc">${propDesc(p)}</p>` : ''}
         ${videoHTML}
         <button class="detail-enquire" id="enquire-btn" onclick="toggleEnquiryForm(${p.id}, '${p.title}')">Enquire about this property</button>
         <div class="enquiry-form" id="enquiry-form">
@@ -825,6 +831,7 @@
   };
 
   function setLang(lang, btn) {
+    currentLang = lang;
     document.querySelectorAll('.nav-links .lang-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     const t = T[lang];
@@ -876,6 +883,10 @@
     const navCont = document.querySelector('.nav-links a[href="#contact"]');
     if (navColl) navColl.textContent = t.nav_collection;
     if (navCont) navCont.textContent = t.nav_contact;
+
+    // Re-render listings so descriptions switch language
+    const filtered = activeFilter === 'all' ? allProperties : allProperties.filter(p => (p.type||'').toLowerCase() === activeFilter || (p.region||'').toLowerCase() === activeFilter);
+    renderGrid(filtered);
   }
 </script>
 

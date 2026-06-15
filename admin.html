@@ -289,8 +289,13 @@
         <div style="margin-top:1.2rem;margin-bottom:1.2rem;border-top:1px solid var(--rule)"></div>
         <div class="form-grid">
           <div class="field form-full">
-            <label>Description</label>
-            <textarea id="f-desc" placeholder="A brief description of the property for the listing detail view…"></textarea>
+            <label>Description (English)</label>
+            <textarea id="f-desc" placeholder="A brief description of the property in English…"></textarea>
+          </div>
+          <div class="field form-full">
+            <label>Description (Português)</label>
+            <textarea id="f-desc-pt" placeholder="Uma breve descrição do imóvel em português…"></textarea>
+            <span class="field-hint">Shown when a visitor switches the site to Portuguese. Leave blank to fall back to English.</span>
           </div>
         </div>
         <div style="margin-top:1.2rem;margin-bottom:1.2rem;border-top:1px solid var(--rule)"></div>
@@ -727,7 +732,8 @@
       feature:     document.getElementById('f-feature').value.trim() || null,
       year:        document.getElementById('f-year').value || null,
       price:       document.getElementById('f-price').value || null,
-      description: document.getElementById('f-desc').value.trim() || null,
+      description:    document.getElementById('f-desc').value.trim() || null,
+      description_pt: document.getElementById('f-desc-pt').value.trim() || null,
       youtube_id:  document.getElementById('f-youtube').value.trim() || null,
       password:    document.getElementById('f-password').value.trim() || null,
       images:      allImagePaths.length ? allImagePaths : null,
@@ -773,6 +779,7 @@
     document.getElementById('f-year').value     = p.year || '';
     document.getElementById('f-price').value    = p.price || '';
     document.getElementById('f-desc').value     = p.description || '';
+    document.getElementById('f-desc-pt').value  = p.description_pt || '';
     document.getElementById('f-youtube').value  = p.youtube_id || '';
     document.getElementById('f-password').value = p.password || '';
     document.getElementById('f-locked').checked = p.is_locked;
@@ -805,7 +812,7 @@
   function resetForm() {
     document.getElementById('edit-id').value = '';
     document.getElementById('form-page-title').textContent = 'Add property';
-    ['f-title','f-location','f-typology','f-area','f-feature','f-year','f-price','f-desc','f-youtube','f-password'].forEach(id => document.getElementById(id).value = '');
+    ['f-title','f-location','f-typology','f-area','f-feature','f-year','f-price','f-desc','f-desc-pt','f-youtube','f-password'].forEach(id => document.getElementById(id).value = '');
     photoList = []; renderPhotoGrid();
     document.getElementById('f-type').value   = '';
     document.getElementById('f-region').value = '';
