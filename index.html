@@ -207,7 +207,7 @@
     .spec-val { font-size: 0.85rem; font-weight: 400; }
     .spec-lbl { font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--mid); }
     .detail-price { font-family: 'Cormorant Garamond', serif; font-size: 2.2rem; font-weight: 400; }
-    .detail-desc { font-size: 0.8rem; line-height: 1.9; color: #6b6459; }
+    .detail-desc { font-size: 0.8rem; line-height: 1.9; color: #6b6459; white-space: pre-wrap; }
     .detail-video-label { font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--mid); margin-bottom: 0.7rem; }
     .video-wrap { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; background: #000; }
     .video-wrap iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
@@ -502,8 +502,16 @@
   }
 
   function propDesc(p) {
-    if (typeof currentLang !== 'undefined' && currentLang === 'pt' && p.description_pt) return p.description_pt;
+    if (currentLang === 'pt' && p.description_pt) return p.description_pt;
     return p.description || '';
+  }
+  function propTitle(p) {
+    if (currentLang === 'pt' && p.title_pt) return p.title_pt;
+    return p.title || '';
+  }
+  function propFeature(p) {
+    if (currentLang === 'pt' && p.feature_pt) return p.feature_pt;
+    return p.feature || '';
   }
 
   function propertyHTML(p) {
@@ -528,9 +536,8 @@
 
     return `
     <article class="property${locked ? ' locked' : ''}" data-type="${p.type||''}" data-region="${p.region||''}" ${onclick}>
-      <h2 class="prop-title">${p.title}</h2>
+      <h2 class="prop-title">${propTitle(p)}</h2>
       <div class="prop-desc-rule"></div>
-      <p class="prop-desc">${propDesc(p)}</p>
       <div class="prop-loc-row">
         <span class="neighbourhood">${loc.neighbourhood || ''}</span>
         <span>${loc.city || ''}</span>
@@ -576,12 +583,12 @@
       <div class="detail-body">
         <button class="detail-close" onclick="closeDetail()">×</button>
         <p class="detail-eyebrow">${cap(p.type)}${p.label ? ' · ' + p.label : ''}</p>
-        <h2 class="detail-title">${p.title}</h2>
+        <h2 class="detail-title">${propTitle(p)}</h2>
         <p class="detail-location">${p.location || ''}</p>
         <div class="detail-specs">
           ${p.typology ? `<div class="spec-item"><span class="spec-val">${p.typology}</span><span class="spec-lbl">Typology</span></div>` : ''}
           ${p.area     ? `<div class="spec-item"><span class="spec-val">${p.area} m²</span><span class="spec-lbl">Area</span></div>` : ''}
-          ${p.feature  ? `<div class="spec-item"><span class="spec-val">${p.feature}</span><span class="spec-lbl">Feature</span></div>` : ''}
+          ${propFeature(p) ? `<div class="spec-item"><span class="spec-val">${propFeature(p)}</span><span class="spec-lbl">Feature</span></div>` : ''}
           ${p.year     ? `<div class="spec-item"><span class="spec-val">${p.year}</span><span class="spec-lbl">Year</span></div>` : ''}
         </div>
         <p class="detail-price">${fmtPrice(p.price)}</p>

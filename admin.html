@@ -146,6 +146,8 @@
     .photo-actions button { background:none; border:none; color:#fff; font-size:0.58rem; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer; }
     .photo-cover-badge { position:absolute; top:0.2rem; left:0.2rem; background:var(--black); color:#fff; font-size:0.5rem; letter-spacing:0.1em; text-transform:uppercase; padding:0.15rem 0.4rem; }
 
+    .lang-tab { background:transparent; border:none; padding:0.45rem 1rem; font-family:'Inter',sans-serif; font-size:0.68rem; letter-spacing:0.06em; cursor:pointer; color:var(--mid); transition:all 0.15s; }
+    .lang-tab.active { background:var(--black); color:var(--white); }
     .tag-item { display:flex; align-items:center; justify-content:space-between; padding:0.55rem 0.8rem; background:#f8f8f8; border:1px solid var(--rule); font-size:0.78rem; }
     .tag-item-name { letter-spacing:0.02em; }
     .tag-delete { background:none; border:none; color:var(--mid); cursor:pointer; font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; transition:color 0.15s; }
@@ -230,9 +232,17 @@
       </div>
       <div class="form-panel">
         <input type="hidden" id="edit-id" value="" />
+        <div style="display:flex;align-items:center;gap:0.8rem;margin-bottom:1.5rem;padding-bottom:1.2rem;border-bottom:1px solid var(--rule)">
+          <span style="font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--mid)">Editing language</span>
+          <div style="display:flex;border:1px solid var(--rule)">
+            <button type="button" class="lang-tab active" id="lang-tab-en" onclick="switchFormLang('en')">English</button>
+            <button type="button" class="lang-tab" id="lang-tab-pt" onclick="switchFormLang('pt')">Português</button>
+          </div>
+          <span class="field-hint" style="margin:0">Title, Feature and Description have separate EN / PT versions</span>
+        </div>
         <div class="form-grid">
           <div class="field form-full">
-            <label>Property title *</label>
+            <label>Property title * <span id="title-lang-tag" style="color:var(--accent)">(EN)</span></label>
             <input type="text" id="f-title" placeholder="Estoril Line Villa" />
           </div>
           <div class="field">
@@ -274,7 +284,7 @@
             <input type="number" id="f-area" placeholder="142" />
           </div>
           <div class="field">
-            <label>Feature</label>
+            <label>Feature <span id="feature-lang-tag" style="color:var(--accent)">(EN)</span></label>
             <input type="text" id="f-feature" placeholder="Pool, Sea view, Garden…" />
           </div>
           <div class="field">
@@ -289,13 +299,9 @@
         <div style="margin-top:1.2rem;margin-bottom:1.2rem;border-top:1px solid var(--rule)"></div>
         <div class="form-grid">
           <div class="field form-full">
-            <label>Description (English)</label>
-            <textarea id="f-desc" placeholder="A brief description of the property in English…"></textarea>
-          </div>
-          <div class="field form-full">
-            <label>Description (Português)</label>
-            <textarea id="f-desc-pt" placeholder="Uma breve descrição do imóvel em português…"></textarea>
-            <span class="field-hint">Shown when a visitor switches the site to Portuguese. Leave blank to fall back to English.</span>
+            <label>Description <span id="desc-lang-tag" style="color:var(--accent)">(EN)</span></label>
+            <textarea id="f-desc" placeholder="A brief description of the property…" style="min-height:140px"></textarea>
+            <span class="field-hint">Line breaks and paragraphs are preserved on the site. Portuguese version shows when a visitor switches language; leave blank to fall back to English.</span>
           </div>
         </div>
         <div style="margin-top:1.2rem;margin-bottom:1.2rem;border-top:1px solid var(--rule)"></div>
@@ -706,9 +712,47 @@
     renderPhotoGrid();
   }
 
+  // ── FORM LANGUAGE TOGGLE (title / feature / description) ──
+  let formLang = 'en';
+  let formI18n = { en: {title:'',feature:'',desc:''}, pt: {title:'',feature:'',desc:''} };
+
+  function captureFormLangFields() {
+    formI18n[formLang].title   = document.getElementById('f-title').value;
+    formI18n[formLang].feature = document.getElementById('f-feature').value;
+    formI18n[formLang].desc    = document.getElementById('f-desc').value;
+  }
+
+  function loadFormLangFields() {
+    document.getElementById('f-title').value   = formI18n[formLang].title || '';
+    document.getElementById('f-feature').value = formI18n[formLang].feature || '';
+    document.getElementById('f-desc').value    = formI18n[formLang].desc || '';
+    const tag = formLang === 'en' ? '(EN)' : '(PT)';
+    document.getElementById('title-lang-tag').textContent = tag;
+    document.getElementById('feature-lang-tag').textContent = tag;
+    document.getElementById('desc-lang-tag').textContent = tag;
+  }
+
+  function switchFormLang(lang) {
+    captureFormLangFields();
+    formLang = lang;
+    document.getElementById('lang-tab-en').classList.toggle('active', lang === 'en');
+    document.getElementById('lang-tab-pt').classList.toggle('active', lang === 'pt');
+    loadFormLangFields();
+  }
+
+  function resetFormLang() {
+    formLang = 'en';
+    formI18n = { en: {title:'',feature:'',desc:''}, pt: {title:'',feature:'',desc:''} };
+    document.getElementById('lang-tab-en').classList.add('active');
+    document.getElementById('lang-tab-pt').classList.remove('active');
+    document.getElementById('title-lang-tag').textContent = '(EN)';
+    document.getElementById('feature-lang-tag').textContent = '(EN)';
+    document.getElementById('desc-lang-tag').textContent = '(EN)';
+  }
+
   async function saveProperty() {
-    const title = document.getElementById('f-title').value.trim();
-    if (!title) { showFormErr('Property title is required'); return; }
+    captureFormLangFields();
+    if (!formI18n.en.title.trim()) { showFormErr('English property title is required'); return; }
 
     // Upload new photos
     const newPhotos = photoList.filter(p => p.file && !p.path);
@@ -723,17 +767,19 @@
     const allImagePaths = photoList.map(p => p.path).filter(Boolean);
 
     const payload = {
-      title,
+      title:          formI18n.en.title.trim(),
       type:        document.getElementById('f-type').value || null,
       location:    document.getElementById('f-location').value.trim() || null,
       region:      document.getElementById('f-region').value || null,
       typology:    document.getElementById('f-typology').value.trim() || null,
       area:        document.getElementById('f-area').value || null,
-      feature:     document.getElementById('f-feature').value.trim() || null,
+      feature:        formI18n.en.feature.trim() || null,
       year:        document.getElementById('f-year').value || null,
       price:       document.getElementById('f-price').value || null,
-      description:    document.getElementById('f-desc').value.trim() || null,
-      description_pt: document.getElementById('f-desc-pt').value.trim() || null,
+      description:    formI18n.en.desc.trim() || null,
+      description_pt: formI18n.pt.desc.trim() || null,
+      title_pt:       formI18n.pt.title.trim() || null,
+      feature_pt:     formI18n.pt.feature.trim() || null,
       youtube_id:  document.getElementById('f-youtube').value.trim() || null,
       password:    document.getElementById('f-password').value.trim() || null,
       images:      allImagePaths.length ? allImagePaths : null,
@@ -768,22 +814,28 @@
     document.getElementById('form-page-title').textContent = 'Edit property';
     document.getElementById('edit-id').value = id;
 
-    document.getElementById('f-title').value    = p.title || '';
     document.getElementById('f-type').value     = p.type || '';
     // label field removed
     document.getElementById('f-location').value = p.location || '';
     document.getElementById('f-region').value   = p.region || '';
     document.getElementById('f-typology').value = p.typology || '';
     document.getElementById('f-area').value     = p.area || '';
-    document.getElementById('f-feature').value  = p.feature || '';
     document.getElementById('f-year').value     = p.year || '';
     document.getElementById('f-price').value    = p.price || '';
-    document.getElementById('f-desc').value     = p.description || '';
-    document.getElementById('f-desc-pt').value  = p.description_pt || '';
     document.getElementById('f-youtube').value  = p.youtube_id || '';
     document.getElementById('f-password').value = p.password || '';
     document.getElementById('f-locked').checked = p.is_locked;
     document.getElementById('f-active').checked = p.active;
+
+    // Load bilingual fields into formI18n and show English first
+    formLang = 'en';
+    formI18n = {
+      en: { title: p.title || '', feature: p.feature || '', desc: p.description || '' },
+      pt: { title: p.title_pt || '', feature: p.feature_pt || '', desc: p.description_pt || '' }
+    };
+    document.getElementById('lang-tab-en').classList.add('active');
+    document.getElementById('lang-tab-pt').classList.remove('active');
+    loadFormLangFields();
 
     // Load existing photos
     photoList = [];
@@ -812,12 +864,13 @@
   function resetForm() {
     document.getElementById('edit-id').value = '';
     document.getElementById('form-page-title').textContent = 'Add property';
-    ['f-title','f-location','f-typology','f-area','f-feature','f-year','f-price','f-desc','f-desc-pt','f-youtube','f-password'].forEach(id => document.getElementById(id).value = '');
+    ['f-title','f-location','f-typology','f-area','f-feature','f-year','f-price','f-desc','f-youtube','f-password'].forEach(id => document.getElementById(id).value = '');
     photoList = []; renderPhotoGrid();
     document.getElementById('f-type').value   = '';
     document.getElementById('f-region').value = '';
     document.getElementById('f-locked').checked = true;
     document.getElementById('f-active').checked = true;
+    resetFormLang();
   }
 
   // ── PAGE NAV ──
