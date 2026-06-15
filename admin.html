@@ -187,7 +187,7 @@
     <nav class="sidebar-nav">
       <div class="nav-item active" onclick="showPage('dashboard', this)"><span class="dot"></span>Dashboard</div>
       <div class="nav-item" onclick="showPage('properties', this)"><span class="dot"></span>Properties</div>
-      <div class="nav-item" onclick="showPage('add', this)"><span class="dot"></span>Add property</div>
+      <div class="nav-item" onclick="addNewProperty(this)"><span class="dot"></span>Add property</div>
       <div class="nav-item" onclick="showPage('requests', this)"><span class="dot"></span>Access requests</div>
       <div class="nav-item" onclick="showPage('enquiries', this)"><span class="dot"></span>Enquiries</div>
       <div class="nav-item" onclick="showPage('settings', this)"><span class="dot"></span>Settings</div>
@@ -204,7 +204,7 @@
     <div class="page active" id="page-dashboard">
       <div class="page-header">
         <div><h1 class="page-title">Dashboard</h1><p class="page-sub" id="dash-date"></p></div>
-        <button class="btn btn-primary" onclick="showPage('add', document.querySelector('[onclick*=\"add\"]'))">+ Add property</button>
+        <button class="btn btn-primary" onclick="addNewProperty(document.querySelector('[onclick*=\"addNew\"]'))">+ Add property</button>
       </div>
       <div class="stats-row">
         <div class="stat-card"><div class="stat-value" id="stat-total">—</div><div class="stat-label">Total properties</div></div>
@@ -220,7 +220,7 @@
     <div class="page" id="page-properties">
       <div class="page-header">
         <div><h1 class="page-title">Properties</h1><p class="page-sub">Manage all listings</p></div>
-        <button class="btn btn-primary" onclick="showPage('add', document.querySelector('[onclick*=\"add\"]'))">+ Add property</button>
+        <button class="btn btn-primary" onclick="addNewProperty(document.querySelector('[onclick*=\"addNew\"]'))">+ Add property</button>
       </div>
       <div class="table-wrap" id="properties-table"></div>
     </div>
@@ -251,6 +251,13 @@
               <option value="">Select type</option>
             </select>
             <span class="field-hint">Manage types in Settings</span>
+          </div>
+          <div class="field">
+            <label>Tag / label</label>
+            <select id="f-label">
+              <option value="">None</option>
+            </select>
+            <span class="field-hint">Manage tags in Settings</span>
           </div>
           <div class="field">
             <label>Property password (optional)</label>
@@ -485,6 +492,7 @@
     const { data } = await db.from('property_tags').select('*').order('name');
     propertyTags = data || [];
     renderTagsList();
+    populateTagSelect();
   }
 
   function renderTypesList() {
@@ -518,7 +526,14 @@
     if (current) sel.value = current;
   }
 
-  function populateTagSelect() { /* removed */ }
+  function populateTagSelect() {
+    const sel = document.getElementById('f-label');
+    if (!sel) return;
+    const current = sel.value;
+    sel.innerHTML = '<option value="">None</option>' +
+      propertyTags.map(t => `<option value="${t.name}">${t.name}</option>`).join('');
+    if (current) sel.value = current;
+  }
 
   async function addType() {
     const input = document.getElementById('new-type-input');
@@ -741,6 +756,7 @@
   }
 
   function resetFormLang() {
+    document.getElementById('f-label').value = p.label || '';
     formLang = 'en';
     formI18n = { en: {title:'',feature:'',desc:''}, pt: {title:'',feature:'',desc:''} };
     document.getElementById('lang-tab-en').classList.add('active');
@@ -828,6 +844,7 @@
     document.getElementById('f-active').checked = p.active;
 
     // Load bilingual fields into formI18n and show English first
+    document.getElementById('f-label').value = p.label || '';
     formLang = 'en';
     formI18n = {
       en: { title: p.title || '', feature: p.feature || '', desc: p.description || '' },
@@ -867,6 +884,7 @@
     ['f-title','f-location','f-typology','f-area','f-feature','f-year','f-price','f-desc','f-youtube','f-password'].forEach(id => document.getElementById(id).value = '');
     photoList = []; renderPhotoGrid();
     document.getElementById('f-type').value   = '';
+    document.getElementById('f-label').value  = '';
     document.getElementById('f-region').value = '';
     document.getElementById('f-locked').checked = true;
     document.getElementById('f-active').checked = true;
@@ -874,13 +892,18 @@
   }
 
   // ── PAGE NAV ──
+  function addNewProperty(el) {
+    resetForm();
+    showPage('add', el || document.querySelector('[onclick*="addNew"]'));
+  }
+
   function showPage(name, el) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     document.getElementById('page-' + name).classList.add('active');
     if (el) el.classList.add('active');
     // Repopulate type select whenever add/edit page is shown
-    if (name === 'add') populateTypeSelect();
+    if (name === 'add') { populateTypeSelect(); populateTagSelect(); }
   }
 
   // ── HELPERS ──
