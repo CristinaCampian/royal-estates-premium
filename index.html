@@ -35,6 +35,11 @@
     .nav-links { display: flex; align-items: center; gap: 1.6rem; }
     .nav-links a { font-size: 0.7rem; letter-spacing: 0.08em; color: var(--mid); text-decoration: none; transition: color 0.15s; }
     .nav-links a:hover, .nav-links a.active { color: var(--ink); }
+
+    .lang-switch { display:flex; align-items:center; gap:0.4rem; }
+    .lang-btn { background:none; border:none; font-family:'Inter',sans-serif; font-size:0.7rem; letter-spacing:0.08em; color:var(--mid); cursor:pointer; padding:0; transition:color 0.15s; }
+    .lang-btn:hover, .lang-btn.active { color:var(--ink); font-weight:500; }
+
     .nav-sep { width: 1px; height: 14px; background: var(--rule); }
 
     /* ── FILTERS (pill rows) ── */
@@ -304,7 +309,8 @@
     @media (max-width: 640px) {
       nav { padding: 0 1.3rem; height: 64px; }
       .nav-logo .name { font-size: 1.1rem; }
-      .nav-links a:not(.active) { display: none; }
+      .nav-links a:not(.active):not(.lang-btn-wrap) { display: none; }
+      .lang-switch { display: flex; }
       .filters { margin-top: 64px; padding: 1.8rem 1.3rem 1.5rem; }
       .filter-row { gap: 0.4rem; }
       .filter-label { min-width: auto; padding: 0.5rem 1rem; }
@@ -336,7 +342,11 @@
     <a href="#" class="active">Collection</a>
     <a href="#contact">Contact</a>
     <div class="nav-sep"></div>
-    <a href="#">EN</a>
+    <div class="lang-switch">
+      <button class="lang-btn active" onclick="setLang('en', this)">EN</button>
+      <span style="color:var(--rule)">|</span>
+      <button class="lang-btn" onclick="setLang('pt', this)">PT</button>
+    </div>
   </div>
 </nav>
 
@@ -344,16 +354,16 @@
 <div class="filters">
   <div class="filter-row">
     <span class="filter-label">Collection</span>
-    <button class="pill active" onclick="filterListings('all', this)">All</button>
-    <button class="pill" onclick="filterListings('apartment', this)">Apartment</button>
-    <button class="pill" onclick="filterListings('villa', this)">Villa</button>
-    <button class="pill" onclick="filterListings('townhouse', this)">Townhouse</button>
+    <button class="pill active" data-filter="all" onclick="filterListings('all', this)">All</button>
+    <button class="pill" data-filter="apartment" onclick="filterListings('apartment', this)">Apartment</button>
+    <button class="pill" data-filter="villa" onclick="filterListings('villa', this)">Villa</button>
+    <button class="pill" data-filter="townhouse" onclick="filterListings('townhouse', this)">Townhouse</button>
   </div>
   <div class="filter-row">
     <span class="filter-label">Location</span>
-    <button class="pill" onclick="filterListings('lisbon', this)">Lisbon</button>
-    <button class="pill" onclick="filterListings('cascais', this)">Cascais</button>
-    <button class="pill" onclick="filterListings('algarve', this)">Algarve</button>
+    <button class="pill" data-filter="lisbon" onclick="filterListings('lisbon', this)">Lisbon</button>
+    <button class="pill" data-filter="cascais" onclick="filterListings('cascais', this)">Cascais</button>
+    <button class="pill" data-filter="algarve" onclick="filterListings('algarve', this)">Algarve</button>
   </div>
 </div>
 
