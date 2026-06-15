@@ -258,7 +258,7 @@
 
     /* ── FOOTER ── */
     footer { border-top: 1px solid var(--rule); }
-    .footer-main { display: grid; grid-template-columns: repeat(2, 1fr); padding: 3rem 2.5rem; gap: 2rem; border-bottom: 1px solid var(--rule); }
+    .footer-main { display: grid; grid-template-columns: repeat(3, 1fr); padding: 3rem 2.5rem; gap: 2rem; border-bottom: 1px solid var(--rule); }
     .footer-col { display: flex; flex-direction: column; gap: 0.6rem; }
     .footer-col-label { font-size: 0.62rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--mid); margin-bottom: 0.3rem; }
     .footer-col-val { font-size: 0.78rem; color: var(--ink); text-decoration: none; transition: color 0.15s; letter-spacing: 0.02em; }
@@ -426,15 +426,14 @@
       <a href="https://royalestates.pt" target="_blank" class="footer-col-val">Royal Estates</a>
       <a href="https://royalestates.luxe" target="_blank" class="footer-col-val">Royal Estates Luxe</a>
     </div>
+    <div class="footer-col">
+      <p class="footer-col-label">Legal</p>
+      <a href="#" onclick="openLegal('privacy'); return false;" class="footer-col-val">Privacy Policy</a>
+      <a href="#" onclick="openLegal('terms'); return false;" class="footer-col-val">Terms of Use</a>
+    </div>
   </div>
   <div class="footer-bottom">
     <div class="footer-mark">Royal Estates <span>Premium</span></div>
-    <div class="footer-links">
-      <a href="#" onclick="openLegal('privacy'); return false;">Privacy</a>
-      <a href="#" onclick="openLegal('terms'); return false;">Terms</a>
-      <a href="https://royalestates.pt" target="_blank">royalestates.pt</a>
-      <a href="https://royalestates.luxe" target="_blank">royalestates.luxe</a>
-    </div>
     <span class="footer-legal">AMI · Licensed Broker · Portugal · © 2026</span>
   </div>
 </footer>
@@ -779,7 +778,7 @@
   function closeLegal() {
     document.getElementById('legal-overlay').classList.remove('open');
   }
-  function setLang(lang, btn) {
+  function setLegalLang(lang, btn) {
     const page = btn.closest('.legal-page');
     page.querySelectorAll('.lang-section').forEach(s => s.classList.remove('active'));
     page.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
@@ -787,6 +786,97 @@
     btn.classList.add('active');
   }
 
+  // ── LANGUAGE SWITCHER ──
+  const T = {
+    en: {
+      all:'All', apartment:'Apartment', villa:'Villa', townhouse:'Townhouse',
+      lisbon:'Lisbon', cascais:'Cascais', algarve:'Algarve',
+      collection_label:'Collection', location_label:'Location',
+      hero_eyebrow:'Curated residential portfolio',
+      hero_headline:'Exceptional homes.<br><em>Considered</em> living.',
+      hero_sub:'A private selection of upper-tier properties across Lisbon, Cascais and the Algarve — vetted, priced with precision, and offered to a register of qualified buyers.',
+      access_title:'Request access',
+      access_sub:'This selection is shared on a private basis. Leave your details and we will be in touch directly within 48 hours.',
+      label_first:'First name', label_last:'Last name', label_email:'Email', label_role:'Role', label_budget:'Budget range',
+      btn_request:'Request access',
+      contact_label:'Contact us', website_label:'Website', legal_label:'Legal',
+      pw_eyebrow:'Private portfolio', pw_title:'Enter your access code',
+      pw_sub:'Enter your access code to reveal the full details and pricing for this listing.',
+      pw_btn:'Unlock listing', pw_error:'Incorrect code. Please try again or request access below.',
+      nav_collection:'Collection', nav_contact:'Contact'
+    },
+    pt: {
+      all:'Todos', apartment:'Apartamento', villa:'Moradia', townhouse:'Casa em banda',
+      lisbon:'Lisboa', cascais:'Cascais', algarve:'Algarve',
+      collection_label:'Coleção', location_label:'Localização',
+      hero_eyebrow:'Portfólio residencial selecionado',
+      hero_headline:'Casas excecionais.<br><em>Vida</em> com critério.',
+      hero_sub:'Uma seleção privada de imóveis de gama superior em Lisboa, Cascais e no Algarve — avaliados com rigor, com preço preciso e apresentados a um registo de compradores qualificados.',
+      access_title:'Solicitar acesso',
+      access_sub:'Esta seleção é partilhada em regime privado. Deixe os seus dados e entraremos em contacto direto nas próximas 48 horas.',
+      label_first:'Nome', label_last:'Apelido', label_email:'Email', label_role:'Função', label_budget:'Intervalo de orçamento',
+      btn_request:'Solicitar acesso',
+      contact_label:'Contacte-nos', website_label:'Website', legal_label:'Legal',
+      pw_eyebrow:'Portfólio privado', pw_title:'Introduza o seu código de acesso',
+      pw_sub:'Introduza o código de acesso para ver os detalhes completos e o preço deste imóvel.',
+      pw_btn:'Desbloquear imóvel', pw_error:'Código incorreto. Tente novamente ou solicite acesso abaixo.',
+      nav_collection:'Coleção', nav_contact:'Contacto'
+    }
+  };
+
+  function setLang(lang, btn) {
+    document.querySelectorAll('.nav-links .lang-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const t = T[lang];
+
+    document.querySelectorAll('.pill').forEach(p => {
+      const key = p.getAttribute('data-filter');
+      if (key && t[key]) p.textContent = t[key];
+    });
+    document.querySelectorAll('.filter-label').forEach((l, i) => {
+      l.textContent = i === 0 ? t.collection_label : t.location_label;
+    });
+
+    const eyebrow = document.querySelector('.hero-eyebrow');
+    const headline = document.querySelector('.hero-headline');
+    const sub = document.querySelector('.hero-sub');
+    if (eyebrow) eyebrow.textContent = t.hero_eyebrow;
+    if (headline) headline.innerHTML = t.hero_headline;
+    if (sub) sub.textContent = t.hero_sub;
+
+    const at = document.querySelector('.access-copy h2');
+    const asub = document.querySelector('.access-copy p');
+    if (at) at.textContent = t.access_title;
+    if (asub) asub.textContent = t.access_sub;
+
+    const fieldLabels = document.querySelectorAll('.access-form .field label');
+    const lk = ['label_first','label_last','label_email','label_role','label_budget'];
+    fieldLabels.forEach((l, i) => { if (lk[i]) l.textContent = t[lk[i]]; });
+
+    const submitBtn = document.querySelector('.form-submit');
+    if (submitBtn) submitBtn.textContent = t.btn_request;
+
+    const fcl = document.querySelectorAll('.footer-col-label');
+    if (fcl[0]) fcl[0].textContent = t.contact_label;
+    if (fcl[1]) fcl[1].textContent = t.website_label;
+    if (fcl[2]) fcl[2].textContent = t.legal_label;
+
+    const pwE = document.querySelector('.pw-eyebrow');
+    const pwT = document.querySelector('.pw-title');
+    const pwS = document.querySelector('.pw-sub');
+    const pwB = document.querySelector('.pw-btn');
+    const pwErr = document.getElementById('pw-error');
+    if (pwE) pwE.textContent = t.pw_eyebrow;
+    if (pwT) pwT.textContent = t.pw_title;
+    if (pwS) pwS.textContent = t.pw_sub;
+    if (pwB) pwB.textContent = t.pw_btn;
+    if (pwErr) pwErr.textContent = t.pw_error;
+
+    const navColl = document.querySelector('.nav-links a.active');
+    const navCont = document.querySelector('.nav-links a[href="#contact"]');
+    if (navColl) navColl.textContent = t.nav_collection;
+    if (navCont) navCont.textContent = t.nav_contact;
+  }
 </script>
 
 
@@ -806,8 +896,8 @@
     <button class="legal-overlay-close" onclick="closeLegal()">← Back to collection</button>
     <div id="legal-privacy" class="legal-page" style="display:none">
 <div class="lang-toggle">
-  <button class="lang-btn active" onclick="setLang('en', this)">EN</button>
-  <button class="lang-btn" onclick="setLang('pt', this)">PT</button>
+  <button class="lang-btn active" onclick="setLegalLang('en', this)">EN</button>
+  <button class="lang-btn" onclick="setLegalLang('pt', this)">PT</button>
 </div>
 
 <!-- ───────────── ENGLISH ───────────── -->
@@ -914,8 +1004,8 @@
     </div>
     <div id="legal-terms" class="legal-page" style="display:none">
 <div class="lang-toggle">
-  <button class="lang-btn active" onclick="setLang('en', this)">EN</button>
-  <button class="lang-btn" onclick="setLang('pt', this)">PT</button>
+  <button class="lang-btn active" onclick="setLegalLang('en', this)">EN</button>
+  <button class="lang-btn" onclick="setLegalLang('pt', this)">PT</button>
 </div>
 
 <!-- ───────────── ENGLISH ───────────── -->
