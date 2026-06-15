@@ -514,12 +514,12 @@
     const loc = splitLocation(p);
 
     const mediaInner = hasImg
-      ? `${!locked && hasVid ? '<span class="video-badge">Video tour</span>' : ''}${locked ? '<div class="lock-badge"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke-width=\"2\"><rect x=\"3\" y=\"11\" width=\"18\" height=\"11\" rx=\"1\"/><path d=\"M7 11V7a5 5 0 0 1 10 0v4\"/></svg></div>' : ''}<img src="${imgUrl(coverImg)}" alt="${p.title}" loading="lazy" style="${locked ? 'filter:grayscale(70%);opacity:0.75;' : ''}" />`
+      ? `${!locked && hasVid ? '<span class="video-badge">Video available</span>' : ''}${locked ? '<div class="lock-badge"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke-width=\"2\"><rect x=\"3\" y=\"11\" width=\"18\" height=\"11\" rx=\"1\"/><path d=\"M7 11V7a5 5 0 0 1 10 0v4\"/></svg></div>' : ''}<img src="${imgUrl(coverImg)}" alt="${p.title}" loading="lazy" style="${locked ? 'filter:grayscale(70%);opacity:0.75;' : ''}" />`
       : locked
       ? `<div class="prop-img-placeholder"><span>Private listing</span></div><div class="lock-badge"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="1"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>`
-      : `${hasVid ? '<span class="video-badge">Video tour</span>' : ''}<div class="prop-img-placeholder"><span>${loc.city || ''}</span></div>`
-        ? `${hasVid ? '<span class="video-badge">Video tour</span>' : ''}<img src="${imgUrl(coverImg)}" alt="${p.title}" loading="lazy" />`
-        : `${hasVid ? '<span class="video-badge">Video tour</span>' : ''}<div class="prop-img-placeholder"><span>${loc.city || ''}</span></div>`;
+      : `${hasVid ? '<span class="video-badge">Video available</span>' : ''}<div class="prop-img-placeholder"><span>${loc.city || ''}</span></div>`
+        ? `${hasVid ? '<span class="video-badge">Video available</span>' : ''}<img src="${imgUrl(coverImg)}" alt="${p.title}" loading="lazy" />`
+        : `${hasVid ? '<span class="video-badge">Video available</span>' : ''}<div class="prop-img-placeholder"><span>${loc.city || ''}</span></div>`;
 
     const priceText = locked ? '€ ●●● ●●●' : fmtPrice(p.price);
     const cta = locked ? '<span class="prop-cta unlock">Unlock</span>' : '<span class="prop-cta">View</span>';
