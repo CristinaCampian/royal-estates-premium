@@ -6,6 +6,8 @@
   <title>REP Admin</title>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="brochure.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root { --black: #0a0a0a; --white: #fafafa; --mid: #888; --rule: #d8d8d8; --accent: #c8a96e; --red: #c0392b; --green: #27ae60; }
@@ -245,7 +247,7 @@
             <button type="button" class="lang-tab active" id="lang-tab-en" onclick="switchFormLang('en')">English</button>
             <button type="button" class="lang-tab" id="lang-tab-pt" onclick="switchFormLang('pt')">Português</button>
           </div>
-          <span class="field-hint" style="margin:0">Title, Feature and Description have separate EN / PT versions</span>
+          <span class="field-hint" style="margin:0">Title, Feature, Description, Exposure, Features, Room areas and Nearby have separate EN / PT versions</span>
         </div>
         <div class="form-grid">
           <div class="field form-full">
@@ -308,6 +310,74 @@
           <div class="field">
             <label>Price (€)</label>
             <input type="number" id="f-price" placeholder="620000" />
+          </div>
+        </div>
+        <div style="margin-top:1.2rem;margin-bottom:1.2rem;border-top:1px solid var(--rule)"></div>
+        <div class="form-grid-3">
+          <div class="field">
+            <label>Reference</label>
+            <input type="text" id="d-reference" placeholder="CB07-0130" />
+          </div>
+          <div class="field">
+            <label>Bedrooms</label>
+            <input type="number" id="d-bedrooms" placeholder="2" />
+          </div>
+          <div class="field">
+            <label>Bathrooms</label>
+            <input type="number" id="d-bathrooms" placeholder="1" />
+          </div>
+          <div class="field">
+            <label>Gross area (m²)</label>
+            <input type="number" id="d-gross" placeholder="85" />
+          </div>
+          <div class="field">
+            <label>Plot area (m²)</label>
+            <input type="number" id="d-plot" placeholder="400" />
+          </div>
+          <div class="field">
+            <label>Floor</label>
+            <input type="text" id="d-floor" placeholder="1" />
+          </div>
+          <div class="field">
+            <label>Energy certificate</label>
+            <select id="d-energy">
+              <option value="">—</option>
+              <option>A+</option><option>A</option><option>B</option><option>B-</option><option>C</option><option>D</option><option>E</option><option>F</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Sun exposure <span class="lang-tag" style="color:var(--accent)">(EN)</span></label>
+            <input type="text" id="d-exposure" placeholder="East, West" />
+          </div>
+          <div class="field">
+            <label>IMI (€ / year)</label>
+            <input type="number" id="d-imi" placeholder="301.63" step="0.01" />
+          </div>
+          <div class="field">
+            <label>IMT (€)</label>
+            <input type="number" id="d-imt" placeholder="39036.65" step="0.01" />
+          </div>
+          <div class="field">
+            <label>Stamp duty (€)</label>
+            <input type="number" id="d-stamp" placeholder="5280" step="0.01" />
+          </div>
+        </div>
+        <div style="margin-top:1.2rem;margin-bottom:1.2rem;border-top:1px solid var(--rule)"></div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Features <span class="lang-tag" style="color:var(--accent)">(EN)</span></label>
+            <textarea id="d-features" placeholder="Air conditioning&#10;Balcony&#10;Equipped kitchen" style="min-height:110px"></textarea>
+            <span class="field-hint">One per line (or comma-separated)</span>
+          </div>
+          <div class="field">
+            <label>Room areas <span class="lang-tag" style="color:var(--accent)">(EN)</span></label>
+            <textarea id="d-areas" placeholder="Living room | 25.37&#10;Kitchen | 14.54&#10;Balcony | 3.41" style="min-height:110px"></textarea>
+            <span class="field-hint">One per line: name | m²</span>
+          </div>
+          <div class="field form-full">
+            <label>Nearby <span class="lang-tag" style="color:var(--accent)">(EN)</span></label>
+            <textarea id="d-nearby" placeholder="5 | Rato Metro Station&#10;8 | Chiado&#10;25 | Lisbon Airport" style="min-height:110px"></textarea>
+            <span class="field-hint">One per line: minutes | place</span>
           </div>
         </div>
         <div style="margin-top:1.2rem;margin-bottom:1.2rem;border-top:1px solid var(--rule)"></div>
@@ -760,12 +830,16 @@
 
   // ── FORM LANGUAGE TOGGLE (title / feature / description) ──
   let formLang = 'en';
-  let formI18n = { en: {title:'',feature:'',desc:''}, pt: {title:'',feature:'',desc:''} };
+  const emptyLang = () => ({title:'',feature:'',desc:'',exposure:'',features:'',areas:'',nearby:''});
+  let formI18n = { en: emptyLang(), pt: emptyLang() };
+
+  const LANG_DETAIL_IDS = [['exposure','d-exposure'],['features','d-features'],['areas','d-areas'],['nearby','d-nearby']];
 
   function captureFormLangFields() {
     formI18n[formLang].title   = document.getElementById('f-title').value;
     formI18n[formLang].feature = document.getElementById('f-feature').value;
     formI18n[formLang].desc    = document.getElementById('f-desc').value;
+    LANG_DETAIL_IDS.forEach(([k, id]) => { formI18n[formLang][k] = document.getElementById(id).value; });
   }
 
   function loadFormLangFields() {
@@ -776,6 +850,8 @@
     document.getElementById('title-lang-tag').textContent = tag;
     document.getElementById('feature-lang-tag').textContent = tag;
     document.getElementById('desc-lang-tag').textContent = tag;
+    LANG_DETAIL_IDS.forEach(([k, id]) => { document.getElementById(id).value = formI18n[formLang][k] || ''; });
+    document.querySelectorAll('.lang-tag').forEach(t => t.textContent = tag);
   }
 
   function switchFormLang(lang) {
@@ -788,12 +864,59 @@
 
   function resetFormLang() {
     formLang = 'en';
-    formI18n = { en: {title:'',feature:'',desc:''}, pt: {title:'',feature:'',desc:''} };
+    formI18n = { en: emptyLang(), pt: emptyLang() };
     document.getElementById('lang-tab-en').classList.add('active');
     document.getElementById('lang-tab-pt').classList.remove('active');
+    document.querySelectorAll('.lang-tag').forEach(t => t.textContent = '(EN)');
     document.getElementById('title-lang-tag').textContent = '(EN)';
     document.getElementById('feature-lang-tag').textContent = '(EN)';
     document.getElementById('desc-lang-tag').textContent = '(EN)';
+  }
+
+
+  // ── EXTRA DETAILS: text <-> structured ──
+  const NEUTRAL_IDS = { reference:'d-reference', bedrooms:'d-bedrooms', bathrooms:'d-bathrooms', gross_area:'d-gross', plot_area:'d-plot', floor:'d-floor', energy:'d-energy', imi:'d-imi', imt:'d-imt', stamp_duty:'d-stamp' };
+  const splitLines = str => (str || '').split(/\r?\n/).map(x => x.trim()).filter(Boolean);
+  const parseFeatures = str => (str || '').split(/\r?\n|,/).map(x => x.trim()).filter(Boolean);
+  const parseAreas = str => splitLines(str).map(l => { const [n, m] = l.split('|').map(x => x.trim()); return { n, m: (m || '').replace(',', '.') }; }).filter(a => a.n);
+  const parseNearby = str => splitLines(str).map(l => { const [m, n] = l.split('|').map(x => x.trim()); return { min: Number(m) || 0, n: n || '' }; }).filter(a => a.n);
+  const areasToText = a => (a || []).map(x => x.n + (x.m ? ' | ' + x.m : '')).join('\n');
+  const nearbyToText = a => (a || []).map(x => x.min + ' | ' + x.n).join('\n');
+
+  function buildDetails() {
+    const d = {};
+    Object.entries(NEUTRAL_IDS).forEach(([k, id]) => { const v = document.getElementById(id).value.trim(); if (v !== '') d[k] = v; });
+    d.i18n = {};
+    ['en', 'pt'].forEach(l => {
+      const x = formI18n[l];
+      d.i18n[l] = { exposure: x.exposure.trim(), features: parseFeatures(x.features), areas: parseAreas(x.areas), nearby: parseNearby(x.nearby) };
+    });
+    return d;
+  }
+
+  function loadDetails(p) {
+    const d = p.details || {};
+    Object.entries(NEUTRAL_IDS).forEach(([k, id]) => { document.getElementById(id).value = d[k] !== undefined ? d[k] : ''; });
+    ['en', 'pt'].forEach(l => {
+      const x = (d.i18n && d.i18n[l]) || {};
+      formI18n[l].exposure = x.exposure || '';
+      formI18n[l].features = (x.features || []).join('\n');
+      formI18n[l].areas    = areasToText(x.areas);
+      formI18n[l].nearby   = nearbyToText(x.nearby);
+    });
+  }
+
+  // ── BROCHURE: generated on every save, stored next to the photos ──
+  async function generateBrochure(row, imagePaths) {
+    const imageUrls = imagePaths.map(pth => `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${pth}`);
+    const blob = await RepBrochure.build(row, { imageUrls, logoUrl: 'logo.svg' });
+    const path = `brochure-${row.id}-${Date.now()}.pdf`;
+    const { error: upErr } = await db.storage.from(BUCKET).upload(path, blob, { contentType: 'application/pdf', cacheControl: '3600' });
+    if (upErr) throw upErr;
+    const { error: dbErr } = await db.from('properties').update({ brochure_url: path }).eq('id', row.id);
+    if (dbErr) throw dbErr;
+    if (row.brochure_url) db.storage.from(BUCKET).remove([row.brochure_url]); // tidy the previous version
+    return path;
   }
 
   async function saveProperty() {
@@ -829,6 +952,7 @@
       youtube_id:  document.getElementById('f-youtube').value.trim() || null,
       password:    document.getElementById('f-password').value.trim() || null,
       images:      allImagePaths.length ? allImagePaths : null,
+      details:     buildDetails(),
       is_locked:   document.getElementById('f-locked').checked,
       active:      document.getElementById('f-active').checked,
     };
@@ -837,15 +961,29 @@
     const editId = document.getElementById('edit-id').value;
     let error;
 
+    let saved = null;
     if (editId) {
-      ({ error } = await db.from('properties').update(payload).eq('id', editId));
+      ({ data: saved, error } = await db.from('properties').update(payload).eq('id', editId).select().single());
     } else {
-      ({ error } = await db.from('properties').insert([payload]));
+      ({ data: saved, error } = await db.from('properties').insert([payload]).select().single());
     }
 
-    if (error) { showFormErr(error.message); return; }
+    if (error) {
+      const missing = /details|brochure_url|schema cache/i.test(error.message);
+      showFormErr(missing ? 'Database needs the new columns — run supabase-migration.sql first' : error.message);
+      return;
+    }
 
-    showFormMsg('Saved successfully');
+    let brochureNote = '';
+    try {
+      showFormMsg('Saved — generating brochure…');
+      if (saved && saved.id) await generateBrochure(saved, allImagePaths);
+    } catch (e) {
+      console.error(e);
+      brochureNote = ' (brochure failed: ' + (e.message || e) + ')';
+    }
+
+    showFormMsg('Saved successfully' + brochureNote);
     resetForm();
     await loadProperties();
     renderDashboard();
@@ -877,9 +1015,10 @@
     document.getElementById('f-label').value = p.label || '';
     formLang = 'en';
     formI18n = {
-      en: { title: p.title || '', feature: p.feature || '', desc: p.description || '' },
-      pt: { title: p.title_pt || '', feature: p.feature_pt || '', desc: p.description_pt || '' }
+      en: { ...emptyLang(), title: p.title || '', feature: p.feature || '', desc: p.description || '' },
+      pt: { ...emptyLang(), title: p.title_pt || '', feature: p.feature_pt || '', desc: p.description_pt || '' }
     };
+    loadDetails(p);
     document.getElementById('lang-tab-en').classList.add('active');
     document.getElementById('lang-tab-pt').classList.remove('active');
     loadFormLangFields();
@@ -916,6 +1055,8 @@
     document.getElementById('f-type').value   = '';
     document.getElementById('f-label').value  = '';
     document.getElementById('f-region').value = '';
+    Object.values(NEUTRAL_IDS).forEach(id => document.getElementById(id).value = '');
+    LANG_DETAIL_IDS.forEach(([k, id]) => document.getElementById(id).value = '');
     document.getElementById('f-locked').checked = true;
     document.getElementById('f-active').checked = true;
     resetFormLang();
@@ -943,7 +1084,7 @@
     const el = document.getElementById('form-msg');
     el.textContent = msg;
     el.classList.add('show');
-    setTimeout(() => el.classList.remove('show'), 3000);
+    setTimeout(() => el.classList.remove('show'), 5000);
   }
   function showFormErr(msg) {
     const el = document.getElementById('form-err');

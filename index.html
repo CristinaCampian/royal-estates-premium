@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Royal Estates Premium</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500&family=Marcellus&family=Aboreto&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -20,131 +20,53 @@
     html { font-size: 16px; scroll-behavior: smooth; }
     body { background: var(--bg); color: var(--ink); font-family: 'Inter', sans-serif; font-weight: 300; min-height: 100vh; }
 
-    /* ── NAV ── */
-    nav {
-      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-      background: rgba(240,235,226,0.94); backdrop-filter: blur(10px);
-      border-bottom: 1px solid var(--rule);
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 2.5rem; height: 70px;
-    }
-    .nav-logo { display: flex; flex-direction: column; line-height: 1; }
-    .nav-logo .name { font-family: 'Cormorant Garamond', serif; font-weight: 500; font-size: 1.35rem; letter-spacing: 0.16em; text-transform: uppercase; }
-    .nav-logo .name span { color: var(--accent); }
-    .nav-logo .tagline { font-size: 0.54rem; letter-spacing: 0.28em; text-transform: uppercase; color: var(--mid); margin-top: 0.35rem; }
-    .nav-links { display: flex; align-items: center; gap: 1.6rem; }
-    .nav-links a { font-size: 0.7rem; letter-spacing: 0.08em; color: var(--mid); text-decoration: none; transition: color 0.15s; }
-    .nav-links a:hover, .nav-links a.active { color: var(--ink); }
+    /* ── MOSAIC GRID ── tiles meet edge-to-edge; the page colour is the gutter */
+    :root { --gap: 2px; --pad: 25px; --serif: 'Marcellus', serif; }
+    .mosaic { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap); }
+    .tile { position: relative; aspect-ratio: 1.08 / 1; padding: var(--pad); overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; }
 
-    .lang-switch { display:flex; align-items:center; gap:0.4rem; }
-    .lang-btn { background:none; border:none; font-family:'Inter',sans-serif; font-size:0.7rem; letter-spacing:0.08em; color:var(--mid); cursor:pointer; padding:0; transition:color 0.15s; }
-    .lang-btn:hover, .lang-btn.active { color:var(--ink); font-weight:500; }
+    .t-cap { font-size: 15px; line-height: 1.33; letter-spacing: 0.01em; }
+    .t-display { font-family: var(--serif); font-weight: 400; font-size: 35px; line-height: 1.17; letter-spacing: 0.024em; }
+    .t-display em { font-style: normal; }
+    .t-center { text-align: center; text-transform: uppercase; }
+    .t-link { display: inline-flex; align-items: center; gap: 0.6rem; margin-top: 1.4rem; font-size: 15px; letter-spacing: 0.01em; color: var(--ink); text-decoration: none; }
+    .t-link .arrow { width: 30px; height: 12px; flex-shrink: 0; transition: transform 0.25s ease; }
+    .t-link:hover .arrow { transform: translateX(5px); }
+    .tile-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 
-    .nav-sep { width: 1px; height: 14px; background: var(--rule); }
+    /* hero tiles */
+    .tile-logo { background: var(--bg); align-items: center; justify-content: center; padding: 0; }
+    .tile-logo img { width: 84%; height: auto; display: block; }
+    .tile-accent { background: var(--accent); }
+    .tile-deep { background: var(--bg-deep); }
 
-    /* ── FILTERS (pill rows) ── */
-    .filters {
-      margin-top: 70px; padding: 2.5rem 2.5rem 2rem;
-      display: flex; flex-direction: column; align-items: center; gap: 0.7rem;
-    }
-    .filter-row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; justify-content: center; }
-    .filter-label {
-      font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--mid);
-      background: var(--bg-deep); padding: 0.55rem 1.3rem; min-width: 130px; text-align: center;
-    }
-    .pill {
-      font-size: 0.66rem; letter-spacing: 0.08em; text-transform: uppercase;
-      padding: 0.55rem 1.4rem; border: 1px solid var(--rule);
-      cursor: pointer; background: transparent; color: var(--ink);
-      transition: all 0.15s; white-space: nowrap;
-    }
-    .pill:hover { border-color: var(--accent); color: var(--accent); }
-    .pill.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+    .lang-switch { display: flex; align-items: center; gap: 0.5rem; font-size: 15px; }
+    .lang-opt { background: none; border: none; font: inherit; letter-spacing: 0.01em; color: var(--mid); cursor: pointer; padding: 0; transition: color 0.15s; }
+    .lang-opt:hover, .lang-opt.active { color: var(--ink); }
+    .lang-opt.active { font-weight: 700; }
+    .lang-sep { color: var(--rule); }
 
-    /* ── GRID ── */
-    .listings-wrap { padding: 1.5rem 2.5rem 3rem; }
-    .listings-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr);
-      border-top: 1px solid var(--rule);
-    }
-    .property {
-      cursor: pointer; padding: 2.2rem 2rem 2.4rem; position: relative;
-      border-bottom: 1px solid var(--rule);
-      display: flex; flex-direction: column;
-    }
-    /* vertical rules between columns */
-    .property:not(:nth-child(3n)) { border-right: 1px solid var(--rule); }
+    /* ── PROPERTY TILES ── */
+    .property { cursor: pointer; background: var(--bg-deep); display: block; }
+    .tile-media { position: absolute; inset: 0; }
+    .tile-media img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.8s cubic-bezier(0.2,0,0.1,1); }
+    .property:hover .tile-media img { transform: scale(1.03); }
+    .tile-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: var(--bg-deep); }
+    .tile-placeholder span { font-size: 23px; letter-spacing: 0.02em; color: var(--mid); }
 
-    .prop-title {
-      font-family: 'Cormorant Garamond', serif; font-weight: 500;
-      font-size: 1.7rem; line-height: 1.08; letter-spacing: 0.01em;
-      text-transform: uppercase; margin-bottom: 1rem; transition: color 0.2s;
-    }
-    .property:hover .prop-title { color: var(--accent); }
-
-    .prop-desc-rule { height: 1px; background: var(--rule); margin-bottom: 1rem; }
-    .prop-desc { font-size: 0.78rem; line-height: 1.65; color: #6b6459; margin-bottom: 1.4rem; min-height: 2.6em; }
-
-    .prop-loc-row {
-      display: flex; align-items: center; justify-content: space-between;
-      font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase;
-      color: var(--mid); margin-bottom: 1rem;
-    }
-    .prop-loc-row .neighbourhood { color: var(--accent); }
-
-    .prop-image-wrap {
-      position: relative; width: 100%; aspect-ratio: 3/4;
-      overflow: hidden; background: var(--bg-deep); margin-top: auto;
-    }
-    .prop-image-wrap img {
-      width: 100%; height: 100%; object-fit: cover; display: block;
-      transition: transform 0.8s cubic-bezier(0.2,0,0.1,1);
-    }
-    .property:hover .prop-image-wrap img { transform: scale(1.04); }
-
-    .prop-img-placeholder {
-      width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
-      background: var(--bg-deep); position: relative; overflow: hidden;
-    }
-    .prop-img-placeholder::after {
-      content: ''; position: absolute; inset: 0;
-      background: repeating-linear-gradient(45deg, transparent, transparent 24px, rgba(0,0,0,0.02) 24px, rgba(0,0,0,0.02) 25px);
-    }
-    .prop-img-placeholder span { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 0.9rem; color: var(--mid); z-index: 1; }
+    .tile-top, .tile-bottom { position: absolute; left: var(--pad); right: var(--pad); z-index: 2; display: flex; gap: 6px; flex-wrap: wrap; pointer-events: none; }
+    .tile-top { top: var(--pad); justify-content: space-between; flex-wrap: nowrap; }
+    .tile-bottom { bottom: var(--pad); }
+    .tag { display: inline-flex; align-items: center; gap: 0.4rem; background: var(--bg); color: var(--ink); font-size: 15px; line-height: 1.33; letter-spacing: 0.01em; padding: 5px 12px; border-radius: 0; white-space: nowrap; }
+    .tag-title { font-family: var(--serif); letter-spacing: 0.02em; overflow: hidden; text-overflow: ellipsis; display: block; min-width: 0; }
+    .tag-icon { flex-shrink: 0; padding: 5px 9px; }
+    .tag-icon svg { width: 14px; height: 14px; }
 
     /* locked */
-    .property.locked .prop-image-wrap { background: #1c1a17; }
-    .property.locked .prop-img-placeholder { background: #1c1a17; }
-    .property.locked .prop-img-placeholder::after { background: repeating-linear-gradient(45deg, transparent, transparent 24px, rgba(255,255,255,0.03) 24px, rgba(255,255,255,0.03) 25px); }
-    .property.locked .prop-img-placeholder span { color: #4a463f; }
-    .property.locked .prop-title { filter: blur(6px); user-select: none; }
-    .property.locked .prop-desc { filter: blur(4px); user-select: none; }
-    .property.locked .prop-loc-row .neighbourhood { filter: blur(3px); user-select: none; }
-
-    .lock-badge {
-      position: absolute; top: 1rem; right: 1rem; background: var(--bg);
-      width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; z-index: 2;
-    }
-    .lock-badge svg { width: 14px; height: 14px; stroke: var(--ink); }
-    .video-badge {
-      position: absolute; bottom: 1rem; left: 1rem; background: rgba(28,26,23,0.78); color: #fff;
-      font-size: 0.56rem; letter-spacing: 0.14em; text-transform: uppercase; padding: 0.3rem 0.7rem;
-      display: flex; align-items: center; gap: 0.4rem; backdrop-filter: blur(4px); z-index: 2;
-    }
-    .video-badge::before { content: '▶'; font-size: 0.48rem; }
-
-    /* price/cta below image */
-    .prop-footer {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-top: 1.1rem;
-    }
-    .prop-price { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 400; }
-    .property.locked .prop-price { filter: blur(5px); user-select: none; }
-    .prop-meta-specs { font-size: 0.64rem; letter-spacing: 0.06em; color: var(--mid); }
-    .prop-cta { font-size: 0.62rem; letter-spacing: 0.13em; text-transform: uppercase; color: var(--mid); display: flex; align-items: center; gap: 0.3rem; transition: color 0.2s; }
-    .property:hover .prop-cta { color: var(--ink); }
-    .prop-cta::after { content: '→'; }
-    .prop-cta.unlock { color: var(--accent); }
+    .property.locked .tile-media img { filter: grayscale(70%); opacity: 0.75; }
+    .property.locked .tile-media { background: var(--ink); }
+    .property.locked .tag-title { filter: blur(5px); user-select: none; }
+    .property.locked .tag-price { user-select: none; }
 
     /* states */
     .loading-state, .empty-state { grid-column: 1/-1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 5rem; gap: 1rem; text-align: center; }
@@ -229,47 +151,102 @@
     .detail-enquire { background: var(--ink); color: var(--bg); border: none; padding: 0.95rem; font-family: 'Inter', sans-serif; font-size: 0.66rem; letter-spacing: 0.18em; text-transform: uppercase; cursor: pointer; width: 100%; transition: opacity 0.15s; margin-top: auto; }
     .detail-enquire:hover { opacity: 0.85; }
 
-    .pw-box { background: var(--bg); width: 100%; max-width: 400px; padding: 3rem; position: relative; }
-    .pw-close { position: absolute; top: 1.1rem; right: 1.4rem; background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--mid); }
-    .pw-close:hover { color: var(--ink); }
-    .pw-eyebrow { font-size: 0.62rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin-bottom: 1rem; }
-    .pw-title { font-family: 'Cormorant Garamond', serif; font-weight: 400; font-size: 1.9rem; margin-bottom: 0.5rem; line-height: 1.15; }
-    .pw-sub { font-size: 0.78rem; color: #6b6459; margin-bottom: 2rem; line-height: 1.75; }
-    .pw-input { width: 100%; border: none; border-bottom: 1px solid var(--ink); padding: 0.6rem 0; font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 300; background: transparent; outline: none; letter-spacing: 0.15em; color: var(--ink); margin-bottom: 1.8rem; }
-    .pw-input::placeholder { color: var(--mid); }
-    .pw-btn { width: 100%; background: var(--ink); color: var(--bg); border: none; padding: 0.9rem; font-family: 'Inter', sans-serif; font-size: 0.66rem; letter-spacing: 0.18em; text-transform: uppercase; cursor: pointer; transition: opacity 0.15s; }
-    .pw-btn:hover { opacity: 0.85; }
-    .pw-error { font-size: 0.72rem; color: #a33; margin-top: 0.8rem; display: none; }
+
+    /* ── LOCKED LISTING: same side panel, greyed out, single password field ── */
+    .dv-grey { width: 100%; height: 100%; object-fit: cover; display: block; filter: grayscale(100%) brightness(0.8); opacity: 0.7; }
+    .dv-blur { filter: blur(6px); user-select: none; pointer-events: none; }
+    .dv-ghost { display: flex; flex-direction: column; gap: 10px; margin-top: 0.4rem; }
+    .dv-ghost span { display: block; height: 12px; border-radius: 0; background: rgba(28,26,23,0.14); }
+    .dv-ghost span:nth-child(1) { width: 100%; }
+    .dv-ghost span:nth-child(2) { width: 92%; }
+    .dv-ghost span:nth-child(3) { width: 68%; }
+    .dv-lock { margin-top: auto; padding-top: 2rem; }
+    .dv-lock-note { display: flex; align-items: center; gap: 0.6rem; font-size: 15px; letter-spacing: 0.01em; }
+    .dv-lock-note svg { width: 15px; height: 15px; flex-shrink: 0; }
+    .dv-lock-row { display: flex; align-items: center; border-bottom: 1px solid var(--ink); margin-top: 1rem; max-width: 420px; }
+    .dv-lock-row input { flex: 1; min-width: 0; background: transparent; border: none; outline: none; border-radius: 0; font-family: 'Inter', sans-serif; font-size: 15px; letter-spacing: 0.15em; padding: 0.7rem 0; color: var(--ink); }
+    .dv-lock-row input::placeholder { color: rgba(28,26,23,0.55); letter-spacing: 0.04em; }
+    .dv-unlock { background: none; border: none; font-family: 'Inter', sans-serif; font-size: 15px; letter-spacing: 0.01em; color: var(--ink); cursor: pointer; padding: 0.7rem 0 0.7rem 1rem; }
+    .dv-unlock:hover { text-decoration: underline; text-underline-offset: 4px; }
+    .pw-error { font-size: 15px; color: #4a120c; margin-top: 0.7rem; display: none; }
     .pw-error.show { display: block; }
 
-    /* ── REQUEST ACCESS ── */
-    .access-section { background: var(--bg-deep); padding: 5rem 2.5rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: start; }
-    .access-inner { max-width: 1100px; margin: 0 auto; display: contents; }
-    .access-copy h2 { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 2.2rem; line-height: 1.15; margin-bottom: 1rem; }
-    .access-copy p { font-size: 0.79rem; color: #6b6459; line-height: 1.85; max-width: 340px; }
-    .access-form { display: flex; flex-direction: column; gap: 1.1rem; }
+    /* ── MINIMAL FOOTER BAR ── */
+    body { padding-bottom: 58px; }
+    .footer-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 260; background: var(--bg); display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; padding: 0 var(--pad); height: 58px; font-size: 15px; letter-spacing: 0.01em; }
+    .footer-mark { font-family: 'Aboreto', serif; font-weight: 400; font-size: 18px; letter-spacing: 0.08em; }
+    .footer-links { display: flex; gap: 1.6rem; flex-wrap: wrap; font-family: var(--serif); letter-spacing: 0.04em; }
+    .footer-links a { color: var(--ink); text-decoration: none; transition: color 0.15s; }
+    .footer-links a:hover { color: var(--accent); }
+    .footer-links a.open { text-decoration: underline; text-underline-offset: 4px; }
+    .footer-legal { font-family: var(--serif); color: var(--mid); font-size: 13px; letter-spacing: 0.04em; }
+
+    /* ── CONTACT OVERLAY: logo left, two panels slide in from the right ── */
+    .contact-overlay { position: fixed; inset: 0 0 58px 0; z-index: 250; display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); background: var(--bg); visibility: hidden; opacity: 0; transition: opacity 0.35s ease, visibility 0s linear 0.9s; }
+    .contact-overlay.open { visibility: visible; opacity: 1; transition: opacity 0.35s ease, visibility 0s; }
+    .contact-logo { display: flex; align-items: center; justify-content: center; background: var(--bg); transform: scale(0.82); opacity: 0; transition: transform 0.9s cubic-bezier(0.2,0.7,0.1,1), opacity 0.6s ease; }
+    .contact-logo img { width: 74%; max-width: 640px; }
+    .contact-overlay.open .contact-logo { transform: none; opacity: 1; transition-delay: 0.15s; }
+    .contact-panels { display: grid; grid-template-rows: 1fr 1.15fr; gap: var(--gap); min-height: 0; }
+    .contact-top, .contact-bottom { padding: var(--pad); overflow-y: auto; transform: translateX(105%); transition: transform 0.8s cubic-bezier(0.2,0.7,0.1,1); position: relative; }
+    .contact-top { background: var(--accent); display: flex; flex-direction: column; justify-content: space-between; gap: 1.5rem; }
+    .contact-bottom { background: var(--bg-deep); }
+    .contact-overlay.open .contact-top, .contact-overlay.open .contact-bottom { transform: none; }
+    .contact-overlay.open .contact-top { transition-delay: 0.05s; }
+    .contact-overlay.open .contact-bottom { transition-delay: 0.18s; }
+    .contact-close { position: absolute; top: 20px; right: 20px; width: 32px; height: 32px; border-radius: 0; border: none; background: rgba(28,26,23,0.15); color: var(--ink); font-size: 1.2rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
+    .contact-close:hover { background: rgba(28,26,23,0.3); }
+    .contact-big { font-family: var(--serif); display: block; font-size: 23px; letter-spacing: 0.02em; line-height: 1.3; color: var(--ink); text-decoration: none; }
+    a.contact-big:first-of-type { text-decoration: underline; text-underline-offset: 4px; }
+    .contact-top .t-cap { margin-bottom: 0.4rem; }
+    .contact-addr { margin-bottom: 0 !important; }
+
+    .access-form { display: flex; flex-direction: column; gap: 1rem; max-width: 560px; min-width: 0; }
+    .form-row > .field { min-width: 0; }
+    .access-title { font-size: 28px; }
+    .access-sub { max-width: 420px; margin-bottom: 0.4rem; }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
     .field { display: flex; flex-direction: column; gap: 0.35rem; }
     .field label { font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--mid); }
-    .field input, .field select { border: none; border-bottom: 1px solid var(--rule); padding: 0.55rem 0; font-family: 'Inter', sans-serif; font-size: 0.82rem; font-weight: 300; background: transparent; outline: none; color: var(--ink); -webkit-appearance: none; transition: border-color 0.15s; }
-    .field input:focus, .field select:focus { border-bottom-color: var(--ink); }
-    .form-submit { background: var(--ink); color: var(--bg); border: none; padding: 0.9rem 2.2rem; font-family: 'Inter', sans-serif; font-size: 0.66rem; letter-spacing: 0.18em; text-transform: uppercase; cursor: pointer; transition: opacity 0.15s; align-self: flex-start; margin-top: 0.5rem; }
+    .field input, .field select { border: none; border-bottom: 1px solid var(--ink); padding: 0.5rem 0; font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 400; background: transparent; outline: none; color: var(--ink); -webkit-appearance: none; border-radius: 0; }
+    .form-submit { background: var(--ink); color: var(--bg); border: none; border-radius: 0; padding: 0.9rem 2.2rem; font-family: 'Inter', sans-serif; font-size: 0.66rem; letter-spacing: 0.18em; text-transform: uppercase; cursor: pointer; transition: opacity 0.15s; align-self: flex-start; margin-top: 0.4rem; }
     .form-submit:hover { opacity: 0.85; }
 
-    /* ── FOOTER ── */
-    footer { border-top: 1px solid var(--rule); }
-    .footer-main { display: grid; grid-template-columns: repeat(3, 1fr); padding: 3rem 2.5rem; gap: 2rem; border-bottom: 1px solid var(--rule); }
-    .footer-col { display: flex; flex-direction: column; gap: 0.6rem; }
-    .footer-col-label { font-size: 0.62rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--mid); margin-bottom: 0.3rem; }
-    .footer-col-val { font-size: 0.78rem; color: var(--ink); text-decoration: none; transition: color 0.15s; letter-spacing: 0.02em; }
-    .footer-col-val:hover { color: var(--accent); }
-    .footer-bottom { display: flex; align-items: center; justify-content: space-between; padding: 1.4rem 2.5rem; }
-    .footer-mark { font-family: 'Cormorant Garamond', serif; font-size: 0.95rem; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 500; }
-    .footer-mark span { color: var(--accent); }
-    .footer-links { display: flex; gap: 2rem; }
-    .footer-links a { font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--mid); text-decoration: none; transition: color 0.15s; }
-    .footer-links a:hover { color: var(--ink); }
-    .footer-legal { font-size: 0.62rem; color: var(--mid); letter-spacing: 0.04em; }
+    /* ── LISTING DETAIL: photo left, colour panel slides in from the right ── */
+    .detail-overlay { position: fixed; inset: 0 0 58px 0; z-index: 250; display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); background: var(--bg); visibility: hidden; opacity: 0; transition: opacity 0.35s ease, visibility 0s linear 0.9s; }
+    .detail-overlay.open { visibility: visible; opacity: 1; transition: opacity 0.35s ease, visibility 0s; }
+    .dv-media { position: relative; background: var(--ink); overflow: hidden; min-height: 0; transform: scale(1.04); opacity: 0; transition: transform 0.9s cubic-bezier(0.2,0.7,0.1,1), opacity 0.6s ease; }
+    .detail-overlay.open .dv-media { transform: none; opacity: 1; transition-delay: 0.1s; }
+    .dv-media #gallery-main { width: 100%; height: 100%; object-fit: cover; display: block; cursor: zoom-in; }
+    .dv-empty { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 23px; color: var(--mid); }
+    .dv-panel { position: relative; background: var(--accent); padding: var(--pad) var(--pad) 40px; overflow-y: auto; display: flex; flex-direction: column; gap: 1.1rem; transform: translateX(105%); transition: transform 0.8s cubic-bezier(0.2,0.7,0.1,1); }
+    .detail-overlay.open .dv-panel { transform: none; transition-delay: 0.05s; }
+    .dv-panel .detail-eyebrow { color: var(--ink); font-size: 15px; letter-spacing: 0.01em; text-transform: none; padding-right: 48px; }
+    .dv-panel .detail-title { font-family: var(--serif); font-weight: 400; font-size: 35px; line-height: 1.17; letter-spacing: 0.024em; text-transform: none; padding-right: 48px; }
+    .dv-panel .detail-location { color: var(--ink); font-size: 15px; letter-spacing: 0.01em; text-transform: none; }
+    .dv-panel .detail-specs { border-color: rgba(28,26,23,0.35); }
+    .dv-panel .spec-val { font-size: 18px; font-weight: 400; }
+    .dv-panel .spec-lbl { color: var(--ink); opacity: 0.65; }
+    .dv-panel .detail-price { font-family: var(--serif); font-size: 28px; letter-spacing: 0.02em; }
+    .dv-panel .detail-desc { color: var(--ink); font-size: 15px; line-height: 1.55; letter-spacing: 0.01em; }
+    .dv-panel .detail-video-label { color: var(--ink); }
+    .dv-sec { border-top: 1px solid rgba(28,26,23,0.35); padding-top: 1rem; }
+    .dv-sec-title { font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.65; margin-bottom: 0.8rem; }
+    .dv-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .dv-tag { font-size: 15px; letter-spacing: 0.01em; line-height: 1.33; padding: 4px 12px; border: 1px solid rgba(28,26,23,0.5); border-radius: 0; }
+    .dv-row { display: flex; justify-content: space-between; gap: 1rem; padding: 7px 0; border-bottom: 1px solid rgba(28,26,23,0.18); font-size: 15px; letter-spacing: 0.01em; }
+    .dv-row:last-child { border-bottom: none; }
+    .dv-row span:last-child { text-align: right; white-space: nowrap; }
+    .dv-brochure { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 0.4rem 0 0; padding: 0.95rem 1.2rem; background: var(--bg); color: var(--ink); border-radius: 0; text-decoration: none; font-size: 15px; letter-spacing: 0.01em; transition: background 0.15s, transform 0.15s; }
+    .dv-brochure:hover { background: #fff; }
+    .dv-brochure small { display: block; font-size: 12px; opacity: 0.6; margin-top: 2px; }
+    .dv-brochure svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .dv-panel .detail-enquire { border-radius: 0; margin-top: 0.6rem; }
+    .dv-panel .enquiry-form { border-top-color: rgba(28,26,23,0.35); }
+    .dv-panel .enquiry-field label { color: var(--ink); opacity: 0.7; }
+    .dv-panel .enquiry-field input, .dv-panel .enquiry-field textarea { border-bottom-color: var(--ink); font-weight: 400; }
+    .dv-panel .enquiry-cancel { color: var(--ink); }
+    .dv-panel .enquiry-submit { border-radius: 0; }
 
     /* ── TOAST ── */
     .toast { position: fixed; bottom: 2.5rem; left: 50%; transform: translateX(-50%) translateY(0.8rem); background: var(--ink); color: var(--bg); padding: 0.8rem 1.8rem; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0; transition: all 0.3s; z-index: 500; pointer-events: none; }
@@ -277,51 +254,62 @@
 
     /* ── RESPONSIVE ── */
 
-    /* ── LEGAL OVERLAY ── */
-    .legal-overlay { display:none; position:fixed; inset:0; background:var(--bg); z-index:300; overflow-y:auto; }
-    .legal-overlay.open { display:block; }
-    .legal-overlay-inner { max-width:860px; margin:0 auto; padding:2rem 2.5rem 5rem; }
-    .legal-overlay-close { background:none; border:none; font-size:0.66rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--mid); cursor:pointer; padding:1.5rem 0; display:flex; align-items:center; gap:0.5rem; transition:color 0.2s; margin-bottom:1rem; }
-    .legal-overlay-close:hover { color:var(--ink); }
-    .lang-toggle { display:flex; gap:0.4rem; padding:0 0 0.5rem; }
-    .lang-btn { font-size:0.64rem; letter-spacing:0.12em; text-transform:uppercase; padding:0.4rem 1rem; border:1px solid var(--rule); background:transparent; color:var(--mid); cursor:pointer; transition:all 0.15s; }
-    .lang-btn.active { background:var(--ink); color:var(--bg); border-color:var(--ink); }
-    .lang-section { display:none; }
-    .lang-section.active { display:block; }
-    .doc-eyebrow { font-size:0.64rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--accent); margin-bottom:1rem; }
-    .doc-title { font-family:'Cormorant Garamond',serif; font-weight:300; font-size:clamp(2rem,4vw,3rem); line-height:1.05; margin-bottom:0.8rem; }
-    .doc-updated { font-size:0.72rem; color:var(--mid); letter-spacing:0.04em; margin-bottom:2.5rem; padding-bottom:2rem; border-bottom:1px solid var(--rule); }
-    .doc h2 { font-family:'Cormorant Garamond',serif; font-weight:500; font-size:1.4rem; margin:2.5rem 0 0.9rem; }
-    .doc p { font-size:0.85rem; line-height:1.85; color:#4a463f; margin-bottom:1rem; }
-    .doc ul { margin:0 0 1rem 1.4rem; }
-    .doc li { font-size:0.85rem; line-height:1.8; color:#4a463f; margin-bottom:0.4rem; }
-    .doc a { color:var(--accent); text-decoration:none; }
-    .doc a:hover { text-decoration:underline; }
+    /* ── LEGAL (Privacy / Terms): logo left, text panel slides in from the right ── */
+    .legal-overlay { position: fixed; inset: 0 0 58px 0; z-index: 250; display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); background: var(--bg); visibility: hidden; opacity: 0; transition: opacity 0.35s ease, visibility 0s linear 0.9s; }
+    .legal-overlay.open { visibility: visible; opacity: 1; transition: opacity 0.35s ease, visibility 0s; }
+    .legal-logo { display: flex; align-items: center; justify-content: center; background: var(--bg); transform: scale(0.82); opacity: 0; transition: transform 0.9s cubic-bezier(0.2,0.7,0.1,1), opacity 0.6s ease; }
+    .legal-logo img { width: 74%; max-width: 640px; }
+    .legal-overlay.open .legal-logo { transform: none; opacity: 1; transition-delay: 0.15s; }
+    .legal-panel { position: relative; background: var(--bg-deep); padding: var(--pad) var(--pad) 70px; overflow-y: auto; transform: translateX(105%); transition: transform 0.8s cubic-bezier(0.2,0.7,0.1,1); }
+    .legal-overlay.open .legal-panel { transform: none; transition-delay: 0.05s; }
+    .lang-toggle { display: flex; gap: 6px; padding: 0 48px 0 0; margin-bottom: 1.6rem; }
+    .lang-btn { font-family: 'Inter', sans-serif; font-size: 15px; letter-spacing: 0.01em; padding: 5px 12px; border: none; border-radius: 0; background: transparent; color: var(--ink); cursor: pointer; transition: background 0.15s, color 0.15s; }
+    .lang-btn:hover { background: var(--bg); }
+    .lang-btn.active { background: var(--ink); color: var(--bg); }
+    .lang-section { display: none; }
+    .lang-section.active { display: block; }
+    .doc { max-width: 620px; }
+    .doc-eyebrow { font-size: 15px; letter-spacing: 0.01em; opacity: 0.65; margin-bottom: 0.6rem; }
+    .doc-title { font-family: var(--serif); font-weight: 400; font-size: 35px; line-height: 1.17; letter-spacing: 0.024em; margin-bottom: 0.6rem; }
+    .doc-updated { font-size: 13px; opacity: 0.6; letter-spacing: 0.02em; margin-bottom: 2rem; padding-bottom: 1.6rem; border-bottom: 1px solid rgba(28,26,23,0.25); }
+    .doc h2 { font-family: var(--serif); font-weight: 400; font-size: 20px; letter-spacing: 0.02em; margin: 2.2rem 0 0.7rem; }
+    .doc p, .doc li { font-size: 15px; line-height: 1.6; letter-spacing: 0.01em; color: var(--ink); }
+    .doc p { margin-bottom: 0.9rem; }
+    .doc ul { margin: 0 0 0.9rem 1.2rem; }
+    .doc li { margin-bottom: 0.35rem; }
+    .doc a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+    .doc a:hover { opacity: 0.65; }
 
     @media (max-width: 980px) {
-      .listings-grid { grid-template-columns: repeat(2, 1fr); }
-      .property:not(:nth-child(3n)) { border-right: none; }
-      .property:not(:nth-child(2n)) { border-right: 1px solid var(--rule); }
+      .mosaic { grid-template-columns: repeat(2, 1fr); }
       .detail-modal { grid-template-columns: 1fr; }
       .detail-media { min-height: 260px; max-height: 320px; }
-      .access-section { grid-template-columns: 1fr; gap: 2.5rem; }
+      .contact-overlay { grid-template-columns: minmax(0,1fr); overflow-y: auto; overflow-x: hidden; }
+      .contact-panels { min-width: 0; }
+      .contact-logo, .legal-logo { display: none; }
+      .legal-overlay { grid-template-columns: minmax(0,1fr); overflow-y: auto; overflow-x: hidden; }
+      .legal-panel { overflow-y: visible; min-width: 0; padding: 20px 20px 60px; }
+      .detail-overlay { grid-template-columns: minmax(0,1fr); grid-template-rows: auto auto; align-content: start; overflow-y: auto; overflow-x: hidden; }
+      .dv-media { height: 75vw; min-height: 260px; }
+      .dv-panel { overflow-y: visible; min-width: 0; }
+      .dv-panel .detail-specs { grid-template-columns: repeat(2, 1fr); }
+      .contact-panels { grid-template-rows: auto auto; }
+      .footer-legal { display: none; }
     }
     @media (max-width: 640px) {
-      nav { padding: 0 1.3rem; height: 64px; }
-      .nav-logo .name { font-size: 1.1rem; }
-      .nav-links a:not(.active):not(.lang-btn-wrap) { display: none; }
-      .lang-switch { display: flex; }
-      .filters { margin-top: 64px; padding: 1.8rem 1.3rem 1.5rem; }
-      .filter-row { gap: 0.4rem; }
-      .filter-label { min-width: auto; padding: 0.5rem 1rem; }
-      .pill { padding: 0.5rem 1rem; }
-      .listings-wrap { padding: 1rem 1.3rem 2rem; }
-      .listings-grid { grid-template-columns: 1fr; }
-      .property:not(:nth-child(2n)) { border-right: none; }
-      .property { padding: 2rem 0.5rem 2.2rem; }
-      .access-section, footer { padding-left: 1.3rem; padding-right: 1.3rem; }
-      footer { flex-direction: column; gap: 1.2rem; text-align: center; }
-      .footer-links { justify-content: center; flex-wrap: wrap; }
+      .mosaic { grid-template-columns: 1fr; }
+      .tile { aspect-ratio: 1 / 1; padding: 20px; }
+      .tile-top, .tile-bottom { left: 20px; right: 20px; }
+      .tile-top { top: 20px; }
+      .tile-bottom { bottom: 20px; }
+      .t-display, .dv-panel .detail-title { font-size: 28px; }
+      .footer-bar { padding: 0 20px; }
+      .footer-mark { display: none; }
+      .footer-links { gap: 1.1rem; font-size: 14px; flex-wrap: nowrap; }
+      .footer-links a[target] { display: none; }
+      .footer-bar { justify-content: center; }
+      .contact-top, .contact-bottom { padding: 20px; overflow-y: visible; }
+      .contact-top { min-height: 300px; }
       .form-row { grid-template-columns: 1fr; }
       .detail-body { padding: 1.8rem; }
     }
@@ -330,131 +318,112 @@
 </head>
 <body>
 
-<!-- NAV -->
-<nav>
-  <div class="nav-logo">
-    <span class="name">Royal Estates <span>Premium</span></span>
-    <span class="tagline">Properties Collection</span>
+<!-- HERO MOSAIC -->
+<header class="mosaic hero">
+  <div class="tile tile-logo">
+    <img src="logo.svg" alt="Royal Estates Premium" />
   </div>
-  <div class="nav-links">
-    <a href="https://royalestates.pt" target="_blank">Royal Estates</a>
-    <a href="https://royalestates.luxe" target="_blank">Royal Estates Luxe</a>
-    <a href="#" class="active">Collection</a>
-    <a href="#contact">Contact</a>
-    <div class="nav-sep"></div>
-    <div class="lang-switch">
-      <button class="lang-btn active" onclick="setLang('en', this)">EN</button>
-      <span style="color:var(--rule)">|</span>
-      <button class="lang-btn" onclick="setLang('pt', this)">PT</button>
+
+  <div class="tile tile-accent">
+    <span class="t-cap hero-eyebrow">Curated residential portfolio</span>
+    <div>
+      <h1 class="t-display hero-headline">Exceptional homes.<br><em>Considered</em> living.</h1>
+      <a class="t-link" href="#contact"><span data-i18n="btn_request">Request access</span> <svg class="arrow" viewBox="0 0 30 12" fill="none" stroke="currentColor" stroke-width="1.1" aria-hidden="true"><path d="M0 6h28M23 1l5 5-5 5"/></svg></a>
     </div>
   </div>
-</nav>
 
-<!-- FILTERS -->
-<div class="filters">
-  <div class="filter-row">
-    <span class="filter-label">Collection</span>
-    <button class="pill active" data-filter="all" onclick="filterListings('all', this)">All</button>
-    <button class="pill" data-filter="apartment" onclick="filterListings('apartment', this)">Apartment</button>
-    <button class="pill" data-filter="villa" onclick="filterListings('villa', this)">Villa</button>
-    <button class="pill" data-filter="townhouse" onclick="filterListings('townhouse', this)">Townhouse</button>
+  <div class="tile tile-deep">
+    <div class="tile-row">
+      <span class="t-cap">Royal Estates Premium</span>
+      <span class="lang-switch">
+        <button class="lang-opt active" onclick="setLang('en', this)">EN</button>
+        <span class="lang-sep">|</span>
+        <button class="lang-opt" onclick="setLang('pt', this)">PT</button>
+      </span>
+    </div>
+    <h2 class="t-display t-center" data-i18n="tile_collection">Properties Collection</h2>
+    <div class="tile-row">
+      <span class="t-cap" data-i18n="tile_regions">Lisbon · Cascais · Algarve</span>
+      <span class="t-cap">Portugal</span>
+    </div>
   </div>
-  <div class="filter-row">
-    <span class="filter-label">Location</span>
-    <button class="pill" data-filter="lisbon" onclick="filterListings('lisbon', this)">Lisbon</button>
-    <button class="pill" data-filter="cascais" onclick="filterListings('cascais', this)">Cascais</button>
-    <button class="pill" data-filter="algarve" onclick="filterListings('algarve', this)">Algarve</button>
-  </div>
-</div>
+</header>
 
 <!-- LISTINGS -->
-<div class="listings-wrap">
-  <div class="listings-grid" id="listings-grid">
-    <div class="loading-state"><p>Loading properties…</p></div>
-  </div>
-</div>
+<main class="mosaic" id="listings-grid">
+  <div class="loading-state"><p>Loading properties…</p></div>
+</main>
 
-<!-- REQUEST ACCESS -->
-<section class="access-section" id="contact">
-  <div class="access-copy">
-    <h2>Request access</h2>
-    <p>This selection is shared on a private basis. Leave your details and we will be in touch directly within 48 hours.</p>
-  </div>
-  <div class="access-form">
-    <div class="form-row">
-      <div class="field"><label>First name</label><input type="text" id="req-first" placeholder="Ana" /></div>
-      <div class="field"><label>Last name</label><input type="text" id="req-last" placeholder="Ferreira" /></div>
-    </div>
-    <div class="field"><label>Email</label><input type="email" id="req-email" placeholder="ana@email.com" /></div>
-    <div class="form-row">
-      <div class="field">
-        <label>Role</label>
-        <select id="req-role">
-          <option value="">Select</option>
-          <option>Private buyer</option>
-          <option>Investor</option>
-          <option>Real estate agent</option>
-          <option>Wealth manager</option>
-          <option>Other</option>
-        </select>
+<!-- FOOTER (minimal band) -->
+<footer class="footer-bar">
+  <span class="footer-mark">Royal Estates</span>
+  <span class="footer-legal">AMI · Licensed Broker · Portugal · © 2026</span>
+  <span class="footer-links">
+    <a href="https://royalestates.pt" target="_blank">Royal Estates</a>
+    <a href="https://royalestates.luxe" target="_blank">Royal Estates Luxe</a>
+    <a href="#" onclick="openLegal('privacy'); return false;">Privacy</a>
+    <a href="#" onclick="openLegal('terms'); return false;">Terms</a>
+    <a href="#contact" id="contact-link" onclick="toggleContact(); return false;" data-i18n="nav_contact">Contact</a>
+  </span>
+</footer>
+
+<!-- CONTACT / REQUEST ACCESS OVERLAY -->
+<section class="contact-overlay" id="contact" aria-hidden="true">
+  <div class="contact-logo"><img src="logo.svg" alt="Royal Estates Premium" /></div>
+  <div class="contact-panels">
+    <div class="contact-top">
+      <button class="contact-close" onclick="closeContact()" aria-label="Close">×</button>
+      <h2 class="t-display">Royal Estates<br>Premium</h2>
+      <div>
+        <p class="t-cap" data-i18n="contact_label">Contact us</p>
+        <a class="contact-big" href="mailto:info@royalestates.pt">info@royalestates.pt</a>
+        <a class="contact-big" href="tel:+351964480190">(+351) 964 480 190</a>
       </div>
-      <div class="field">
-        <label>Budget range</label>
-        <select id="req-budget">
-          <option value="">Select</option>
-          <option>€500k – €750k</option>
-          <option>€750k – €1.2M</option>
-          <option>€1.2M – €2M</option>
-          <option>€2M+</option>
-        </select>
+      <p class="t-cap contact-addr">Rua Francisco Rocha, Lt 50, R/C, 2530-110 Lourinhã · AMI 23635</p>
+    </div>
+    <div class="contact-bottom">
+      <div class="access-form">
+        <h3 class="t-display access-title" data-i18n="access_title">Request access</h3>
+        <p class="t-cap access-sub" data-i18n="access_sub">This selection is shared on a private basis. Leave your details and we will be in touch directly within 48 hours.</p>
+        <div class="form-row">
+          <div class="field"><label>First name</label><input type="text" id="req-first" placeholder="Ana" /></div>
+          <div class="field"><label>Last name</label><input type="text" id="req-last" placeholder="Ferreira" /></div>
+        </div>
+        <div class="field"><label>Email</label><input type="email" id="req-email" placeholder="ana@email.com" /></div>
+        <div class="form-row">
+          <div class="field">
+            <label>Role</label>
+            <select id="req-role">
+              <option value="">Select</option>
+              <option>Private buyer</option>
+              <option>Investor</option>
+              <option>Real estate agent</option>
+              <option>Wealth manager</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Budget range</label>
+            <select id="req-budget">
+              <option value="">Select</option>
+              <option>€500k – €750k</option>
+              <option>€750k – €1.2M</option>
+              <option>€1.2M – €2M</option>
+              <option>€2M+</option>
+            </select>
+          </div>
+        </div>
+        <button class="form-submit" onclick="submitRequest()">Request access</button>
       </div>
     </div>
-    <button class="form-submit" onclick="submitRequest()">Request access</button>
   </div>
 </section>
 
-<!-- FOOTER -->
-<footer>
-  <div class="footer-main">
-    <div class="footer-col">
-      <p class="footer-col-label">Contact us</p>
-      <a href="tel:+351964480190" class="footer-col-val">(+351) 964 480 190</a>
-      <a href="mailto:info@royalestates.pt" class="footer-col-val">info@royalestates.pt</a>
-    </div>
-    <div class="footer-col">
-      <p class="footer-col-label">Website</p>
-      <a href="https://royalestates.pt" target="_blank" class="footer-col-val">Royal Estates</a>
-      <a href="https://royalestates.luxe" target="_blank" class="footer-col-val">Royal Estates Luxe</a>
-    </div>
-    <div class="footer-col">
-      <p class="footer-col-label">Legal</p>
-      <a href="#" onclick="openLegal('privacy'); return false;" class="footer-col-val">Privacy Policy</a>
-      <a href="#" onclick="openLegal('terms'); return false;" class="footer-col-val">Terms of Use</a>
-    </div>
-  </div>
-  <div class="footer-bottom">
-    <div class="footer-mark">Royal Estates <span>Premium</span></div>
-    <span class="footer-legal">AMI · Licensed Broker · Portugal · © 2026</span>
-  </div>
-</footer>
-
-<!-- PASSWORD MODAL -->
-<div class="modal-overlay" id="pw-overlay" onclick="closePwOutside(event)">
-  <div class="pw-box">
-    <button class="pw-close" onclick="closePw()">×</button>
-    <p class="pw-eyebrow">Private portfolio</p>
-    <h2 class="pw-title">Enter your access code</h2>
-    <p class="pw-sub">This listing is reserved for verified buyers. Enter your access code to reveal the full details and pricing for this listing.</p>
-    <input class="pw-input" type="password" id="pw-input" placeholder="ACCESS CODE" onkeydown="if(event.key==='Enter') checkPw()" autocomplete="off" />
-    <button class="pw-btn" onclick="checkPw()">Unlock listing</button>
-    <p class="pw-error" id="pw-error">Incorrect code. Please try again or request access below.</p>
-  </div>
-</div>
-
-<!-- LISTING DETAIL MODAL -->
-<div class="modal-overlay" id="detail-overlay" onclick="closeDetailOutside(event)">
-  <div class="detail-modal" id="detail-content"></div>
-</div>
+<!-- LISTING DETAIL (side panel) -->
+<section class="detail-overlay" id="detail-overlay" aria-hidden="true">
+  <div class="dv-media" id="detail-media"></div>
+  <div class="dv-panel" id="detail-panel"></div>
+</section>
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
@@ -517,96 +486,132 @@
   function propertyHTML(p) {
     const locked = p.is_locked && !isUnlocked && !unlockedProperties.has(p.id);
     const coverImg = (p.images && p.images.length) ? p.images[0] : p.image_url;
-    const hasImg = !!coverImg;
     const hasVid = !!p.youtube_id;
     const loc = splitLocation(p);
+    const lockIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="1"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
 
-    const mediaInner = hasImg
-      ? `${!locked && hasVid ? '<span class="video-badge">Video available</span>' : ''}${locked ? '<div class="lock-badge"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke-width=\"2\"><rect x=\"3\" y=\"11\" width=\"18\" height=\"11\" rx=\"1\"/><path d=\"M7 11V7a5 5 0 0 1 10 0v4\"/></svg></div>' : ''}<img src="${imgUrl(coverImg)}" alt="${p.title}" loading="lazy" style="${locked ? 'filter:grayscale(70%);opacity:0.75;' : ''}" />`
-      : locked
-      ? `<div class="prop-img-placeholder"><span>Private listing</span></div><div class="lock-badge"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="1"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>`
-      : `${hasVid ? '<span class="video-badge">Video available</span>' : ''}<div class="prop-img-placeholder"><span>${loc.city || ''}</span></div>`
-        ? `${hasVid ? '<span class="video-badge">Video available</span>' : ''}<img src="${imgUrl(coverImg)}" alt="${p.title}" loading="lazy" />`
-        : `${hasVid ? '<span class="video-badge">Video available</span>' : ''}<div class="prop-img-placeholder"><span>${loc.city || ''}</span></div>`;
+    const media = coverImg
+      ? `<img src="${imgUrl(coverImg)}" alt="${p.title}" loading="lazy" />`
+      : `<div class="tile-placeholder"><span>${locked ? t_('private_listing') : (loc.city || '')}</span></div>`;
 
     const priceText = locked ? '€ ●●● ●●●' : fmtPrice(p.price);
-    const cta = locked ? '<span class="prop-cta unlock">Unlock</span>' : '<span class="prop-cta">View</span>';
-    const onclick = locked ? `onclick="openPw(${p.id})"` : `onclick="openDetail(${p.id})"`;
     const specsLine = [p.typology, p.area ? p.area + ' m²' : null].filter(Boolean).join(' · ');
+    const onclick = `onclick="openDetail(${p.id})"`;
 
     return `
-    <article class="property${locked ? ' locked' : ''}" data-type="${p.type||''}" data-region="${p.region||''}" ${onclick}>
-      <h2 class="prop-title">${propTitle(p)}</h2>
-      <div class="prop-desc-rule"></div>
-      <div class="prop-loc-row">
-        <span class="neighbourhood">${loc.neighbourhood || ''}</span>
-        <span>${loc.city || ''}</span>
+    <article class="tile property${locked ? ' locked' : ''}" data-type="${p.type||''}" data-region="${p.region||''}" ${onclick}>
+      <div class="tile-media">${media}</div>
+      <div class="tile-top">
+        <span class="tag tag-title">${propTitle(p)}</span>
+        ${locked ? `<span class="tag tag-icon">${lockIcon}</span>` : ''}
       </div>
-      <div class="prop-image-wrap">${mediaInner}</div>
-      <div class="prop-footer">
-        <span class="prop-price">${priceText}</span>
-        ${specsLine && !locked ? `<span class="prop-meta-specs">${specsLine}</span>` : ''}
-        ${cta}
+      <div class="tile-bottom">
+        <span class="tag tag-price">${priceText}</span>
+        ${!locked && specsLine ? `<span class="tag">${specsLine}</span>` : ''}
+        ${!locked && loc.city ? `<span class="tag">${loc.city}</span>` : ''}
+        ${!locked && hasVid ? '<span class="tag">▶ Video</span>' : ''}
       </div>
     </article>`;
+  }
+
+  function esc(v) { return String(v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+  const eur = v => '€ ' + Number(v).toLocaleString('de-DE');
+
+  // language-specific extras fall back to English when the PT version is empty
+  function langExtras(p) {
+    const i = (p.details && p.details.i18n) || {};
+    const cur = i[currentLang] || {}, en = i.en || {};
+    const g = k => ((Array.isArray(cur[k]) ? cur[k].length : cur[k]) ? cur[k] : en[k]);
+    return { exposure: g('exposure') || '', features: g('features') || [], areas: g('areas') || [], nearby: g('nearby') || [] };
+  }
+
+  function specsHTML(p) {
+    const d = p.details || {}, x = langExtras(p);
+    const items = [
+      ['d_ref', d.reference], ['d_typology', p.typology], ['d_beds', d.bedrooms], ['d_baths', d.bathrooms],
+      ['d_area', p.area ? p.area + ' m²' : ''], ['d_gross', d.gross_area ? d.gross_area + ' m²' : ''], ['d_plot', d.plot_area ? d.plot_area + ' m²' : ''],
+      ['d_floor', d.floor], ['d_year', p.year], ['d_energy', d.energy], ['d_exposure', x.exposure], ['d_feature', propFeature(p)]
+    ].filter(it => it[1] !== undefined && it[1] !== null && it[1] !== '');
+    if (!items.length) return '';
+    return `<div class="detail-specs">${items.map(([k, v]) => `<div class="spec-item"><span class="spec-val">${esc(v)}</span><span class="spec-lbl">${t_(k)}</span></div>`).join('')}</div>`;
+  }
+
+  function sectionsHTML(p) {
+    const d = p.details || {}, x = langExtras(p);
+    const sec = (key, inner) => `<div class="dv-sec"><p class="dv-sec-title">${t_(key)}</p>${inner}</div>`;
+    const rows = list => list.map(([a, b]) => `<div class="dv-row"><span>${esc(a)}</span><span>${esc(b)}</span></div>`).join('');
+    let out = '';
+    if (x.features.length) out += sec('d_features', `<div class="dv-tags">${x.features.map(f => `<span class="dv-tag">${esc(f)}</span>`).join('')}</div>`);
+    if (x.areas.length) out += sec('d_areas', rows(x.areas.map(a => [a.n, a.m ? String(a.m).replace('.', ',') + ' m²' : ''])));
+    const costs = [];
+    if (d.imi) costs.push([t_('d_imi'), eur(d.imi)]);
+    if (d.imt) costs.push([t_('d_imt'), eur(d.imt)]);
+    if (d.stamp_duty) costs.push([t_('d_stamp'), eur(d.stamp_duty)]);
+    if (costs.length) out += sec('d_costs', rows(costs));
+    if (x.nearby.length) out += sec('d_nearby', rows(x.nearby.map(n => [n.n, n.min + ' ' + t_('min')])));
+    return out;
+  }
+
+  function brochureHTML(p) {
+    if (!p.brochure_url) return '';
+    return `<a class="dv-brochure" href="${imgUrl(p.brochure_url)}" target="_blank" rel="noopener"><span>${t_('brochure')}<small>PDF · PT | EN</small></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 3v13M6 11l6 6 6-6M4 21h16"/></svg></a>`;
   }
 
   function openDetail(id) {
     const p = allProperties.find(x => x.id === id);
     if (!p) return;
+    closeContact(); closeLegal();
+    const locked = p.is_locked && !isUnlocked && !unlockedProperties.has(p.id);
+    if (locked) return openLockedDetail(p);
+    pendingUnlockPropertyId = null;
     const gallery = (p.images && p.images.length) ? p.images : (p.image_url ? [p.image_url] : []);
+    window._galleryImgs = gallery.map(imgUrl);
+    window._galleryIdx = 0;
+
     let mediaHTML;
-    if (gallery.length > 1) {
-      window._galleryImgs = gallery.map(imgUrl);
-      window._galleryIdx = 0;
+    if (gallery.length) {
       mediaHTML = `
-        <div class="gallery">
-          <div class="gallery-main-wrap">
-            <img id="gallery-main" src="${imgUrl(gallery[0])}" alt="${p.title}" />
-            <button class="gallery-arrow left" onclick="galleryNav(-1)">‹</button>
-            <button class="gallery-arrow right" onclick="galleryNav(1)">›</button>
-            <span class="gallery-counter" id="gallery-counter">1 / ${gallery.length}</span>
-            <button class="fullscreen-btn" onclick="openFs(0)">⤢ Fullscreen</button>
-          </div>
-        </div>`;
-    } else if (gallery.length === 1) {
-      window._galleryImgs = [imgUrl(gallery[0])];
-      window._galleryIdx = 0;
-      mediaHTML = `<div class="gallery-main-wrap" style="flex:1;position:relative;min-height:300px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#1c1a17"><img src="${imgUrl(gallery[0])}" alt="${p.title}" style="width:100%;height:100%;object-fit:cover;" /><button class="fullscreen-btn" onclick="openFs(0)">⤢ Fullscreen</button></div>`;
+        <img id="gallery-main" src="${imgUrl(gallery[0])}" alt="${p.title}" onclick="openFs(window._galleryIdx)" />
+        ${gallery.length > 1 ? `
+          <button class="gallery-arrow left" onclick="galleryNav(-1)">‹</button>
+          <button class="gallery-arrow right" onclick="galleryNav(1)">›</button>
+          <span class="gallery-counter" id="gallery-counter">1 / ${gallery.length}</span>` : ''}
+        <button class="fullscreen-btn" onclick="openFs(window._galleryIdx)">⤢ Fullscreen</button>`;
     } else {
-      mediaHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#1c1a17"><span style="font-family:'Cormorant Garamond',serif;font-style:italic;color:#4a463f">${p.location||''}</span></div>`;
+      mediaHTML = `<div class="dv-empty">${p.location || ''}</div>`;
     }
+
     const vid = ytId(p.youtube_id);
     const videoHTML = vid ? `<div><p class="detail-video-label">Video</p><div class="video-wrap"><iframe src="https://www.youtube.com/embed/${vid}?rel=0&modestbranding=1" allowfullscreen loading="lazy"></iframe></div></div>` : '';
-    document.getElementById('detail-content').innerHTML = `
-      <div class="detail-media">${mediaHTML}</div>
-      <div class="detail-body">
-        <button class="detail-close" onclick="closeDetail()">×</button>
-        <p class="detail-eyebrow">${cap(p.type)}${p.label ? ' · ' + p.label : ''}</p>
-        <h2 class="detail-title">${propTitle(p)}</h2>
-        <p class="detail-location">${p.location || ''}</p>
-        <div class="detail-specs">
-          ${p.typology ? `<div class="spec-item"><span class="spec-val">${p.typology}</span><span class="spec-lbl">Typology</span></div>` : ''}
-          ${p.area     ? `<div class="spec-item"><span class="spec-val">${p.area} m²</span><span class="spec-lbl">Area</span></div>` : ''}
-          ${propFeature(p) ? `<div class="spec-item"><span class="spec-val">${propFeature(p)}</span><span class="spec-lbl">Feature</span></div>` : ''}
-          ${p.year     ? `<div class="spec-item"><span class="spec-val">${p.year}</span><span class="spec-lbl">Year</span></div>` : ''}
-        </div>
-        <p class="detail-price">${fmtPrice(p.price)}</p>
-        ${propDesc(p) ? `<p class="detail-desc">${propDesc(p)}</p>` : ''}
-        ${videoHTML}
-        <button class="detail-enquire" id="enquire-btn" onclick="toggleEnquiryForm(${p.id}, '${p.title}')">Enquire about this property</button>
-        <div class="enquiry-form" id="enquiry-form">
-          <div class="enquiry-field"><label>Your name *</label><input type="text" id="enq-name" placeholder="Ana Ferreira" /></div>
-          <div class="enquiry-field"><label>Email address *</label><input type="email" id="enq-email" placeholder="ana@email.com" /></div>
-          <div class="enquiry-field"><label>Phone (optional)</label><input type="tel" id="enq-phone" placeholder="+351 900 000 000" /></div>
-          <div class="enquiry-field"><label>Message (optional)</label><textarea id="enq-message" placeholder="I would like more information about this property…"></textarea></div>
-          <div class="enquiry-actions">
-            <button class="enquiry-submit" onclick="submitEnquiry()">Send enquiry</button>
-            <button class="enquiry-cancel" onclick="toggleEnquiryForm()">Cancel</button>
-          </div>
+    const safeTitle = JSON.stringify(p.title || '').replace(/"/g, '&quot;');
+
+    document.getElementById('detail-media').innerHTML = mediaHTML;
+    document.getElementById('detail-panel').innerHTML = `
+      <button class="contact-close" onclick="closeDetail()" aria-label="Close">×</button>
+      <p class="detail-eyebrow">${cap(p.type)}${p.label ? ' · ' + p.label : ''}</p>
+      <h2 class="detail-title">${propTitle(p)}</h2>
+      <p class="detail-location">${p.location || ''}</p>
+      ${specsHTML(p)}
+      <p class="detail-price">${fmtPrice(p.price)}</p>
+      ${propDesc(p) ? `<p class="detail-desc">${propDesc(p)}</p>` : ''}
+      ${sectionsHTML(p)}
+      ${videoHTML}
+      ${brochureHTML(p)}
+      <button class="detail-enquire" id="enquire-btn" onclick="toggleEnquiryForm(${p.id}, ${safeTitle})">Enquire about this property</button>
+      <div class="enquiry-form" id="enquiry-form">
+        <div class="enquiry-field"><label>Your name *</label><input type="text" id="enq-name" placeholder="Ana Ferreira" /></div>
+        <div class="enquiry-field"><label>Email address *</label><input type="email" id="enq-email" placeholder="ana@email.com" /></div>
+        <div class="enquiry-field"><label>Phone (optional)</label><input type="tel" id="enq-phone" placeholder="+351 900 000 000" /></div>
+        <div class="enquiry-field"><label>Message (optional)</label><textarea id="enq-message" placeholder="I would like more information about this property…"></textarea></div>
+        <div class="enquiry-actions">
+          <button class="enquiry-submit" onclick="submitEnquiry()">Send enquiry</button>
+          <button class="enquiry-cancel" onclick="toggleEnquiryForm()">Cancel</button>
         </div>
       </div>`;
-    document.getElementById('detail-overlay').classList.add('open');
+    document.getElementById('detail-panel').scrollTop = 0;
+    const o = document.getElementById('detail-overlay');
+    o.classList.add('open');
+    o.setAttribute('aria-hidden', 'false');
   }
   function ytId(input) {
     if (!input) return '';
@@ -674,8 +679,11 @@
     galleryGo((window._galleryIdx || 0) + dir);
   }
 
-  function closeDetail() { document.getElementById('detail-overlay').classList.remove('open'); }
-  function closeDetailOutside(e) { if (e.target === document.getElementById('detail-overlay')) closeDetail(); }
+  function closeDetail() {
+    const o = document.getElementById('detail-overlay');
+    o.classList.remove('open');
+    o.setAttribute('aria-hidden', 'true');
+  }
   let currentEnquiryPropertyId = null;
   let currentEnquiryPropertyTitle = null;
 
@@ -723,39 +731,64 @@
 
   let unlockedProperties = new Set(JSON.parse(sessionStorage.getItem('rep_unlocked_ids') || '[]'));
 
-  function openPw(propertyId) { pendingUnlockPropertyId = propertyId || null; document.getElementById('pw-overlay').classList.add('open'); setTimeout(() => document.getElementById('pw-input').focus(), 100); }
-  function closePw() { document.getElementById('pw-overlay').classList.remove('open'); document.getElementById('pw-error').classList.remove('show'); document.getElementById('pw-input').value = ''; }
-  function closePwOutside(e) { if (e.target === document.getElementById('pw-overlay')) closePw(); }
   let pendingUnlockPropertyId = null;
 
+  function openLockedDetail(p) {
+    pendingUnlockPropertyId = p.id;
+    window._galleryImgs = [];
+    const cover = (p.images && p.images.length) ? p.images[0] : p.image_url;
+    const lockIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="1"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+    document.getElementById('detail-media').innerHTML = cover
+      ? `<img class="dv-grey" src="${imgUrl(cover)}" alt="" />`
+      : `<div class="dv-empty">${t_('private_listing')}</div>`;
+    document.getElementById('detail-panel').innerHTML = `
+      <button class="contact-close" onclick="closeDetail()" aria-label="Close">×</button>
+      <h2 class="detail-title dv-blur">${propTitle(p)}</h2>
+      <p class="detail-location dv-blur">${p.location || ''}</p>
+      <p class="detail-price dv-blur">€ ●●● ●●●</p>
+      <div class="dv-ghost"><span></span><span></span><span></span></div>
+      <div class="dv-lock">
+        <p class="dv-lock-note">${lockIcon}<span>${t_('verified_note')}</span></p>
+        <div class="dv-lock-row">
+          <input type="password" id="pw-input" placeholder="${t_('pw_placeholder')}" autocomplete="off" onkeydown="if(event.key==='Enter') checkPw()" />
+          <button class="dv-unlock" onclick="checkPw()">${t_('unlock')} →</button>
+        </div>
+        <p class="pw-error" id="pw-error">${t_('pw_error')}</p>
+      </div>`;
+    document.getElementById('detail-panel').scrollTop = 0;
+    const o = document.getElementById('detail-overlay');
+    o.classList.add('open');
+    o.setAttribute('aria-hidden', 'false');
+    setTimeout(() => { const i = document.getElementById('pw-input'); if (i) i.focus(); }, 800);
+  }
+
   function checkPw() {
-    const val = document.getElementById('pw-input').value.trim();
+    const input = document.getElementById('pw-input');
+    if (!input) return;
+    const val = input.value.trim();
+    const id = pendingUnlockPropertyId;
+    const prop = allProperties.find(p => p.id === id);
+    let ok = false;
 
-    // Check per-property password first
-    if (pendingUnlockPropertyId) {
-      const prop = allProperties.find(p => p.id === pendingUnlockPropertyId);
-      if (prop && prop.password && val === prop.password) {
-        unlockedProperties.add(pendingUnlockPropertyId);
-        sessionStorage.setItem('rep_unlocked_ids', JSON.stringify([...unlockedProperties]));
-        closePw();
-        renderGrid(activeFilter === 'all' ? allProperties : allProperties.filter(p => p.type === activeFilter || p.region === activeFilter));
-        showToast('Listing unlocked');
-        return;
-      }
-    }
-
-    // Fall back to global password
-    if (val === ACCESS_CODE) {
+    // per-property password first, then the global access code
+    if (prop && prop.password && val === prop.password) {
+      unlockedProperties.add(id);
+      sessionStorage.setItem('rep_unlocked_ids', JSON.stringify([...unlockedProperties]));
+      ok = true;
+    } else if (val === ACCESS_CODE) {
       isUnlocked = true;
       sessionStorage.setItem('rep_unlocked', 'true');
-      closePw();
-      const filtered = activeFilter === 'all' ? allProperties : allProperties.filter(p => p.type === activeFilter || p.region === activeFilter);
-      renderGrid(filtered);
-      showToast('Access granted — listing unlocked');
+      ok = true;
+    }
+
+    if (ok) {
+      renderGrid(activeFilter === 'all' ? allProperties : allProperties.filter(p => p.type === activeFilter || p.region === activeFilter));
+      openDetail(id);
+      showToast('Listing unlocked');
     } else {
       document.getElementById('pw-error').classList.add('show');
-      document.getElementById('pw-input').value = '';
-      document.getElementById('pw-input').focus();
+      input.value = '';
+      input.focus();
     }
   }
 
@@ -769,12 +802,26 @@
     }]);
     if (error) { showToast('Something went wrong — please try again'); return; }
     showToast('Request received — we\'ll be in touch within 48h');
+    closeContact();
     ['req-first','req-last','req-email'].forEach(id => document.getElementById(id).value = '');
+  }
+
+  function toggleContact() { document.getElementById('contact').classList.contains('open') ? closeContact() : openContact(); }
+  function openContact() {
+    closeDetail(); closeLegal();
+    document.getElementById('contact').classList.add('open');
+    document.getElementById('contact').setAttribute('aria-hidden', 'false');
+    document.getElementById('contact-link').classList.add('open');
+  }
+  function closeContact() {
+    document.getElementById('contact').classList.remove('open');
+    document.getElementById('contact').setAttribute('aria-hidden', 'true');
+    document.getElementById('contact-link').classList.remove('open');
   }
 
   function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3200); }
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { closePw(); closeDetail(); closeFs(); }
+    if (e.key === 'Escape') { closeContact(); closeLegal(); closeDetail(); closeFs(); }
     if (e.ctrlKey && e.shiftKey && e.key === 'A') {
       e.preventDefault();
       window.location.href = 'admin.html';
@@ -783,13 +830,19 @@
   init();
 
   function openLegal(page) {
+    closeContact(); closeDetail();
     document.querySelectorAll('.legal-page').forEach(p => p.style.display = 'none');
     document.getElementById('legal-' + page).style.display = 'block';
-    document.getElementById('legal-overlay').classList.add('open');
-    window.scrollTo(0, 0);
+    const o = document.getElementById('legal-overlay');
+    o.classList.add('open');
+    o.setAttribute('aria-hidden', 'false');
+    document.getElementById('legal-panel').scrollTop = 0;
+    o.scrollTop = 0;
   }
   function closeLegal() {
-    document.getElementById('legal-overlay').classList.remove('open');
+    const o = document.getElementById('legal-overlay');
+    o.classList.remove('open');
+    o.setAttribute('aria-hidden', 'true');
   }
   function setLegalLang(lang, btn) {
     const page = btn.closest('.legal-page');
@@ -815,8 +868,9 @@
       contact_label:'Contact us', website_label:'Website', legal_label:'Legal',
       pw_eyebrow:'Private portfolio', pw_title:'Enter your access code',
       pw_sub:'Enter your access code to reveal the full details and pricing for this listing.',
-      pw_btn:'Unlock listing', pw_error:'Incorrect code. Please try again or request access below.',
-      nav_collection:'Collection', nav_contact:'Contact'
+      pw_btn:'Unlock listing', pw_error:'Incorrect code.',
+      nav_collection:'Collection', nav_contact:'Contact',
+      tile_collection:'Properties Collection', tile_regions:'Lisbon · Cascais · Algarve', private_listing:'Private listing', verified_note:'Reserved for verified clients.', pw_placeholder:'Access code', unlock:'Unlock', d_typology:'Typology', d_area:'Living area', d_gross:'Gross area', d_plot:'Plot', d_beds:'Bedrooms', d_baths:'Bathrooms', d_floor:'Floor', d_year:'Year', d_energy:'Energy', d_exposure:'Exposure', d_feature:'Feature', d_ref:'Reference', d_features:'Features', d_areas:'Areas', d_costs:'Costs', d_imi:'IMI / year', d_imt:'IMT', d_stamp:'Stamp duty', d_nearby:'Nearby', min:'min', brochure:'Download brochure'
     },
     pt: {
       all:'Todos', apartment:'Apartamento', villa:'Moradia', townhouse:'Casa em banda',
@@ -832,16 +886,20 @@
       contact_label:'Contacte-nos', website_label:'Website', legal_label:'Legal',
       pw_eyebrow:'Portfólio privado', pw_title:'Introduza o seu código de acesso',
       pw_sub:'Introduza o código de acesso para ver os detalhes completos e o preço deste imóvel.',
-      pw_btn:'Desbloquear imóvel', pw_error:'Código incorreto. Tente novamente ou solicite acesso abaixo.',
-      nav_collection:'Coleção', nav_contact:'Contacto'
+      pw_btn:'Desbloquear imóvel', pw_error:'Código incorreto.',
+      nav_collection:'Coleção', nav_contact:'Contacto',
+      tile_collection:'Coleção de Imóveis', tile_regions:'Lisboa · Cascais · Algarve', private_listing:'Imóvel privado', verified_note:'Reservado a clientes verificados.', pw_placeholder:'Código de acesso', unlock:'Desbloquear', d_typology:'Tipologia', d_area:'Área útil', d_gross:'Área bruta', d_plot:'Terreno', d_beds:'Quartos', d_baths:'Casas de banho', d_floor:'Piso', d_year:'Ano', d_energy:'Energia', d_exposure:'Exposição', d_feature:'Destaque', d_ref:'Referência', d_features:'Características', d_areas:'Áreas', d_costs:'Custos', d_imi:'IMI / ano', d_imt:'IMT', d_stamp:'Imposto de selo', d_nearby:'Na envolvente', min:'min', brochure:'Descarregar brochura'
     }
   };
 
+  function t_(key) { return (T[currentLang] || T.en)[key] || ''; }
+
   function setLang(lang, btn) {
     currentLang = lang;
-    document.querySelectorAll('.nav-links .lang-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.lang-opt').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     const t = T[lang];
+    document.querySelectorAll('[data-i18n]').forEach(el => { if (t[el.dataset.i18n]) el.textContent = t[el.dataset.i18n]; });
 
     document.querySelectorAll('.pill').forEach(p => {
       const key = p.getAttribute('data-filter');
@@ -858,38 +916,12 @@
     if (headline) headline.innerHTML = t.hero_headline;
     if (sub) sub.textContent = t.hero_sub;
 
-    const at = document.querySelector('.access-copy h2');
-    const asub = document.querySelector('.access-copy p');
-    if (at) at.textContent = t.access_title;
-    if (asub) asub.textContent = t.access_sub;
-
     const fieldLabels = document.querySelectorAll('.access-form .field label');
     const lk = ['label_first','label_last','label_email','label_role','label_budget'];
     fieldLabels.forEach((l, i) => { if (lk[i]) l.textContent = t[lk[i]]; });
 
     const submitBtn = document.querySelector('.form-submit');
     if (submitBtn) submitBtn.textContent = t.btn_request;
-
-    const fcl = document.querySelectorAll('.footer-col-label');
-    if (fcl[0]) fcl[0].textContent = t.contact_label;
-    if (fcl[1]) fcl[1].textContent = t.website_label;
-    if (fcl[2]) fcl[2].textContent = t.legal_label;
-
-    const pwE = document.querySelector('.pw-eyebrow');
-    const pwT = document.querySelector('.pw-title');
-    const pwS = document.querySelector('.pw-sub');
-    const pwB = document.querySelector('.pw-btn');
-    const pwErr = document.getElementById('pw-error');
-    if (pwE) pwE.textContent = t.pw_eyebrow;
-    if (pwT) pwT.textContent = t.pw_title;
-    if (pwS) pwS.textContent = t.pw_sub;
-    if (pwB) pwB.textContent = t.pw_btn;
-    if (pwErr) pwErr.textContent = t.pw_error;
-
-    const navColl = document.querySelector('.nav-links a.active');
-    const navCont = document.querySelector('.nav-links a[href="#contact"]');
-    if (navColl) navColl.textContent = t.nav_collection;
-    if (navCont) navCont.textContent = t.nav_contact;
 
     // Re-render listings so descriptions switch language
     const filtered = activeFilter === 'all' ? allProperties : allProperties.filter(p => (p.type||'').toLowerCase() === activeFilter || (p.region||'').toLowerCase() === activeFilter);
@@ -909,9 +941,10 @@
 </div>
 
 <!-- LEGAL PAGES OVERLAY -->
-<div class="legal-overlay" id="legal-overlay">
-  <div class="legal-overlay-inner">
-    <button class="legal-overlay-close" onclick="closeLegal()">← Back to collection</button>
+<section class="legal-overlay" id="legal-overlay" aria-hidden="true">
+  <div class="legal-logo"><img src="logo.svg" alt="Royal Estates Premium" /></div>
+  <div class="legal-panel" id="legal-panel">
+    <button class="contact-close" onclick="closeLegal()" aria-label="Close">×</button>
     <div id="legal-privacy" class="legal-page" style="display:none">
 <div class="lang-toggle">
   <button class="lang-btn active" onclick="setLegalLang('en', this)">EN</button>
@@ -924,7 +957,7 @@
   <h1 class="doc-title">Privacy Policy</h1>
   <p class="doc-updated">Last updated: June 2026</p>
 <h2>1. Who we are</h2>
-  <p>This website ("Royal Estates Premium") is operated by Royal Estates Lda, a real estate brokerage licensed under AMI no. 23635, with registered office at Rua da Fonte, n.º 7, Paço, Peniche, Portugal, holding tax number (NIPC) 516 503 545 (hereinafter "we", "us", or the "Controller").</p>
+  <p>This website ("Royal Estates Premium") is operated by Royal Estates Lda, a real estate brokerage licensed under AMI no. 23635, with registered office at Rua Francisco Rocha, Lt 50, R/C, 2530-110 Lourinhã, Portugal, holding tax number (NIPC) 516 503 545 (hereinafter "we", "us", or the "Controller").</p>
   <p>We are the data controller responsible for the personal data collected through this website. For any questions about this policy or your data, contact us at <a href="mailto:info@royalestates.pt">info@royalestates.pt</a> or (+351) 964 480 190.</p>
 
   <h2>2. What data we collect</h2>
@@ -975,7 +1008,7 @@
   <h1 class="doc-title">Política de Privacidade</h1>
   <p class="doc-updated">Última atualização: Junho 2026</p>
 <h2>1. Quem somos</h2>
-  <p>Este website ("Royal Estates Premium") é operado pela Royal Estates Lda, mediadora imobiliária licenciada com a licença AMI n.º 23635, com sede em Rua da Fonte, n.º 7, Paço, Peniche, Portugal, com o número de identificação de pessoa coletiva (NIPC) 516 503 545 (doravante "nós" ou "Responsável pelo Tratamento").</p>
+  <p>Este website ("Royal Estates Premium") é operado pela Royal Estates Lda, mediadora imobiliária licenciada com a licença AMI n.º 23635, com sede em Rua Francisco Rocha, Lt 50, R/C, 2530-110 Lourinhã, Portugal, com o número de identificação de pessoa coletiva (NIPC) 516 503 545 (doravante "nós" ou "Responsável pelo Tratamento").</p>
   <p>Somos o responsável pelo tratamento dos dados pessoais recolhidos através deste website. Para qualquer questão sobre esta política ou sobre os seus dados, contacte-nos através de <a href="mailto:info@royalestates.pt">info@royalestates.pt</a> ou (+351) 964 480 190.</p>
 
   <h2>2. Que dados recolhemos</h2>
@@ -1032,7 +1065,7 @@
   <h1 class="doc-title">Terms of Use</h1>
   <p class="doc-updated">Last updated: June 2026</p>
 <h2>1. About these terms</h2>
-  <p>These terms of use govern your access to and use of the Royal Estates Premium website (the "Website"), operated by Royal Estates Lda, a real estate brokerage licensed under AMI no. 23635, with registered office at Rua da Fonte, n.º 7, Paço, Peniche, Portugal. By accessing or using the Website, you agree to be bound by these terms.</p>
+  <p>These terms of use govern your access to and use of the Royal Estates Premium website (the "Website"), operated by Royal Estates Lda, a real estate brokerage licensed under AMI no. 23635, with registered office at Rua Francisco Rocha, Lt 50, R/C, 2530-110 Lourinhã, Portugal. By accessing or using the Website, you agree to be bound by these terms.</p>
 
   <h2>2. Nature of the information provided</h2>
   <p>The Website presents a curated selection of properties for general information purposes. All property descriptions, areas, typologies, prices, images, and video content are provided for indicative purposes only and do not constitute a contractual offer, a binding proposal, or a guarantee of availability.</p>
@@ -1075,7 +1108,7 @@
   <h1 class="doc-title">Termos e Condições de Utilização</h1>
   <p class="doc-updated">Última atualização: Junho 2026</p>
 <h2>1. Sobre estes termos</h2>
-  <p>Os presentes termos e condições regulam o acesso e a utilização do website Royal Estates Premium (o "Website"), operado pela Royal Estates Lda, mediadora imobiliária licenciada com a licença AMI n.º 23635, com sede em Rua da Fonte, n.º 7, Paço, Peniche, Portugal. Ao aceder ou utilizar o Website, o utilizador aceita ficar vinculado a estes termos.</p>
+  <p>Os presentes termos e condições regulam o acesso e a utilização do website Royal Estates Premium (o "Website"), operado pela Royal Estates Lda, mediadora imobiliária licenciada com a licença AMI n.º 23635, com sede em Rua Francisco Rocha, Lt 50, R/C, 2530-110 Lourinhã, Portugal. Ao aceder ou utilizar o Website, o utilizador aceita ficar vinculado a estes termos.</p>
 
   <h2>2. Natureza da informação prestada</h2>
   <p>O Website apresenta uma seleção criteriosa de imóveis para fins de informação geral. Todas as descrições, áreas, tipologias, preços, imagens e conteúdos de vídeo são fornecidos a título meramente indicativo e não constituem uma oferta contratual, uma proposta vinculativa ou uma garantia de disponibilidade.</p>
@@ -1113,7 +1146,7 @@
 </div>
     </div>
   </div>
-</div>
+</section>
 
 </body>
 </html>
