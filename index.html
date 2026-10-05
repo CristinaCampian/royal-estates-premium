@@ -299,10 +299,16 @@
     @media (max-width: 640px) {
       .mosaic { grid-template-columns: 1fr; }
       .tile { aspect-ratio: 1 / 1; padding: 20px; }
+      /* hero tiles a little shorter so the headline + link sit inside the first screen, like FORA */
+      .tile-logo { aspect-ratio: 1 / 0.92; }
+      .tile-accent, .tile-deep { aspect-ratio: 1 / 0.84; padding: 22px; }
+      .tile-accent .t-cap, .tile-deep .t-cap { font-size: 17px; }
+      .tile-accent .t-link { font-size: 17px; margin-top: 1.1rem; }
       .tile-top, .tile-bottom { left: 20px; right: 20px; }
       .tile-top { top: 20px; }
       .tile-bottom { bottom: 20px; }
-      .t-display, .dv-panel .detail-title { font-size: 28px; }
+      .t-display { font-size: 32px; }
+      .dv-panel .detail-title { font-size: 28px; }
       .footer-bar { padding: 0 20px; }
       .footer-mark { display: none; }
       .footer-links { gap: 1.1rem; font-size: 14px; flex-wrap: nowrap; }
