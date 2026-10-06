@@ -20,6 +20,15 @@
     html { font-size: 16px; scroll-behavior: smooth; }
     body { background: var(--bg); color: var(--ink); font-family: 'Inter', sans-serif; font-weight: 300; min-height: 100vh; }
 
+    /* ── WELCOME SCREEN ── */
+    body.welcoming { overflow: hidden; }
+    .welcome { position: fixed; inset: 0; z-index: 1000; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.2rem; transition: transform 0.95s cubic-bezier(0.7, 0, 0.2, 1); }
+    .welcome.out { transform: translateY(-100%); }
+    .welcome img { width: min(44vw, 300px); height: auto; display: block; opacity: 0; transform: translateY(12px); animation: welcomeIn 0.9s 0.15s cubic-bezier(0.2, 0.7, 0.1, 1) forwards; }
+    .welcome-mark { font-family: 'Aboreto', serif; font-size: 18px; letter-spacing: 0.32em; text-indent: 0.32em; opacity: 0; animation: welcomeIn 0.8s 0.65s ease forwards; }
+    @keyframes welcomeIn { to { opacity: 1; transform: none; } }
+    @media (prefers-reduced-motion: reduce) { .welcome img, .welcome-mark { animation: none; opacity: 1; transform: none; } }
+
     /* ── MOSAIC GRID ── tiles meet edge-to-edge; the page colour is the gutter */
     :root { --gap: 2px; --pad: 25px; --serif: 'Marcellus', serif; }
     .mosaic { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap); }
@@ -347,7 +356,14 @@
     @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
   </style>
 </head>
-<body>
+<body class="welcoming">
+
+<!-- WELCOME: logo for a moment, then it lifts away to reveal the collection -->
+<div class="welcome" id="welcome" aria-hidden="true">
+  <img src="logo.svg" alt="" />
+  <span class="welcome-mark">Royal Estates</span>
+</div>
+<noscript><style>.welcome { display: none; } body.welcoming { overflow: auto; }</style></noscript>
 
 <!-- HERO MOSAIC -->
 <header class="mosaic hero">
@@ -503,6 +519,22 @@
   let currentLang = 'en';
   let activeFilter  = 'all';
   let isUnlocked    = sessionStorage.getItem('rep_unlocked') === 'true';
+
+  // ── WELCOME SCREEN: shown at least ~1.8s, and until the collection has loaded (max 6s) ──
+  const welcomeStart = Date.now();
+  let welcomeDone = false;
+  function endWelcome() {
+    if (welcomeDone) return;
+    welcomeDone = true;
+    const w = document.getElementById('welcome');
+    if (!w) { document.body.classList.remove('welcoming'); return; }
+    setTimeout(() => {
+      w.classList.add('out');
+      document.body.classList.remove('welcoming');
+      setTimeout(() => w.remove(), 1100);
+    }, Math.max(0, 1800 - (Date.now() - welcomeStart)));
+  }
+  setTimeout(endWelcome, 6000);
 
   async function loadAccessCode() {
     try {
@@ -938,7 +970,7 @@
       window.location.href = 'admin.html';
     }
   });
-  init();
+  init().finally(endWelcome);
 
   function openLegal(page) {
     closeContact(); closeDetail();
