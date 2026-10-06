@@ -206,6 +206,8 @@
     .contact-top .t-cap { margin-bottom: 0.4rem; }
     .contact-addr { margin-bottom: 0 !important; }
 
+    .code-block { max-width: 560px; padding-bottom: 1.8rem; margin-bottom: 1.8rem; border-bottom: 1px solid rgba(28,26,23,0.25); }
+    .code-block .access-sub { margin: 0.5rem 0 0.4rem; }
     .access-form { display: flex; flex-direction: column; gap: 1rem; max-width: 560px; min-width: 0; }
     .form-row > .field { min-width: 0; }
     .access-title { font-size: 28px; }
@@ -317,7 +319,8 @@
       .menu-list { list-style: none; margin: auto 0 0; padding: 0; text-align: center; }
       .menu-list a { display: inline-flex; align-items: center; gap: 0.7rem; font-family: var(--serif); font-size: 30px; line-height: 1; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); text-decoration: none; padding: 0.55rem 0; }
       .menu-ext { display: flex; gap: 1.4rem; margin: 1.6rem 0 auto; font-size: 15px; }
-      .menu-ext a { color: var(--ink); text-decoration: none; opacity: 0.75; }
+      .menu-ext a { display: inline-flex; align-items: center; gap: 0.45rem; color: var(--ink); text-decoration: none; opacity: 0.75; }
+      .menu-ext .ext { width: 10px; height: 10px; }
       .menu-bar { align-self: stretch; display: flex; align-items: center; justify-content: space-between; background: var(--bg); padding: 1.3rem 20px calc(1.3rem + env(safe-area-inset-bottom, 0px)); }
       .menu-bar .footer-mark { display: block; }
       .menu-close { display: flex; align-items: center; gap: 0.6rem; background: none; border: none; font-family: var(--serif); font-size: 17px; letter-spacing: 0.06em; color: var(--ink); cursor: pointer; }
@@ -356,7 +359,7 @@
     <span class="t-cap hero-eyebrow">Curated residential portfolio</span>
     <div>
       <h1 class="t-display hero-headline">Exceptional homes.<br><em>Considered</em> living.</h1>
-      <a class="t-link" href="#contact"><span data-i18n="btn_request">Request access</span> <svg class="arrow" viewBox="0 0 30 12" fill="none" stroke="currentColor" stroke-width="1.1" aria-hidden="true"><path d="M0 6h28M23 1l5 5-5 5"/></svg></a>
+      <a class="t-link" href="#contact" onclick="openContact('code'); return false;"><span data-i18n="hero_cta">Access the collection</span> <svg class="arrow" viewBox="0 0 30 12" fill="none" stroke="currentColor" stroke-width="1.1" aria-hidden="true"><path d="M0 6h28M23 1l5 5-5 5"/></svg></a>
     </div>
   </div>
 
@@ -407,8 +410,8 @@
     <li><a href="#" onclick="menuGo('terms'); return false;" data-i18n="menu_terms">Terms</a></li>
   </ul>
   <div class="menu-ext">
-    <a href="https://royalestates.pt" target="_blank" rel="noopener">Royal Estates ↗</a>
-    <a href="https://royalestates.luxe" target="_blank" rel="noopener">Royal Estates Luxe ↗</a>
+    <a href="https://royalestates.pt" target="_blank" rel="noopener">Royal Estates <svg class="ext" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.1" aria-hidden="true"><path d="M2 10L10 2M4 2h6v6"/></svg></a>
+    <a href="https://royalestates.luxe" target="_blank" rel="noopener">Royal Estates Luxe <svg class="ext" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.1" aria-hidden="true"><path d="M2 10L10 2M4 2h6v6"/></svg></a>
   </div>
   <div class="menu-bar">
     <span class="footer-mark">Royal Estates</span>
@@ -431,8 +434,17 @@
       <p class="t-cap contact-addr">Rua Francisco Rocha, Lt 50, R/C, 2530-110 Lourinhã · AMI 23635</p>
     </div>
     <div class="contact-bottom">
+      <div class="code-block" id="code-block">
+        <h3 class="t-display access-title" data-i18n="code_title">Access code</h3>
+        <p class="t-cap access-sub" data-i18n="code_sub">Enter your code to unlock every property.</p>
+        <div class="dv-lock-row">
+          <input type="password" id="global-code" placeholder="Access code" autocomplete="off" onkeydown="if(event.key==='Enter') unlockAll()" />
+          <button class="dv-unlock" onclick="unlockAll()"><span data-i18n="unlock">Unlock</span> →</button>
+        </div>
+        <p class="pw-error" id="global-error" data-i18n="pw_error">Incorrect code.</p>
+      </div>
       <div class="access-form">
-        <h3 class="t-display access-title" data-i18n="access_title">Request access</h3>
+        <h3 class="t-display access-title" data-i18n="access_title">No code? Request access</h3>
         <p class="t-cap access-sub" data-i18n="access_sub">This selection is shared on a private basis. Leave your details and we will be in touch directly within 48 hours.</p>
         <div class="form-row">
           <div class="field"><label>First name</label><input type="text" id="req-first" placeholder="Ana" /></div>
@@ -558,7 +570,7 @@
         <span class="tag tag-price">${priceText}</span>
         ${!locked && specsLine ? `<span class="tag">${specsLine}</span>` : ''}
         ${!locked && loc.city ? `<span class="tag">${loc.city}</span>` : ''}
-        ${!locked && hasVid ? '<span class="tag">▶ Video</span>' : ''}
+        ${!locked && hasVid ? '<span class="tag"><svg viewBox="0 0 10 10" width="8" height="8" fill="currentColor" aria-hidden="true"><path d="M1 0l8 5-8 5z"/></svg>Video</span>' : ''}
       </div>
     </article>`;
   }
@@ -856,11 +868,36 @@
   }
 
   function toggleContact() { document.getElementById('contact').classList.contains('open') ? closeContact() : openContact(); }
-  function openContact() {
+  function openContact(focus) {
     closeDetail(); closeLegal();
     document.getElementById('contact').classList.add('open');
     document.getElementById('contact').setAttribute('aria-hidden', 'false');
     document.getElementById('contact-link').classList.add('open');
+    if (focus === 'code') {
+      setTimeout(() => {
+        document.getElementById('code-block').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        document.getElementById('global-code').focus({ preventScroll: true });
+      }, 750);
+    }
+  }
+
+  // one code unlocks every listing, whatever password each listing has of its own
+  function unlockAll() {
+    const input = document.getElementById('global-code');
+    const err = document.getElementById('global-error');
+    if (input.value.trim() === ACCESS_CODE) {
+      isUnlocked = true;
+      sessionStorage.setItem('rep_unlocked', 'true');
+      input.value = '';
+      err.classList.remove('show');
+      closeContact();
+      renderGrid(activeFilter === 'all' ? allProperties : allProperties.filter(p => p.type === activeFilter || p.region === activeFilter));
+      showToast(t_('all_unlocked'));
+    } else {
+      err.classList.add('show');
+      input.value = '';
+      input.focus();
+    }
   }
   function closeContact() {
     document.getElementById('contact').classList.remove('open');
@@ -927,10 +964,10 @@
       hero_eyebrow:'Curated residential portfolio',
       hero_headline:'Exceptional homes.<br><em>Considered</em> living.',
       hero_sub:'A private selection of upper-tier properties across Lisbon, Cascais and the Algarve — vetted, priced with precision, and offered to a register of qualified buyers.',
-      access_title:'Request access',
+      access_title:'No code? Request access',
       access_sub:'This selection is shared on a private basis. Leave your details and we will be in touch directly within 48 hours.',
       label_first:'First name', label_last:'Last name', label_email:'Email', label_role:'Role', label_budget:'Budget range',
-      btn_request:'Request access',
+      btn_request:'Request access', hero_cta:'Access the collection', all_unlocked:'Access granted — all listings unlocked', code_title:'Access code', code_sub:'Enter your code to unlock every property.',
       contact_label:'Contact us', website_label:'Website', legal_label:'Legal',
       pw_eyebrow:'Private portfolio', pw_title:'Enter your access code',
       pw_sub:'Enter your access code to reveal the full details and pricing for this listing.',
@@ -945,10 +982,10 @@
       hero_eyebrow:'Portfólio residencial selecionado',
       hero_headline:'Casas excecionais.<br><em>Vida</em> com critério.',
       hero_sub:'Uma seleção privada de imóveis de gama superior em Lisboa, Cascais e no Algarve — avaliados com rigor, com preço preciso e apresentados a um registo de compradores qualificados.',
-      access_title:'Solicitar acesso',
+      access_title:'Sem código? Solicite acesso',
       access_sub:'Esta seleção é partilhada em regime privado. Deixe os seus dados e entraremos em contacto direto nas próximas 48 horas.',
       label_first:'Nome', label_last:'Apelido', label_email:'Email', label_role:'Função', label_budget:'Intervalo de orçamento',
-      btn_request:'Solicitar acesso',
+      btn_request:'Solicitar acesso', hero_cta:'Aceder à coleção', all_unlocked:'Acesso concedido — todos os imóveis desbloqueados', code_title:'Código de acesso', code_sub:'Introduza o código para desbloquear todos os imóveis.',
       contact_label:'Contacte-nos', website_label:'Website', legal_label:'Legal',
       pw_eyebrow:'Portfólio privado', pw_title:'Introduza o seu código de acesso',
       pw_sub:'Introduza o código de acesso para ver os detalhes completos e o preço deste imóvel.',
