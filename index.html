@@ -493,7 +493,7 @@
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   const SUPABASE_URL  = 'https://mejkdoabupmfwcldysgd.supabase.co';
   const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1lamtkb2FidXBtZndjbGR5c2dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjAwNTQsImV4cCI6MjA5NjY5NjA1NH0.xX4Tmm9ZXtAt-uMtIcsjYxbuLHPPR569zl-z5nv5TWk';
-  const ACCESS_CODE   = 'premium2025';
+  let   ACCESS_CODE   = 'premium2025'; // fallback; the live value comes from site_settings (set in the admin)
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   const { createClient } = supabase;
@@ -504,7 +504,15 @@
   let activeFilter  = 'all';
   let isUnlocked    = sessionStorage.getItem('rep_unlocked') === 'true';
 
+  async function loadAccessCode() {
+    try {
+      const { data, error } = await db.from('site_settings').select('value').eq('key', 'access_code').maybeSingle();
+      if (!error && data) ACCESS_CODE = (data.value || '').trim(); // empty = global code switched off
+    } catch (e) { /* keep fallback */ }
+  }
+
   async function init() {
+    loadAccessCode();
     const { data, error } = await db.from('properties').select('*').eq('active', true).order('created_at', { ascending: false });
     if (error) {
       document.getElementById('listings-grid').innerHTML = '<div class="empty-state"><h3>Unable to load</h3><p>Please refresh the page.</p></div>';
@@ -836,7 +844,7 @@
       unlockedProperties.add(id);
       sessionStorage.setItem('rep_unlocked_ids', JSON.stringify([...unlockedProperties]));
       ok = true;
-    } else if (val === ACCESS_CODE) {
+    } else if (ACCESS_CODE && val === ACCESS_CODE) {
       isUnlocked = true;
       sessionStorage.setItem('rep_unlocked', 'true');
       ok = true;
@@ -885,7 +893,7 @@
   function unlockAll() {
     const input = document.getElementById('global-code');
     const err = document.getElementById('global-error');
-    if (input.value.trim() === ACCESS_CODE) {
+    if (ACCESS_CODE && input.value.trim() === ACCESS_CODE) {
       isUnlocked = true;
       sessionStorage.setItem('rep_unlocked', 'true');
       input.value = '';

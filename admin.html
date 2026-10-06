@@ -71,6 +71,10 @@
     .stat-label { font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--mid); }
 
     /* TABLE */
+    .code-bar { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; background: var(--white); border: 1px solid var(--rule); border-bottom: none; padding: 1rem 1.2rem; }
+    .code-bar-label { flex: 1 1 260px; display: flex; flex-direction: column; gap: 0.2rem; }
+    .code-bar-label label { font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--mid); }
+    .code-bar input { width: 240px; border: none; border-bottom: 1px solid var(--black); padding: 0.5rem 0; font-family: 'Inter', sans-serif; font-size: 0.85rem; letter-spacing: 0.08em; background: transparent; outline: none; }
     .table-wrap { background: var(--white); border: 1px solid var(--rule); overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; }
     th { font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--mid); padding: 0.9rem 1.2rem; text-align: left; border-bottom: 1px solid var(--rule); background: #fafafa; font-weight: 400; }
@@ -230,6 +234,14 @@
       <div class="page-header">
         <div><h1 class="page-title">Properties</h1><p class="page-sub">Manage all listings</p></div>
         <button class="btn btn-primary" onclick="addNewProperty(document.querySelector('[onclick*=\"addNew\"]'))">+ Add property</button>
+      </div>
+      <div class="code-bar">
+        <div class="code-bar-label">
+          <label for="global-code-input">Global access code</label>
+          <span class="field-hint">Unlocks every listing on the site, including ones with their own code. Leave empty to turn it off.</span>
+        </div>
+        <input type="text" id="global-code-input" placeholder="e.g. premium2025" autocomplete="off" onkeydown="if(event.key==='Enter') saveGlobalCode()" />
+        <button class="btn btn-ghost" id="global-code-btn" onclick="saveGlobalCode()">Save code</button>
       </div>
       <div class="table-wrap" id="properties-table"></div>
     </div>
@@ -541,6 +553,25 @@
     const { data } = await db.from('properties').select('*').order('created_at', { ascending: false });
     properties = data || [];
     renderPropertiesTable();
+    loadGlobalCode();
+  }
+
+  // ── GLOBAL ACCESS CODE (one code that unlocks every listing) ──
+  async function loadGlobalCode() {
+    const { data, error } = await db.from('site_settings').select('value').eq('key', 'access_code').maybeSingle();
+    const input = document.getElementById('global-code-input');
+    if (!error && data) input.value = data.value || '';
+    else if (error) input.placeholder = 'Run supabase-migration.sql to enable';
+  }
+
+  async function saveGlobalCode() {
+    const value = document.getElementById('global-code-input').value.trim();
+    const { error } = await db.from('site_settings').upsert({ key: 'access_code', value, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+    if (error) {
+      showToast(/site_settings|relation|schema cache/i.test(error.message) ? 'Run the updated supabase-migration.sql first' : 'Could not save: ' + error.message);
+      return;
+    }
+    showToast(value ? 'Global access code saved' : 'Global access code turned off');
   }
 
 
