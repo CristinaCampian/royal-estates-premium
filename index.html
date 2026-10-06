@@ -171,6 +171,11 @@
     .pw-error { font-size: 15px; color: #4a120c; margin-top: 0.7rem; display: none; }
     .pw-error.show { display: block; }
 
+    /* ── MOBILE MENU: floating button + full-screen menu (phones only) ── */
+    .menu-fab, .menu-overlay { display: none; }
+    .sq { display: inline-block; width: 9px; height: 9px; background: var(--ink); flex-shrink: 0; }
+    .sq.open { background: transparent; border: 1.5px solid var(--ink); box-sizing: border-box; }
+
     /* ── MINIMAL FOOTER BAR ── */
     body { padding-bottom: 58px; }
     .footer-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 260; background: var(--bg); display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; padding: 0 var(--pad); height: 58px; font-size: 15px; letter-spacing: 0.01em; }
@@ -299,6 +304,23 @@
     @media (max-width: 640px) {
       .mosaic { grid-template-columns: 1fr; }
       .tile { aspect-ratio: 1 / 1; padding: 20px; }
+      /* full-bleed page; the footer bar becomes a floating Menu button + full-screen menu */
+      body { padding-bottom: 0; }
+      .footer-bar { display: none; }
+      .contact-overlay, .detail-overlay, .legal-overlay { inset: 0; }
+      .menu-fab { display: flex; align-items: center; gap: 0.6rem; position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 270; background: var(--bg); color: var(--ink); border: none; padding: 0.8rem 1.2rem; font-family: 'Inter', sans-serif; font-size: 17px; letter-spacing: 0.01em; box-shadow: 0 3px 14px rgba(28,26,23,0.22); cursor: pointer; }
+      body:has(.contact-overlay.open, .detail-overlay.open, .legal-overlay.open, .menu-overlay.open) .menu-fab { display: none; }
+      .menu-overlay { display: flex; flex-direction: column; align-items: center; position: fixed; inset: 0; z-index: 275; background: var(--accent); visibility: hidden; opacity: 0; transform: translateY(14px); transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.2,0.7,0.1,1), visibility 0s linear 0.5s; }
+      .menu-overlay.open { visibility: visible; opacity: 1; transform: none; transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.2,0.7,0.1,1), visibility 0s; }
+      .menu-logo { padding: 7vh 0 0; width: 34%; }
+      .menu-logo img { width: 100%; display: block; }
+      .menu-list { list-style: none; margin: auto 0 0; padding: 0; text-align: center; }
+      .menu-list a { display: inline-flex; align-items: center; gap: 0.7rem; font-family: var(--serif); font-size: 30px; line-height: 1; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); text-decoration: none; padding: 0.55rem 0; }
+      .menu-ext { display: flex; gap: 1.4rem; margin: 1.6rem 0 auto; font-size: 15px; }
+      .menu-ext a { color: var(--ink); text-decoration: none; opacity: 0.75; }
+      .menu-bar { align-self: stretch; display: flex; align-items: center; justify-content: space-between; background: var(--bg); padding: 1.3rem 20px calc(1.3rem + env(safe-area-inset-bottom, 0px)); }
+      .menu-bar .footer-mark { display: block; }
+      .menu-close { display: flex; align-items: center; gap: 0.6rem; background: none; border: none; font-family: var(--serif); font-size: 17px; letter-spacing: 0.06em; color: var(--ink); cursor: pointer; }
       /* hero tiles a little shorter so the headline + link sit inside the first screen, like FORA */
       .tile-logo { aspect-ratio: 1 / 0.92; }
       .tile-accent, .tile-deep { aspect-ratio: 1 / 0.84; padding: 22px; }
@@ -372,6 +394,27 @@
     <a href="#contact" id="contact-link" onclick="toggleContact(); return false;" data-i18n="nav_contact">Contact</a>
   </span>
 </footer>
+
+<!-- MOBILE: floating menu button + full-screen menu -->
+<button class="menu-fab" id="menu-fab" onclick="openMenu()" aria-label="Menu"><span class="sq"></span><span data-i18n="menu_label">Menu</span></button>
+<nav class="menu-overlay" id="menu-overlay" aria-hidden="true">
+  <div class="menu-logo"><img src="logo.svg" alt="Royal Estates Premium" /></div>
+  <ul class="menu-list">
+    <li><a href="#" class="current" onclick="menuGo('home'); return false;"><span class="sq"></span><span data-i18n="menu_home">Home</span></a></li>
+    <li><a href="#listings-grid" onclick="menuGo('collection'); return false;" data-i18n="menu_collection">Collection</a></li>
+    <li><a href="#contact" onclick="menuGo('contact'); return false;" data-i18n="nav_contact">Contact</a></li>
+    <li><a href="#" onclick="menuGo('privacy'); return false;" data-i18n="menu_privacy">Privacy</a></li>
+    <li><a href="#" onclick="menuGo('terms'); return false;" data-i18n="menu_terms">Terms</a></li>
+  </ul>
+  <div class="menu-ext">
+    <a href="https://royalestates.pt" target="_blank" rel="noopener">Royal Estates ↗</a>
+    <a href="https://royalestates.luxe" target="_blank" rel="noopener">Royal Estates Luxe ↗</a>
+  </div>
+  <div class="menu-bar">
+    <span class="footer-mark">Royal Estates</span>
+    <button class="menu-close" onclick="closeMenu()"><span class="sq open"></span><span data-i18n="menu_close">Close</span></button>
+  </div>
+</nav>
 
 <!-- CONTACT / REQUEST ACCESS OVERLAY -->
 <section class="contact-overlay" id="contact" aria-hidden="true">
@@ -825,9 +868,26 @@
     document.getElementById('contact-link').classList.remove('open');
   }
 
+  // ── MOBILE MENU ──
+  function openMenu() {
+    const o = document.getElementById('menu-overlay');
+    o.classList.add('open'); o.setAttribute('aria-hidden', 'false');
+  }
+  function closeMenu() {
+    const o = document.getElementById('menu-overlay');
+    o.classList.remove('open'); o.setAttribute('aria-hidden', 'true');
+  }
+  function menuGo(where) {
+    closeMenu();
+    if (where === 'home') window.scrollTo({ top: 0, behavior: 'smooth' });
+    else if (where === 'collection') setTimeout(() => document.getElementById('listings-grid').scrollIntoView({ behavior: 'smooth' }), 60);
+    else if (where === 'contact') openContact();
+    else openLegal(where);
+  }
+
   function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3200); }
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { closeContact(); closeLegal(); closeDetail(); closeFs(); }
+    if (e.key === 'Escape') { closeMenu(); closeContact(); closeLegal(); closeDetail(); closeFs(); }
     if (e.ctrlKey && e.shiftKey && e.key === 'A') {
       e.preventDefault();
       window.location.href = 'admin.html';
@@ -876,7 +936,7 @@
       pw_sub:'Enter your access code to reveal the full details and pricing for this listing.',
       pw_btn:'Unlock listing', pw_error:'Incorrect code.',
       nav_collection:'Collection', nav_contact:'Contact',
-      tile_collection:'Properties Collection', tile_regions:'Lisbon · Cascais · Algarve', private_listing:'Private listing', verified_note:'Reserved for verified clients.', pw_placeholder:'Access code', unlock:'Unlock', d_typology:'Typology', d_area:'Living area', d_gross:'Gross area', d_plot:'Plot', d_beds:'Bedrooms', d_baths:'Bathrooms', d_floor:'Floor', d_year:'Year', d_energy:'Energy', d_exposure:'Exposure', d_feature:'Feature', d_ref:'Reference', d_features:'Features', d_areas:'Areas', d_costs:'Costs', d_imi:'IMI / year', d_imt:'IMT', d_stamp:'Stamp duty', d_nearby:'Nearby', min:'min', brochure:'Download brochure'
+      tile_collection:'Properties Collection', tile_regions:'Lisbon · Cascais · Algarve', private_listing:'Private listing', verified_note:'Reserved for verified clients.', pw_placeholder:'Access code', unlock:'Unlock', menu_label:'Menu', menu_close:'Close', menu_home:'Home', menu_collection:'Collection', menu_privacy:'Privacy', menu_terms:'Terms', d_typology:'Typology', d_area:'Living area', d_gross:'Gross area', d_plot:'Plot', d_beds:'Bedrooms', d_baths:'Bathrooms', d_floor:'Floor', d_year:'Year', d_energy:'Energy', d_exposure:'Exposure', d_feature:'Feature', d_ref:'Reference', d_features:'Features', d_areas:'Areas', d_costs:'Costs', d_imi:'IMI / year', d_imt:'IMT', d_stamp:'Stamp duty', d_nearby:'Nearby', min:'min', brochure:'Download brochure'
     },
     pt: {
       all:'Todos', apartment:'Apartamento', villa:'Moradia', townhouse:'Casa em banda',
@@ -894,7 +954,7 @@
       pw_sub:'Introduza o código de acesso para ver os detalhes completos e o preço deste imóvel.',
       pw_btn:'Desbloquear imóvel', pw_error:'Código incorreto.',
       nav_collection:'Coleção', nav_contact:'Contacto',
-      tile_collection:'Coleção de Imóveis', tile_regions:'Lisboa · Cascais · Algarve', private_listing:'Imóvel privado', verified_note:'Reservado a clientes verificados.', pw_placeholder:'Código de acesso', unlock:'Desbloquear', d_typology:'Tipologia', d_area:'Área útil', d_gross:'Área bruta', d_plot:'Terreno', d_beds:'Quartos', d_baths:'Casas de banho', d_floor:'Piso', d_year:'Ano', d_energy:'Energia', d_exposure:'Exposição', d_feature:'Destaque', d_ref:'Referência', d_features:'Características', d_areas:'Áreas', d_costs:'Custos', d_imi:'IMI / ano', d_imt:'IMT', d_stamp:'Imposto de selo', d_nearby:'Na envolvente', min:'min', brochure:'Descarregar brochura'
+      tile_collection:'Coleção de Imóveis', tile_regions:'Lisboa · Cascais · Algarve', private_listing:'Imóvel privado', verified_note:'Reservado a clientes verificados.', pw_placeholder:'Código de acesso', unlock:'Desbloquear', menu_label:'Menu', menu_close:'Fechar', menu_home:'Início', menu_collection:'Coleção', menu_privacy:'Privacidade', menu_terms:'Termos', d_typology:'Tipologia', d_area:'Área útil', d_gross:'Área bruta', d_plot:'Terreno', d_beds:'Quartos', d_baths:'Casas de banho', d_floor:'Piso', d_year:'Ano', d_energy:'Energia', d_exposure:'Exposição', d_feature:'Destaque', d_ref:'Referência', d_features:'Características', d_areas:'Áreas', d_costs:'Custos', d_imi:'IMI / ano', d_imt:'IMT', d_stamp:'Imposto de selo', d_nearby:'Na envolvente', min:'min', brochure:'Descarregar brochura'
     }
   };
 
