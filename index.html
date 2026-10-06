@@ -194,7 +194,7 @@
     .pw-error.show { display: block; }
 
     /* ── MOBILE MENU: floating button + full-screen menu (phones only) ── */
-    .menu-fab, .menu-overlay { display: none; }
+    .menu-fab, .menu-overlay, .skip-fab { display: none; }
     .sq { display: inline-block; width: 9px; height: 9px; background: var(--ink); flex-shrink: 0; }
     .sq.open { background: transparent; border: 1.5px solid var(--ink); box-sizing: border-box; }
 
@@ -333,7 +333,11 @@
       .footer-bar { display: none; }
       .contact-overlay, .detail-overlay, .legal-overlay { inset: 0; }
       .menu-fab { display: flex; align-items: center; gap: 0.6rem; position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 270; background: var(--bg); color: var(--ink); border: none; padding: 0.8rem 1.2rem; font-family: 'Inter', sans-serif; font-size: 17px; letter-spacing: 0.01em; box-shadow: 0 3px 14px rgba(28,26,23,0.22); cursor: pointer; }
-      body:has(.contact-overlay.open, .detail-overlay.open, .legal-overlay.open, .menu-overlay.open) .menu-fab { display: none; }
+      .skip-fab { display: flex; align-items: center; justify-content: center; position: fixed; right: 16px; bottom: calc(16px + 46px + 8px + env(safe-area-inset-bottom, 0px)); z-index: 270; width: 38px; height: 38px; background: var(--bg); color: var(--ink); border: none; box-shadow: 0 3px 14px rgba(28,26,23,0.22); cursor: pointer; transition: opacity 0.3s ease, transform 0.3s ease; }
+      .skip-fab svg { width: 11px; height: 17px; }
+      .skip-fab.away { opacity: 0; pointer-events: none; transform: translateY(8px); }
+      body:has(.contact-overlay.open, .detail-overlay.open, .legal-overlay.open, .menu-overlay.open) .menu-fab,
+      body:has(.contact-overlay.open, .detail-overlay.open, .legal-overlay.open, .menu-overlay.open) .skip-fab { display: none; }
       .menu-overlay { display: flex; flex-direction: column; align-items: center; position: fixed; inset: 0; z-index: 275; background: var(--accent); visibility: hidden; opacity: 0; transform: translateY(14px); transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.2,0.7,0.1,1), visibility 0s linear 0.5s; }
       .menu-overlay.open { visibility: visible; opacity: 1; transform: none; transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.2,0.7,0.1,1), visibility 0s; }
       .menu-logo { padding: 7vh 0 0; width: 34%; }
@@ -428,6 +432,7 @@
 </footer>
 
 <!-- MOBILE: floating menu button + full-screen menu -->
+<button class="skip-fab" id="skip-fab" onclick="skipToProperties()" aria-label="Skip to properties"><svg viewBox="0 0 12 18" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><path d="M6 0v16M1 11l5 5 5-5"/></svg></button>
 <button class="menu-fab" id="menu-fab" onclick="openMenu()" aria-label="Menu"><span class="sq"></span><span data-i18n="menu_label">Menu</span></button>
 <nav class="menu-overlay" id="menu-overlay" aria-hidden="true">
   <div class="menu-logo"><img src="logo.svg" alt="Royal Estates Premium" /></div>
@@ -950,6 +955,7 @@
       closeContact();
       renderGrid(activeFilter === 'all' ? allProperties : allProperties.filter(p => p.type === activeFilter || p.region === activeFilter));
       showToast(t_('all_unlocked'));
+      if (isPhone()) setTimeout(skipToProperties, 450); // phones: take them straight to the properties
     } else {
       err.classList.add('show');
       input.value = '';
@@ -971,6 +977,20 @@
     const o = document.getElementById('menu-overlay');
     o.classList.remove('open'); o.setAttribute('aria-hidden', 'true');
   }
+  const isPhone = () => window.matchMedia('(max-width: 640px)').matches;
+  function skipToProperties() {
+    document.getElementById('listings-grid').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  // hide the skip button once the visitor is already at the properties
+  function syncSkipButton() {
+    const grid = document.getElementById('listings-grid');
+    const btn = document.getElementById('skip-fab');
+    if (!grid || !btn) return;
+    btn.classList.toggle('away', grid.getBoundingClientRect().top < window.innerHeight * 0.45);
+  }
+  window.addEventListener('scroll', syncSkipButton, { passive: true });
+  window.addEventListener('resize', syncSkipButton);
+
   function menuGo(where) {
     closeMenu();
     if (where === 'home') window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -987,7 +1007,7 @@
       window.location.href = 'admin.html';
     }
   });
-  init().finally(endWelcome);
+  init().finally(() => { endWelcome(); syncSkipButton(); });
 
   function openLegal(page) {
     closeContact(); closeDetail();
