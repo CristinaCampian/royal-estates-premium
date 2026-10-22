@@ -54,13 +54,38 @@
     .t-link { display: inline-flex; align-items: center; gap: 0.6rem; margin-top: 1.4rem; font-size: 15px; letter-spacing: 0.01em; color: var(--ink); text-decoration: none; }
     .t-link .arrow { width: 30px; height: 12px; flex-shrink: 0; transition: transform 0.25s ease; }
     .t-link:hover .arrow { transform: translateX(5px); }
+    .t-link .lock { width: 15px; height: 15px; flex-shrink: 0; }
     .tile-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 
     /* hero tiles */
-    .tile-logo { background: var(--bg); align-items: center; justify-content: center; padding: 0; }
-    .tile-logo img { width: 84%; height: auto; display: block; }
-    .tile-accent { background: var(--accent); }
-    .tile-deep { background: var(--bg-deep); }
+    /* ── LANDING HERO: a full-screen mosaic above the collection ── */
+    .landing { display: grid; grid-template-columns: 1fr 1.3fr 1fr; grid-template-rows: 1fr 1fr; grid-template-areas: "logo photo gold" "logo photo tan"; gap: var(--gap); height: calc(100svh - 58px); min-height: 560px; margin-bottom: var(--gap); }
+    .landing .tile { aspect-ratio: auto; min-height: 0; }
+    .landing.pre .tile { clip-path: inset(100% 0 0 0); }
+    .landing-logo { grid-area: logo; background: var(--bg); align-items: center; justify-content: center; padding: 0; }
+    .landing-logo img { width: 70%; max-width: 560px; height: auto; display: block; translate: 0 var(--ly, 0px); will-change: transform; }
+    .landing-photo { grid-area: photo; background: var(--ink); cursor: pointer; }
+    .landing-gold { grid-area: gold; background: var(--accent); }
+    .landing-tan { grid-area: tan; background: var(--bg-deep); }
+    .slides { position: absolute; inset: -6% 0; translate: 0 var(--py, 0px); will-change: transform; }
+    .slide { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transform: scale(1.06); transition: opacity 1.4s ease, transform 9s linear; }
+    .slide.on { opacity: 1; transform: scale(1); }
+    .empty-msg { display: none; position: absolute; inset: 0; align-items: center; justify-content: center; padding: var(--pad); text-align: center; font-family: var(--serif); font-size: clamp(24px, 2.4vw, 35px); letter-spacing: 0.024em; }
+    .landing-photo.empty { background: var(--bg-deep); cursor: default; }
+    .landing-photo.empty .empty-msg { display: flex; }
+    .landing-photo.empty .tile-top, .landing-photo.empty .tile-bottom, .landing-photo.empty .hero-count { display: none; }
+    .hero-count { position: absolute; right: var(--pad); bottom: var(--pad); z-index: 2; pointer-events: none; font-family: var(--serif); letter-spacing: 0.1em; }
+    .landing .hero-headline { font-size: clamp(32px, 3.1vw, 54px); }
+    .landing .hero-headline .ln { display: block; overflow: hidden; padding-bottom: 0.12em; margin-bottom: -0.12em; }
+    .landing .hero-headline .ln > span { display: inline-block; }
+    .landing .tan-title { font-size: clamp(28px, 2.6vw, 44px); }
+    .hero-explore { display: inline-flex; align-items: center; justify-content: center; background: none; border: none; color: var(--ink); cursor: pointer; padding: 8px; }
+    .hero-explore svg { width: 54px; height: 27px; display: block; animation: chevronDrop 2.2s ease-in-out infinite; }
+    .hero-explore-m { display: none; }
+    .menu-top { display: none; }
+    .landing-gold > div { position: relative; }
+    @keyframes chevronDrop { 0%, 100% { transform: translateY(-4px); opacity: 0.45; } 50% { transform: translateY(8px); opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) { .hero-explore svg { animation: none; opacity: 1; } .slide { transition: opacity 0.6s ease; transform: none; } .slide.on { transform: none; } }
 
     .lang-switch { display: flex; align-items: center; gap: 0.5rem; font-size: 15px; }
     .lang-opt { background: none; border: none; font: inherit; letter-spacing: 0.01em; color: var(--mid); cursor: pointer; padding: 0; transition: color 0.15s; }
@@ -194,7 +219,7 @@
     .pw-error.show { display: block; }
 
     /* ── MOBILE MENU: floating button + full-screen menu (phones only) ── */
-    .menu-fab, .menu-overlay, .scroll-cue { display: none; }
+    .menu-fab, .menu-overlay { display: none; }
     .sq { display: inline-block; width: 9px; height: 9px; background: var(--ink); flex-shrink: 0; }
     .sq.open { background: transparent; border: 1.5px solid var(--ink); box-sizing: border-box; }
 
@@ -311,6 +336,11 @@
 
     @media (max-width: 980px) {
       .mosaic { grid-template-columns: repeat(2, 1fr); }
+      .landing { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr auto; grid-template-areas: "logo photo" "gold photo" "tan tan"; }
+      .landing-tan { flex-direction: row; align-items: center; justify-content: space-between; padding: 12px 22px; }
+      .landing-tan .tan-brand, .landing-tan .tan-title, .landing-tan .tan-regions { display: none; }
+      .landing-tan .tan-bottom { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+      .hero-explore svg { width: 40px; height: 20px; }
       .detail-modal { grid-template-columns: 1fr; }
       .detail-media { min-height: 260px; max-height: 320px; }
       .contact-overlay { grid-template-columns: minmax(0,1fr); overflow-y: auto; overflow-x: hidden; }
@@ -332,7 +362,21 @@
       body { padding-bottom: 0; }
       .footer-bar { display: none; }
       .contact-overlay, .detail-overlay, .legal-overlay { inset: 0; }
-      .menu-fab { display: flex; align-items: center; gap: 0.6rem; position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 270; background: var(--bg); color: var(--ink); border: none; padding: 0.8rem 1.2rem; font-family: 'Inter', sans-serif; font-size: 17px; letter-spacing: 0.01em; box-shadow: 0 3px 14px rgba(28,26,23,0.22); cursor: pointer; }
+      .menu-fab { display: flex; align-items: center; gap: 0.6rem; position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 270; background: var(--bg); color: var(--ink); border: none; padding: 0.8rem 1.2rem; font-family: 'Inter', sans-serif; font-size: 17px; letter-spacing: 0.01em; box-shadow: 0 3px 14px rgba(28,26,23,0.22); cursor: pointer; opacity: 0; pointer-events: none; transform: translateY(10px); transition: opacity 0.3s ease, transform 0.3s ease; }
+      .menu-fab.show { opacity: 1; pointer-events: auto; transform: none; }
+      .menu-top { display: flex; flex-direction: column; align-items: flex-end; gap: 20px; position: static; margin: 0 -8px 0 0; padding: 8px; background: none; border: none; color: var(--ink); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+      /* cascading bars (long / medium / short, right-aligned); they even out to full width while pressed */
+      .burger { display: flex; flex-direction: column; align-items: flex-end; gap: 18px; width: 92px; }
+      .burger i { display: block; height: 6px; background: var(--ink); border-radius: 3px; transition: width 0.45s cubic-bezier(0.2, 0.7, 0.1, 1); }
+      .burger i:nth-child(1) { width: 100%; }
+      .burger i:nth-child(2) { width: 66%; }
+      .burger i:nth-child(3) { width: 36%; }
+      .menu-top:active .burger i, .menu-fab:active .burger i { width: 100%; }
+      .menu-word { font-family: var(--serif); font-size: 20px; line-height: 1; letter-spacing: 0.3em; margin-right: -0.3em; text-transform: uppercase; }
+      .burger.mini { width: 24px; gap: 4px; }
+      .burger.mini i { height: 2px; border-radius: 1px; }
+      .menu-fab { gap: 0.9rem; }
+      .menu-fab .menu-word { font-size: 15px; letter-spacing: 0.24em; margin-right: -0.24em; }
       body:has(.contact-overlay.open, .detail-overlay.open, .legal-overlay.open, .menu-overlay.open) .menu-fab { display: none; }
       .menu-overlay { display: flex; flex-direction: column; align-items: center; position: fixed; inset: 0; z-index: 275; background: var(--accent); visibility: hidden; opacity: 0; transform: translateY(14px); transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.2,0.7,0.1,1), visibility 0s linear 0.5s; }
       .menu-overlay.open { visibility: visible; opacity: 1; transform: none; transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.2,0.7,0.1,1), visibility 0s; }
@@ -340,21 +384,30 @@
       .menu-logo img { width: 100%; display: block; }
       .menu-list { list-style: none; margin: auto 0 0; padding: 0; text-align: center; }
       .menu-list a { display: inline-flex; align-items: center; gap: 0.7rem; font-family: var(--serif); font-size: 30px; line-height: 1; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); text-decoration: none; padding: 0.55rem 0; }
-      .menu-ext { display: flex; gap: 1.4rem; margin: 1.6rem 0 auto; font-size: 15px; }
+      .menu-lang { display: flex; align-items: center; gap: 0.8rem; margin-top: 1.6rem; font-family: var(--serif); font-size: 20px; letter-spacing: 0.08em; }
+      .menu-lang .lang-opt { font-family: var(--serif); font-size: 20px; letter-spacing: 0.08em; color: var(--ink); opacity: 0.55; }
+      .menu-lang .lang-opt.active { opacity: 1; font-weight: 400; text-decoration: underline; text-underline-offset: 6px; }
+      .menu-lang .lang-sep { opacity: 0.4; }
+      .menu-ext { display: flex; gap: 1.4rem; margin: 1.4rem 0 auto; font-size: 15px; }
       .menu-ext a { display: inline-flex; align-items: center; gap: 0.45rem; color: var(--ink); text-decoration: none; opacity: 0.75; }
       .menu-ext .ext { width: 10px; height: 10px; }
       .menu-bar { align-self: stretch; display: flex; align-items: center; justify-content: space-between; background: var(--bg); padding: 1.3rem 20px calc(1.3rem + env(safe-area-inset-bottom, 0px)); }
       .menu-bar .footer-mark { display: block; }
       .menu-close { display: flex; align-items: center; gap: 0.6rem; background: none; border: none; font-family: var(--serif); font-size: 17px; letter-spacing: 0.06em; color: var(--ink); cursor: pointer; }
-      .scroll-cue { display: flex; align-items: flex-end; justify-content: center; position: absolute; left: 50%; bottom: 4px; transform: translateX(-50%); width: 56px; height: 44px; padding: 0 0 6px; background: none; border: none; color: var(--ink); cursor: pointer; }
-      .scroll-cue svg { width: 11px; height: 17px; animation: cueFloat 2.4s ease-in-out infinite; }
-      @keyframes cueFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(5px); } }
-      @media (prefers-reduced-motion: reduce) { .scroll-cue svg { animation: none; } }
-      /* hero tiles a little shorter so the headline + link sit inside the first screen, like FORA */
-      .tile-logo { aspect-ratio: 1 / 0.92; }
-      .tile-accent, .tile-deep { aspect-ratio: 1 / 0.84; padding: 22px; }
-      .tile-accent .t-cap, .tile-deep .t-cap { font-size: 17px; }
-      .tile-accent .t-link { font-size: 17px; margin-top: 1.1rem; }
+      /* landing hero fills the first screen: logo / photo / headline, with a slim bar for language + explore */
+      .landing { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 30fr) minmax(0, 34fr) minmax(190px, 36fr); grid-template-areas: "logo" "photo" "gold"; height: 100svh; min-height: 640px; }
+      .landing .tile { padding: 20px; }
+      .landing .landing-logo { padding: 0 12px; flex-direction: row; align-items: center; justify-content: space-between; } /* logo hard left, menu hard right, same centre line */
+      /* iPhone Safari draws a ~57px cream status-bar strip above the page; lift the header so it looks centred in the cream you actually see */
+      .landing-logo img, .menu-top { position: relative; top: -12%; }
+      .landing-logo img { width: auto; height: 55.5%; max-width: 50%; }
+      .landing-gold { padding: 22px; }
+      .landing-gold .t-cap { font-size: 17px; }
+      .landing-gold .t-link { font-size: 17px; margin-top: 1.1rem; }
+      .landing-tan { display: none; }
+      .hero-explore-m { display: inline-flex; position: absolute; right: 0; top: calc(50% - 19px); }
+      .hero-explore-m svg { width: 44px; height: 22px; }
+      .hero-count { right: 20px; bottom: 20px; }
       .tile-top, .tile-bottom { left: 20px; right: 20px; }
       .tile-top { top: 20px; }
       .tile-bottom { bottom: 20px; }
@@ -382,34 +435,46 @@
 </div>
 <noscript><style>.welcome { display: none; } body.welcoming { overflow: auto; }</style></noscript>
 
-<!-- HERO MOSAIC -->
-<header class="mosaic hero">
-  <div class="tile tile-logo">
+<!-- LANDING HERO -->
+<header class="landing pre" id="landing">
+  <div class="tile landing-logo">
     <img src="logo.svg" alt="Royal Estates Premium" />
-    <button class="scroll-cue" onclick="skipToProperties()" aria-label="Skip to properties"><svg viewBox="0 0 12 18" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><path d="M6 0v16M1 11l5 5 5-5"/></svg></button>
+    <button class="menu-top fade-up" id="menu-top" onclick="openMenu()" aria-label="Menu"><span class="burger" aria-hidden="true"><i></i><i></i><i></i></span><span class="menu-word" data-i18n="menu_label">Menu</span></button>
   </div>
 
-  <div class="tile tile-accent">
-    <span class="t-cap hero-eyebrow">Curated residential portfolio</span>
+  <div class="tile landing-photo empty" id="landing-photo" onclick="heroOpen()">
+    <div class="slides" id="hero-slides"></div>
+    <div class="empty-msg" data-i18n="hero_private">A private collection</div>
+    <div class="tile-top fade-up"><span class="tag" data-i18n="hero_featured">Featured</span></div>
+    <div class="tile-bottom fade-up">
+      <span class="tag tag-title" id="hero-cap-title"></span>
+      <span class="tag" id="hero-cap-loc"></span>
+    </div>
+    <span class="tag hero-count fade-up"><span id="hero-idx">01</span>&nbsp;/&nbsp;<span id="hero-total">00</span></span>
+  </div>
+
+  <div class="tile landing-gold">
+    <span class="t-cap hero-eyebrow fade-up">Curated residential portfolio</span>
     <div>
-      <h1 class="t-display hero-headline">Exceptional homes.<br><em>Considered</em> living.</h1>
-      <a class="t-link" href="#contact" onclick="openContact('code'); return false;"><span data-i18n="hero_cta">Access the collection</span> <svg class="arrow" viewBox="0 0 30 12" fill="none" stroke="currentColor" stroke-width="1.1" aria-hidden="true"><path d="M0 6h28M23 1l5 5-5 5"/></svg></a>
+      <h1 class="t-display hero-headline"><span class="ln"><span>Exceptional homes.</span></span><span class="ln"><span>Considered living.</span></span></h1>
+      <button class="hero-explore hero-explore-m fade-up" onclick="skipToProperties()" aria-label="Scroll to the properties"><svg viewBox="0 0 40 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="square" aria-hidden="true"><path d="M2 3l18 14L38 3"/></svg></button>
+      <a class="t-link fade-up" href="#contact" onclick="openContact('code'); return false;"><span data-i18n="hero_cta">Access the collection</span> <svg class="lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="11"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg></a>
     </div>
   </div>
 
-  <div class="tile tile-deep">
-    <div class="tile-row">
-      <span class="t-cap">Royal Estates Premium</span>
+  <div class="tile landing-tan">
+    <div class="tile-row tan-top fade-up">
+      <span class="t-cap tan-brand">Royal Estates Premium</span>
       <span class="lang-switch">
         <button class="lang-opt active" onclick="setLang('en', this)">EN</button>
         <span class="lang-sep">|</span>
         <button class="lang-opt" onclick="setLang('pt', this)">PT</button>
       </span>
     </div>
-    <h2 class="t-display t-center" data-i18n="tile_collection">Properties Collection</h2>
-    <div class="tile-row">
-      <span class="t-cap" data-i18n="tile_regions">Lisbon · Cascais · Algarve</span>
-      <span class="t-cap">Portugal</span>
+    <h2 class="t-display t-center tan-title fade-up" data-i18n="tile_collection">Properties Collection</h2>
+    <div class="tile-row tan-bottom fade-up">
+      <span class="t-cap tan-regions" data-i18n="tile_regions">Lisbon · Cascais · Algarve</span>
+      <button class="hero-explore" onclick="skipToProperties()" aria-label="Scroll to the properties"><svg viewBox="0 0 40 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="square" aria-hidden="true"><path d="M2 3l18 14L38 3"/></svg></button>
     </div>
   </div>
 </header>
@@ -433,7 +498,7 @@
 </footer>
 
 <!-- MOBILE: floating menu button + full-screen menu -->
-<button class="menu-fab" id="menu-fab" onclick="openMenu()" aria-label="Menu"><span class="sq"></span><span data-i18n="menu_label">Menu</span></button>
+<button class="menu-fab" id="menu-fab" onclick="openMenu()" aria-label="Menu"><span class="burger mini" aria-hidden="true"><i></i><i></i><i></i></span><span class="menu-word" data-i18n="menu_label">Menu</span></button>
 <nav class="menu-overlay" id="menu-overlay" aria-hidden="true">
   <div class="menu-logo"><img src="logo.svg" alt="Royal Estates Premium" /></div>
   <ul class="menu-list">
@@ -443,6 +508,11 @@
     <li><a href="#" onclick="menuGo('privacy'); return false;" data-i18n="menu_privacy">Privacy</a></li>
     <li><a href="#" onclick="menuGo('terms'); return false;" data-i18n="menu_terms">Terms</a></li>
   </ul>
+  <div class="menu-lang">
+    <button class="lang-opt active" onclick="setLang('en', this)">EN</button>
+    <span class="lang-sep">|</span>
+    <button class="lang-opt" onclick="setLang('pt', this)">PT</button>
+  </div>
   <div class="menu-ext">
     <a href="https://royalestates.pt" target="_blank" rel="noopener">Royal Estates <svg class="ext" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.1" aria-hidden="true"><path d="M2 10L10 2M4 2h6v6"/></svg></a>
     <a href="https://royalestates.luxe" target="_blank" rel="noopener">Royal Estates Luxe <svg class="ext" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.1" aria-hidden="true"><path d="M2 10L10 2M4 2h6v6"/></svg></a>
@@ -523,6 +593,7 @@
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script>
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   const SUPABASE_URL  = 'https://mejkdoabupmfwcldysgd.supabase.co';
@@ -537,6 +608,82 @@
   let currentLang = 'en';
   let activeFilter  = 'all';
   let isUnlocked    = sessionStorage.getItem('rep_unlocked') === 'true';
+
+  // ── LANDING HERO: photo slideshow + entrance ──
+  const heroState = { slides: [], i: 0, timer: null, played: false, visible: true };
+  const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // slideshow uses only listings that are already public (never the locked ones)
+  function buildHeroSlides() {
+    const wrap = document.getElementById('hero-slides');
+    const tile = document.getElementById('landing-photo');
+    if (!wrap || !tile) return;
+    const open = allProperties.filter(p => !(p.is_locked && !isUnlocked && !unlockedProperties.has(p.id)));
+    const slides = [];
+    open.forEach(p => {
+      const imgs = (p.images && p.images.length) ? p.images : (p.image_url ? [p.image_url] : []);
+      imgs.slice(0, 3).forEach(path => slides.push({ id: p.id, path }));
+    });
+    heroState.slides = slides.slice(0, 6);
+    clearInterval(heroState.timer);
+    tile.classList.toggle('empty', !heroState.slides.length);
+    wrap.innerHTML = heroState.slides.map((sl, i) => `<img class="slide" src="${imgUrl(sl.path)}" alt="" ${i ? 'loading="lazy"' : ''} />`).join('');
+    document.getElementById('hero-total').textContent = String(heroState.slides.length).padStart(2, '0');
+    heroState.i = 0;
+    if (heroState.slides.length) heroShow(0);
+    if (heroState.slides.length > 1 && !reducedMotion()) heroState.timer = setInterval(heroTick, 5200);
+  }
+  function heroTick() {
+    if (document.hidden || !heroState.visible || !heroState.slides.length) return;
+    heroShow((heroState.i + 1) % heroState.slides.length);
+  }
+  function heroShow(i) {
+    const sl = heroState.slides[i];
+    if (!sl) return;
+    heroState.i = i;
+    document.querySelectorAll('#hero-slides .slide').forEach((el, k) => el.classList.toggle('on', k === i));
+    const p = allProperties.find(x => x.id === sl.id);
+    if (!p) return;
+    document.getElementById('hero-cap-title').textContent = propTitle(p);
+    const city = splitLocation(p).city;
+    const locEl = document.getElementById('hero-cap-loc');
+    locEl.textContent = city; locEl.style.display = city ? '' : 'none';
+    document.getElementById('hero-idx').textContent = String(i + 1).padStart(2, '0');
+  }
+  function heroOpen() {
+    const sl = heroState.slides[heroState.i];
+    if (sl) openDetail(sl.id);
+  }
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(es => { heroState.visible = es[0].isIntersecting; }).observe(document.getElementById('landing'));
+  }
+
+  function startHeroIntro() {
+    if (heroState.played) return;
+    heroState.played = true;
+    const L = document.getElementById('landing');
+    if (!L) return;
+    if (!window.gsap || reducedMotion()) { L.classList.remove('pre'); return; }
+    const tl = gsap.timeline({ defaults: { ease: 'power3.out' }, onComplete: () => gsap.set('#landing .tile', { clearProps: 'clipPath' }) });
+    tl.fromTo('#landing .tile', { clipPath: 'inset(100% 0% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.15, ease: 'power4.inOut', stagger: 0.12 }, 0)
+      .fromTo('.landing-logo img', { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 1.3 }, 0.4)
+      .fromTo('#hero-slides', { scale: 1.16 }, { scale: 1, duration: 2, ease: 'power2.out' }, 0.1)
+      .fromTo('.hero-headline .ln > span', { yPercent: 115 }, { yPercent: 0, duration: 1.05, stagger: 0.14 }, 0.8)
+      .fromTo('#landing .fade-up', { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, stagger: 0.07 }, 1.0);
+    L.classList.remove('pre');
+    // gentle parallax on scroll (plain listener: ScrollTrigger interfered with smooth scrolling to the properties)
+    let ticking = false;
+    window.addEventListener('scroll', () => {
+      if (ticking || !heroState.visible) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const y = Math.min(window.scrollY, window.innerHeight);
+        L.style.setProperty('--py', (y * 0.07).toFixed(1) + 'px');
+        L.style.setProperty('--ly', (-y * 0.06).toFixed(1) + 'px');
+        ticking = false;
+      });
+    }, { passive: true });
+  }
 
   // ── WELCOME SCREEN: shown at least ~1.8s, and until the collection has loaded (max 6s) ──
   const welcomeStart = Date.now();
@@ -553,6 +700,7 @@
     setTimeout(() => {
       w.classList.add('out');
       document.body.classList.remove('welcoming');
+      setTimeout(startHeroIntro, 350);
       setTimeout(() => w.remove(), 1100);
     }, Math.max(0, 1800 - (Date.now() - welcomeStart)));
   }
@@ -574,6 +722,7 @@
     }
     allProperties = data || [];
     renderGrid(allProperties);
+    buildHeroSlides();
   }
 
   function imgUrl(path) { return `${SUPABASE_URL}/storage/v1/object/public/property-images/${path}`; }
@@ -906,6 +1055,7 @@
 
     if (ok) {
       renderGrid(activeFilter === 'all' ? allProperties : allProperties.filter(p => p.type === activeFilter || p.region === activeFilter));
+      buildHeroSlides();
       openDetail(id);
       showToast('Listing unlocked');
     } else {
@@ -954,6 +1104,7 @@
       err.classList.remove('show');
       closeContact();
       renderGrid(activeFilter === 'all' ? allProperties : allProperties.filter(p => p.type === activeFilter || p.region === activeFilter));
+      buildHeroSlides();
       showToast(t_('all_unlocked'));
       if (isPhone()) setTimeout(skipToProperties, 450); // phones: take them straight to the properties
     } else {
@@ -977,6 +1128,13 @@
     const o = document.getElementById('menu-overlay');
     o.classList.remove('open'); o.setAttribute('aria-hidden', 'true');
   }
+  (function () {
+    const top = document.getElementById('menu-top'), fab = document.getElementById('menu-fab');
+    if (!top || !fab) return;
+    if (!('IntersectionObserver' in window)) { fab.classList.add('show'); return; }
+    new IntersectionObserver(es => fab.classList.toggle('show', !es[0].isIntersecting)).observe(top);
+  })();
+
   const isPhone = () => window.matchMedia('(max-width: 640px)').matches;
   function skipToProperties() {
     document.getElementById('listings-grid').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -998,6 +1156,8 @@
     }
   });
   init().finally(endWelcome);
+  if (document.documentElement.classList.contains('skip-welcome')) startHeroIntro(); // quick reload: no welcome screen, go straight in
+  setTimeout(startHeroIntro, 7000); // safety net
 
   function openLegal(page) {
     closeContact(); closeDetail();
@@ -1040,7 +1200,7 @@
       pw_sub:'Enter your access code to reveal the full details and pricing for this listing.',
       pw_btn:'Unlock listing', pw_error:'Incorrect code.',
       nav_collection:'Collection', nav_contact:'Contact',
-      tile_collection:'Properties Collection', tile_regions:'Lisbon · Cascais · Algarve', private_listing:'Private listing', verified_note:'Reserved for verified clients.', pw_placeholder:'Access code', unlock:'Unlock', menu_label:'Menu', menu_close:'Close', menu_home:'Home', menu_collection:'Collection', menu_privacy:'Privacy', menu_terms:'Terms', d_typology:'Typology', d_area:'Living area', d_gross:'Gross area', d_plot:'Plot', d_beds:'Bedrooms', d_baths:'Bathrooms', d_floor:'Floor', d_year:'Year', d_energy:'Energy', d_exposure:'Exposure', d_feature:'Feature', d_ref:'Reference', d_features:'Features', d_areas:'Areas', d_costs:'Costs', d_imi:'IMI / year', d_imt:'IMT', d_stamp:'Stamp duty', d_nearby:'Nearby', min:'min', brochure:'Download brochure'
+      tile_collection:'Properties Collection', tile_regions:'Lisbon · Cascais · Algarve', private_listing:'Private listing', verified_note:'Reserved for verified clients.', pw_placeholder:'Access code', unlock:'Unlock', hero_featured:'Featured', hero_explore:'Explore', hero_private:'A private collection', menu_label:'Menu', menu_close:'Close', menu_home:'Home', menu_collection:'Collection', menu_privacy:'Privacy', menu_terms:'Terms', d_typology:'Typology', d_area:'Living area', d_gross:'Gross area', d_plot:'Plot', d_beds:'Bedrooms', d_baths:'Bathrooms', d_floor:'Floor', d_year:'Year', d_energy:'Energy', d_exposure:'Exposure', d_feature:'Feature', d_ref:'Reference', d_features:'Features', d_areas:'Areas', d_costs:'Costs', d_imi:'IMI / year', d_imt:'IMT', d_stamp:'Stamp duty', d_nearby:'Nearby', min:'min', brochure:'Download brochure'
     },
     pt: {
       all:'Todos', apartment:'Apartamento', villa:'Moradia', townhouse:'Casa em banda',
@@ -1058,7 +1218,7 @@
       pw_sub:'Introduza o código de acesso para ver os detalhes completos e o preço deste imóvel.',
       pw_btn:'Desbloquear imóvel', pw_error:'Código incorreto.',
       nav_collection:'Coleção', nav_contact:'Contacto',
-      tile_collection:'Coleção de Imóveis', tile_regions:'Lisboa · Cascais · Algarve', private_listing:'Imóvel privado', verified_note:'Reservado a clientes verificados.', pw_placeholder:'Código de acesso', unlock:'Desbloquear', menu_label:'Menu', menu_close:'Fechar', menu_home:'Início', menu_collection:'Coleção', menu_privacy:'Privacidade', menu_terms:'Termos', d_typology:'Tipologia', d_area:'Área útil', d_gross:'Área bruta', d_plot:'Terreno', d_beds:'Quartos', d_baths:'Casas de banho', d_floor:'Piso', d_year:'Ano', d_energy:'Energia', d_exposure:'Exposição', d_feature:'Destaque', d_ref:'Referência', d_features:'Características', d_areas:'Áreas', d_costs:'Custos', d_imi:'IMI / ano', d_imt:'IMT', d_stamp:'Imposto de selo', d_nearby:'Na envolvente', min:'min', brochure:'Descarregar brochura'
+      tile_collection:'Coleção de Imóveis', tile_regions:'Lisboa · Cascais · Algarve', private_listing:'Imóvel privado', verified_note:'Reservado a clientes verificados.', pw_placeholder:'Código de acesso', unlock:'Desbloquear', hero_featured:'Em destaque', hero_explore:'Explorar', hero_private:'Uma coleção privada', menu_label:'Menu', menu_close:'Fechar', menu_home:'Início', menu_collection:'Coleção', menu_privacy:'Privacidade', menu_terms:'Termos', d_typology:'Tipologia', d_area:'Área útil', d_gross:'Área bruta', d_plot:'Terreno', d_beds:'Quartos', d_baths:'Casas de banho', d_floor:'Piso', d_year:'Ano', d_energy:'Energia', d_exposure:'Exposição', d_feature:'Destaque', d_ref:'Referência', d_features:'Características', d_areas:'Áreas', d_costs:'Custos', d_imi:'IMI / ano', d_imt:'IMT', d_stamp:'Imposto de selo', d_nearby:'Na envolvente', min:'min', brochure:'Descarregar brochura'
     }
   };
 
@@ -1066,8 +1226,8 @@
 
   function setLang(lang, btn) {
     currentLang = lang;
-    document.querySelectorAll('.lang-opt').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+    // keep every EN | PT switch (hero strip on tablet, phone menu) in sync
+    document.querySelectorAll('.lang-opt').forEach(b => b.classList.toggle('active', b.textContent.trim().toLowerCase() === lang));
     const t = T[lang];
     document.querySelectorAll('[data-i18n]').forEach(el => { if (t[el.dataset.i18n]) el.textContent = t[el.dataset.i18n]; });
 
@@ -1083,7 +1243,7 @@
     const headline = document.querySelector('.hero-headline');
     const sub = document.querySelector('.hero-sub');
     if (eyebrow) eyebrow.textContent = t.hero_eyebrow;
-    if (headline) headline.innerHTML = t.hero_headline;
+    if (headline) headline.innerHTML = t.hero_headline.split('<br>').map(l => `<span class="ln"><span>${l}</span></span>`).join('');
     if (sub) sub.textContent = t.hero_sub;
 
     const fieldLabels = document.querySelectorAll('.access-form .field label');
@@ -1092,6 +1252,8 @@
 
     const submitBtn = document.querySelector('.form-submit');
     if (submitBtn) submitBtn.textContent = t.btn_request;
+
+    if (heroState.slides.length) heroShow(heroState.i);
 
     // Re-render listings so descriptions switch language
     const filtered = activeFilter === 'all' ? allProperties : allProperties.filter(p => (p.type||'').toLowerCase() === activeFilter || (p.region||'').toLowerCase() === activeFilter);
