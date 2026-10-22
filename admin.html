@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>REP Admin</title>
+  <meta name="robots" content="noindex, nofollow" />
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="icon" href="favicon-48.png" sizes="48x48" type="image/png" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
@@ -421,7 +422,65 @@
           </div>
         </div>
         <div style="margin-top:1.2rem;margin-bottom:1.2rem;border-top:1px solid var(--rule)"></div>
+        <div class="form-grid">
+          <div class="field form-full">
+            <label>Extra facts <span class="lang-tag" style="color:var(--accent)">(EN)</span></label>
+            <textarea id="d-facts" placeholder="Land | 66.5 ha&#10;Divisions | 13&#10;Footprint | 888 m²&#10;Vineyard | On request" style="min-height:110px"></textarea>
+            <span class="field-hint">One per line: label | value. They appear in the facts grid on the site. Use the Português tab for the Portuguese wording.</span>
+          </div>
+          <div class="field">
+            <label>Red grape varieties</label>
+            <textarea id="d-grapes-red" placeholder="Touriga Nacional&#10;Aragonês" style="min-height:90px"></textarea>
+            <span class="field-hint">One per line or comma-separated. Grape names are the same in both languages.</span>
+          </div>
+          <div class="field">
+            <label>White grape varieties</label>
+            <textarea id="d-grapes-white" placeholder="Verdelho&#10;Arinto" style="min-height:90px"></textarea>
+          </div>
+        </div>
+        <div style="margin-top:1.2rem;margin-bottom:1.2rem;border-top:1px solid var(--rule)"></div>
+        <div class="form-grid-3">
+          <div class="field">
+            <label>Photo credit</label>
+            <input type="text" id="d-credit" placeholder="Ethan Campian" />
+          </div>
+          <div class="field">
+            <label>Contact – name</label>
+            <input type="text" id="d-contact-name" placeholder="Cristina Sava" />
+          </div>
+          <div class="field">
+            <label>Contact – phone</label>
+            <input type="text" id="d-contact-phone" placeholder="+351 964 480 198" />
+          </div>
+          <div class="field">
+            <label>Contact – email</label>
+            <input type="text" id="d-contact-email" placeholder="info@royalestates.pt" />
+          </div>
+          <div class="field" style="grid-column: span 2">
+            <label>File name prefix</label>
+            <input type="text" id="d-prefix" placeholder="quinta-das-flores" />
+            <span class="field-hint">Photos and brochures are saved as prefix-01-xxxxx.jpg. The random ending keeps the web addresses unguessable. Empty = the English title.</span>
+          </div>
+        </div>
+        <div class="form-grid" style="margin-top:1.2rem">
+          <div class="field">
+            <label>Brochure PDF – English</label>
+            <input type="file" id="d-brochure-en" accept="application/pdf" />
+            <span class="field-hint" id="d-brochure-en-cur"></span>
+          </div>
+          <div class="field">
+            <label>Brochure PDF – Português</label>
+            <input type="file" id="d-brochure-pt" accept="application/pdf" />
+            <span class="field-hint" id="d-brochure-pt-cur"></span>
+          </div>
+          <span class="field-hint form-full" style="margin-top:-0.4rem">If you attach a brochure here, the site shows your PDF(s) and the automatic brochure is not generated for this listing.</span>
+        </div>
+        <div style="margin-top:1.2rem;margin-bottom:1.2rem;border-top:1px solid var(--rule)"></div>
         <div style="display:flex; gap:2.5rem; flex-wrap:wrap; margin-top:0.5rem;">
+          <div class="toggle-row">
+            <label class="toggle"><input type="checkbox" id="f-offmarket" onchange="if(this.checked) document.getElementById('f-locked').checked = true" /><div class="toggle-track"></div></label>
+            <span class="toggle-label">Off-market (left out of the page entirely until a visitor unlocks it)</span>
+          </div>
           <div class="toggle-row">
             <label class="toggle"><input type="checkbox" id="f-locked" checked /><div class="toggle-track"></div></label>
             <span class="toggle-label">Lock listing (password required)</span>
@@ -783,17 +842,16 @@
   // ── MULTI-PHOTO MANAGEMENT ──
   let photoList = []; // { file, preview, path, isCover }
 
-  function addPhotos(e) {
+  // files are read one after another so the order you select them in is the order they land in
+  async function addPhotos(e) {
     const files = Array.from(e.target.files);
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = ev => {
-        photoList.push({ file, preview: ev.target.result, path: null, isCover: photoList.length === 0 });
-        renderPhotoGrid();
-      };
-      reader.readAsDataURL(file);
-    });
     e.target.value = '';
+    const read = f => new Promise(res => { const r = new FileReader(); r.onload = ev => res(ev.target.result); r.readAsDataURL(f); });
+    for (const file of files) {
+      const preview = await read(file);
+      photoList.push({ file, preview, path: null, isCover: photoList.length === 0 });
+    }
+    renderPhotoGrid();
   }
 
   function renderPhotoGrid() {
@@ -864,10 +922,10 @@
 
   // ── FORM LANGUAGE TOGGLE (title / feature / description) ──
   let formLang = 'en';
-  const emptyLang = () => ({title:'',feature:'',desc:'',exposure:'',features:'',areas:'',nearby:''});
+  const emptyLang = () => ({title:'',feature:'',desc:'',exposure:'',features:'',areas:'',nearby:'',facts:''});
   let formI18n = { en: emptyLang(), pt: emptyLang() };
 
-  const LANG_DETAIL_IDS = [['exposure','d-exposure'],['features','d-features'],['areas','d-areas'],['nearby','d-nearby']];
+  const LANG_DETAIL_IDS = [['exposure','d-exposure'],['features','d-features'],['areas','d-areas'],['nearby','d-nearby'],['facts','d-facts']];
 
   function captureFormLangFields() {
     formI18n[formLang].title   = document.getElementById('f-title').value;
@@ -916,6 +974,11 @@
   const parseNearby = str => splitLines(str).map(l => { const [m, n] = l.split('|').map(x => x.trim()); return { min: Number(m) || 0, n: n || '' }; }).filter(a => a.n);
   const areasToText = a => (a || []).map(x => x.n + (x.m ? ' | ' + x.m : '')).join('\n');
   const nearbyToText = a => (a || []).map(x => x.min + ' | ' + x.n).join('\n');
+  const parseFacts = str => splitLines(str).map(l => { const [k, ...r] = l.split('|'); return { k: k.trim(), v: r.join('|').trim() }; }).filter(f => f.k && f.v);
+  const factsToText = a => (a || []).map(f => f.k + ' | ' + f.v).join('\n');
+  const slugify = t => (t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  const rand = (n = 5) => Array.from(crypto.getRandomValues(new Uint8Array(n)), b => (b % 36).toString(36)).join('');
+  let brochureState = { en: null, pt: null }; // brochure PDFs already stored for the listing being edited
 
   function buildDetails() {
     const d = {};
@@ -923,8 +986,17 @@
     d.i18n = {};
     ['en', 'pt'].forEach(l => {
       const x = formI18n[l];
-      d.i18n[l] = { exposure: x.exposure.trim(), features: parseFeatures(x.features), areas: parseAreas(x.areas), nearby: parseNearby(x.nearby) };
+      d.i18n[l] = { exposure: x.exposure.trim(), features: parseFeatures(x.features), areas: parseAreas(x.areas), nearby: parseNearby(x.nearby), facts: parseFacts(x.facts) };
     });
+    const v = id => document.getElementById(id).value.trim();
+    if (document.getElementById('f-offmarket').checked) d.off_market = true;
+    if (v('d-credit')) d.credit = v('d-credit');
+    if (v('d-prefix')) d.prefix = slugify(v('d-prefix'));
+    const contact = { name: v('d-contact-name'), phone: v('d-contact-phone'), email: v('d-contact-email') };
+    if (contact.name || contact.phone || contact.email) d.contact = contact;
+    const red = parseFeatures(document.getElementById('d-grapes-red').value), white = parseFeatures(document.getElementById('d-grapes-white').value);
+    if (red.length || white.length) d.grapes = { red, white };
+    if (brochureState.en || brochureState.pt) d.brochures = { en: brochureState.en, pt: brochureState.pt };
     return d;
   }
 
@@ -937,7 +1009,28 @@
       formI18n[l].features = (x.features || []).join('\n');
       formI18n[l].areas    = areasToText(x.areas);
       formI18n[l].nearby   = nearbyToText(x.nearby);
+      formI18n[l].facts    = factsToText(x.facts);
     });
+    const set = (id, val) => { document.getElementById(id).value = val || ''; };
+    document.getElementById('f-offmarket').checked = !!d.off_market;
+    set('d-credit', d.credit); set('d-prefix', d.prefix);
+    const c = d.contact || {}; set('d-contact-name', c.name); set('d-contact-phone', c.phone); set('d-contact-email', c.email);
+    const g = d.grapes || {}; set('d-grapes-red', (g.red || []).join('\n')); set('d-grapes-white', (g.white || []).join('\n'));
+    brochureState = { en: (d.brochures && d.brochures.en) || null, pt: (d.brochures && d.brochures.pt) || null };
+    ['en', 'pt'].forEach(l => { document.getElementById('d-brochure-' + l).value = ''; document.getElementById('d-brochure-' + l + '-cur').textContent = brochureState[l] ? 'Current file: ' + brochureState[l] : ''; });
+  }
+
+  // custom brochure PDFs (stored next to the photos, named with the same prefix + a random ending)
+  async function uploadBrochures(prefix) {
+    for (const l of ['en', 'pt']) {
+      const f = document.getElementById('d-brochure-' + l).files[0];
+      if (!f) continue;
+      const path = `${prefix}-brochure-${l}-${rand()}.pdf`;
+      const { error } = await db.storage.from(BUCKET).upload(path, f, { contentType: 'application/pdf', cacheControl: '3600', upsert: false });
+      if (error) throw error;
+      if (brochureState[l]) db.storage.from(BUCKET).remove([brochureState[l]]); // replace the old file
+      brochureState[l] = path;
+    }
   }
 
   // ── BROCHURE: generated on every save, stored next to the photos ──
@@ -957,11 +1050,15 @@
     captureFormLangFields();
     if (!formI18n.en.title.trim()) { showFormErr('English property title is required'); return; }
 
-    // Upload new photos
-    const newPhotos = photoList.filter(p => p.file && !p.path);
-    for (const photo of newPhotos) {
-      const ext  = photo.file.name.split('.').pop();
-      const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const prefix = slugify(document.getElementById('d-prefix').value) || slugify(formI18n.en.title) || 'listing';
+    try { await uploadBrochures(prefix); } catch (e) { showFormErr('Brochure upload failed: ' + (e.message || e)); return; }
+
+    // Upload new photos (named prefix-NN-random, NN = position in the gallery)
+    for (let i = 0; i < photoList.length; i++) {
+      const photo = photoList[i];
+      if (!(photo.file && !photo.path)) continue;
+      let ext = photo.file.name.split('.').pop().toLowerCase(); if (ext === 'jpeg') ext = 'jpg';
+      const path = `${prefix}-${String(i + 1).padStart(2, '0')}-${rand()}.${ext}`;
       const { error: uploadErr } = await db.storage.from(BUCKET).upload(path, photo.file, { cacheControl: '3600', upsert: false });
       if (uploadErr) { showFormErr('Image upload failed: ' + uploadErr.message); return; }
       photo.path = path;
@@ -987,10 +1084,11 @@
       password:    document.getElementById('f-password').value.trim() || null,
       images:      allImagePaths.length ? allImagePaths : null,
       details:     buildDetails(),
-      is_locked:   document.getElementById('f-locked').checked,
+      is_locked:   document.getElementById('f-locked').checked || document.getElementById('f-offmarket').checked,
       active:      document.getElementById('f-active').checked,
     };
     if (imagePath) payload.image_url = imagePath;
+    if (brochureState.en || brochureState.pt) payload.brochure_url = brochureState.en || brochureState.pt;
 
     const editId = document.getElementById('edit-id').value;
     let error;
@@ -1010,8 +1108,10 @@
 
     let brochureNote = '';
     try {
-      showFormMsg('Saved — generating brochure…');
-      if (saved && saved.id) await generateBrochure(saved, allImagePaths);
+      if (!(brochureState.en || brochureState.pt)) {
+        showFormMsg('Saved — generating brochure…');
+        if (saved && saved.id) await generateBrochure(saved, allImagePaths);
+      }
     } catch (e) {
       console.error(e);
       brochureNote = ' (brochure failed: ' + (e.message || e) + ')';
@@ -1091,6 +1191,10 @@
     document.getElementById('f-region').value = '';
     Object.values(NEUTRAL_IDS).forEach(id => document.getElementById(id).value = '');
     LANG_DETAIL_IDS.forEach(([k, id]) => document.getElementById(id).value = '');
+    ['d-credit','d-prefix','d-contact-name','d-contact-phone','d-contact-email','d-grapes-red','d-grapes-white'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('f-offmarket').checked = false;
+    brochureState = { en: null, pt: null };
+    ['en', 'pt'].forEach(l => { document.getElementById('d-brochure-' + l).value = ''; document.getElementById('d-brochure-' + l + '-cur').textContent = ''; });
     document.getElementById('f-locked').checked = true;
     document.getElementById('f-active').checked = true;
     resetFormLang();

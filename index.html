@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Royal Estates Premium</title>
+  <meta name="robots" content="noindex, nofollow, noarchive, noimageindex" />
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="icon" href="favicon-48.png" sizes="48x48" type="image/png" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
@@ -82,7 +83,13 @@
     .hero-explore { display: inline-flex; align-items: center; justify-content: center; background: none; border: none; color: var(--ink); cursor: pointer; padding: 8px; }
     .hero-explore svg { width: 54px; height: 27px; display: block; animation: chevronDrop 2.2s ease-in-out infinite; }
     .hero-explore-m { display: none; }
-    .menu-top { display: none; }
+    .menu-top, .wordmark { display: none; }
+    .closing { display: flex; align-items: center; gap: 32px; background: var(--bg-deep); padding: 40px var(--pad); margin-top: var(--gap); }
+    .closing-mark { width: 120px; height: auto; flex-shrink: 0; display: block; }
+    .closing-text { font-size: 15px; line-height: 1.6; letter-spacing: 0.01em; }
+    .closing-name { font-family: var(--serif); font-size: 22px; line-height: 1.2; letter-spacing: 0.04em; margin-bottom: 0.5rem; }
+    .closing a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+    .closing-links { display: flex; gap: 1.4rem; margin-top: 0.8rem; }
     .landing-gold > div { position: relative; }
     @keyframes chevronDrop { 0%, 100% { transform: translateY(-4px); opacity: 0.45; } 50% { transform: translateY(8px); opacity: 1; } }
     @media (prefers-reduced-motion: reduce) { .hero-explore svg { animation: none; opacity: 1; } .slide { transition: opacity 0.6s ease; transform: none; } .slide.on { transform: none; } }
@@ -232,6 +239,7 @@
     .footer-links a:hover { color: var(--accent); }
     .footer-links a.open { text-decoration: underline; text-underline-offset: 4px; }
     .footer-legal { font-family: var(--serif); color: var(--mid); font-size: 13px; letter-spacing: 0.04em; }
+    @media (max-width: 1240px) { .footer-legal { display: none; } .footer-links { gap: 1.3rem; flex-wrap: nowrap; } }
 
     /* ── CONTACT OVERLAY: logo left, two panels slide in from the right ── */
     .contact-overlay { position: fixed; inset: 0 0 58px 0; z-index: 250; display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); background: var(--bg); visibility: hidden; opacity: 0; transition: opacity 0.35s ease, visibility 0s linear 0.9s; }
@@ -291,6 +299,11 @@
     .dv-row { display: flex; justify-content: space-between; gap: 1rem; padding: 7px 0; border-bottom: 1px solid rgba(28,26,23,0.18); font-size: 15px; letter-spacing: 0.01em; }
     .dv-row:last-child { border-bottom: none; }
     .dv-row span:last-child { text-align: right; white-space: nowrap; }
+    .dv-sub { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.65; margin: 0.9rem 0 0.5rem; }
+    .dv-sub:first-child { margin-top: 0; }
+    .dv-contact { display: flex; flex-direction: column; gap: 4px; font-size: 15px; }
+    .dv-contact a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+    .dv-credit { font-size: 12.5px; opacity: 0.65; margin-top: 0.4rem; }
     .dv-brochure { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 0.4rem 0 0; padding: 0.95rem 1.2rem; background: var(--bg); color: var(--ink); border-radius: 0; text-decoration: none; font-size: 15px; letter-spacing: 0.01em; transition: background 0.15s, transform 0.15s; }
     .dv-brochure:hover { background: #fff; }
     .dv-brochure small { display: block; font-size: 12px; opacity: 0.6; margin-top: 2px; }
@@ -301,6 +314,92 @@
     .dv-panel .enquiry-field input, .dv-panel .enquiry-field textarea { border-bottom-color: var(--ink); font-weight: 400; }
     .dv-panel .enquiry-cancel { color: var(--ink); }
     .dv-panel .enquiry-submit { border-radius: 0; }
+
+    /* ── MORTGAGE SIMULATOR: same panel pattern as the listings; flat cream / gold / ink blocks ── */
+    .sim-overlay .dv-media { background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2rem; padding: var(--pad); }
+    .sim-overlay .dv-media img { width: 54%; max-width: 340px; height: auto; display: block; }
+    .sim-caption { font-family: var(--serif); font-size: 20px; letter-spacing: 0.08em; text-transform: uppercase; text-align: center; }
+    .sim-overlay .dv-panel { background: var(--bg-deep); padding: 0; gap: 0; }
+    .sim-close { position: fixed; top: 16px; right: 16px; z-index: 5; }
+    .sim { display: grid; gap: var(--gap); font-size: 15px; line-height: 1.6; letter-spacing: 0.01em; }
+    .sim h1, .sim h2, .sim h3, .sim p { margin: 0; }
+    .sim .num { font-variant-numeric: lining-nums tabular-nums; }
+    .sim-head { background: var(--accent); padding: var(--pad) 64px var(--pad) var(--pad); }
+    .sim-eyebrow { font-size: 0.62rem; letter-spacing: 0.22em; text-transform: uppercase; margin-bottom: 1.2rem !important; }
+    .sim h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(28px, 4.6vw, 38px); line-height: 1.17; letter-spacing: 0.024em; text-wrap: balance; }
+    .sim .lead { margin-top: 14px; max-width: 56ch; }
+    .sim .card { background: var(--bg); padding: var(--pad); min-width: 0; }
+    .sim .step { display: flex; align-items: baseline; gap: 12px; margin-bottom: 20px; }
+    .sim .step b { font-family: var(--serif); font-weight: 400; font-size: 30px; line-height: 1; color: var(--accent); }
+    .sim .step h2, .sim h3 { font-family: var(--serif); font-weight: 400; font-size: 24px; line-height: 1.15; letter-spacing: 0.02em; }
+    .sim h3 { margin-bottom: 6px; }
+    .sim .fields { display: grid; gap: 26px; }
+    .sim .field { display: grid; gap: 8px; min-width: 0; }
+    .sim .field label { font-size: 15px; letter-spacing: 0.01em; text-transform: none; color: var(--ink); }
+    .sim .sub { font-size: 13px; color: var(--mid); }
+    .sim .inp { display: flex; align-items: baseline; border-bottom: 1px solid var(--ink); transition: border-color 0.15s; }
+    .sim .inp:focus-within { border-bottom-color: var(--accent); box-shadow: 0 1px 0 var(--accent); }
+    .sim .inp input { flex: 1; width: 0; min-width: 0; border: 0; border-radius: 0; background: transparent; color: var(--ink); font-family: 'Inter', sans-serif; font-weight: 400; font-size: 24px; font-variant-numeric: lining-nums tabular-nums; letter-spacing: 0; padding: 8px 0; outline: 0; }
+    .sim .inp .u { color: var(--mid); padding-left: 10px; }
+    .sim input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+    .sim input[type=number]::-webkit-inner-spin-button, .sim input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    .sim input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 26px; background: transparent; cursor: pointer; margin: 0; padding: 0; border: 0; }
+    .sim input[type=range]::-webkit-slider-runnable-track { height: 2px; background: var(--ink); }
+    .sim input[type=range]::-moz-range-track { height: 2px; background: var(--ink); }
+    .sim input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; margin-top: -8px; background: var(--ink); border: 0; border-radius: 0; }
+    .sim input[type=range]::-moz-range-thumb { width: 18px; height: 18px; background: var(--ink); border: 0; border-radius: 0; }
+    .sim input[type=range]:focus-visible::-webkit-slider-thumb { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .sim .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .sim .chip { font-family: 'Inter', sans-serif; font-size: 15px; border: 1px solid var(--ink); border-radius: 0; background: transparent; color: var(--ink); padding: 6px 16px; cursor: pointer; transition: background 0.15s, color 0.15s; }
+    .sim .chip:hover { background: var(--ink); color: var(--bg); }
+    .sim .chip:focus-visible, .sim summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .sim .rangeval { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+    .sim .rangeval strong { font-family: 'Inter', sans-serif; font-weight: 400; font-size: 24px; font-variant-numeric: lining-nums tabular-nums; line-height: 1; white-space: nowrap; }
+    /* result: the ink block, like the access panel's dark counterpart */
+    .sim .result { background: var(--ink); color: var(--bg); --cap: var(--bg); --int: var(--accent); }
+    .sim .result .step b { color: var(--accent); }
+    .sim .result .sub { color: rgba(240, 235, 226, 0.62); }
+    .sim .big { font-family: var(--serif); font-weight: 400; font-variant-numeric: lining-nums tabular-nums; font-size: clamp(56px, 13vw, 88px); line-height: 0.95; letter-spacing: 0.01em; margin: 8px 0 6px !important; }
+    .sim .big small { font-family: 'Inter', sans-serif; font-weight: 300; font-size: 0.26em; color: rgba(240, 235, 226, 0.62); letter-spacing: 0.01em; margin-left: 10px; }
+    .sim .plain { margin-top: 14px !important; }
+    .sim .plain b { font-weight: 500; }
+    .sim .split { display: flex; height: 10px; margin: 24px 0 10px; background: rgba(240, 235, 226, 0.14); overflow: hidden; }
+    .sim .split i { display: block; height: 100%; }
+    .sim .legend { display: flex; gap: 6px 18px; flex-wrap: wrap; font-size: 13px; color: rgba(240, 235, 226, 0.7); }
+    .sim .legend span { display: inline-flex; align-items: center; gap: 8px; }
+    .sim .legend em { width: 10px; height: 10px; display: inline-block; }
+    .sim .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 22px 24px; margin-top: 28px; padding-top: 24px; border-top: 1px solid rgba(240, 235, 226, 0.25); }
+    .sim .fact .k { font-size: 12.5px; color: rgba(240, 235, 226, 0.62); }
+    .sim .fact .v { font-family: var(--serif); font-size: 28px; line-height: 1.2; font-variant-numeric: lining-nums tabular-nums; }
+    .sim .meter { margin-top: 16px; }
+    .sim .track { position: relative; height: 10px; background: linear-gradient(90deg, #4E7B59 0 35%, #A8701A 35% 50%, #A63A33 50% 100%); opacity: 0.92; }
+    .sim .pin { position: absolute; top: -6px; width: 3px; height: 22px; background: var(--ink); transform: translateX(-1.5px); }
+    .sim .scale { display: flex; font-size: 12px; color: var(--mid); margin-top: 8px; position: relative; height: 16px; }
+    .sim .scale span { position: absolute; transform: translateX(-50%); }
+    .sim .verdict { margin-top: 16px; padding: 14px 16px; background: var(--bg-deep); border-left: 3px solid var(--accent); font-size: 14.5px; }
+    .sim .verdict.good { border-color: #4E7B59; } .sim .verdict.warn { border-color: #A8701A; } .sim .verdict.bad { border-color: #A63A33; }
+    .sim table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; font-size: 14px; margin-top: 12px; }
+    .sim th, .sim td { padding: 10px 8px; text-align: right; border-bottom: 1px solid var(--rule); }
+    .sim th:first-child, .sim td:first-child { text-align: left; padding-left: 0; }
+    .sim th:last-child, .sim td:last-child { padding-right: 0; }
+    .sim th { font-weight: 400; color: var(--mid); font-size: 12.5px; }
+    .sim tr.now td { font-weight: 500; background: var(--bg-deep); }
+    .sim .tablewrap { overflow-x: auto; }
+    .sim .up { color: #A63A33; }
+    .sim details { border-top: 1px solid var(--rule); padding: 14px 0; }
+    .sim details:last-child { border-bottom: 1px solid var(--rule); }
+    .sim summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+    .sim summary::-webkit-details-marker { display: none; }
+    .sim summary::after { content: "+"; color: var(--accent); font-size: 20px; line-height: 1; }
+    .sim details[open] summary::after { content: "–"; }
+    .sim details p { margin-top: 8px; color: var(--mid); font-size: 14px; }
+    .sim .cta { background: var(--accent); }
+    .sim .cta p { max-width: 52ch; }
+    .sim .cta .contacts { display: flex; gap: 8px 28px; flex-wrap: wrap; margin-top: 18px; font-family: var(--serif); font-size: 20px; letter-spacing: 0.03em; user-select: all; }
+    .sim .small { font-size: 12.5px; color: var(--mid); }
+    .sim .cta .small { color: inherit; }
+    .sim-disclaimer { background: var(--bg-deep); padding: 20px var(--pad) 4px; }
+    .sim .foot { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--mid); padding: 8px var(--pad) 48px; }
 
     /* ── TOAST ── */
     .toast { position: fixed; bottom: 2.5rem; left: 50%; transform: translateX(-50%) translateY(0.8rem); background: var(--ink); color: var(--bg); padding: 0.8rem 1.8rem; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0; transition: all 0.3s; z-index: 500; pointer-events: none; }
@@ -346,6 +445,7 @@
       .contact-overlay { grid-template-columns: minmax(0,1fr); overflow-y: auto; overflow-x: hidden; }
       .contact-panels { min-width: 0; }
       .contact-logo, .legal-logo { display: none; }
+      .sim-overlay .dv-media { display: none; }
       .legal-overlay { grid-template-columns: minmax(0,1fr); overflow-y: auto; overflow-x: hidden; }
       .legal-panel { overflow-y: visible; min-width: 0; padding: 20px 20px 60px; }
       .detail-overlay { grid-template-columns: minmax(0,1fr); grid-template-rows: auto auto; align-content: start; overflow-y: auto; overflow-x: hidden; }
@@ -364,19 +464,20 @@
       .contact-overlay, .detail-overlay, .legal-overlay { inset: 0; }
       .menu-fab { display: flex; align-items: center; gap: 0.6rem; position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 270; background: var(--bg); color: var(--ink); border: none; padding: 0.8rem 1.2rem; font-family: 'Inter', sans-serif; font-size: 17px; letter-spacing: 0.01em; box-shadow: 0 3px 14px rgba(28,26,23,0.22); cursor: pointer; opacity: 0; pointer-events: none; transform: translateY(10px); transition: opacity 0.3s ease, transform 0.3s ease; }
       .menu-fab.show { opacity: 1; pointer-events: auto; transform: none; }
-      .menu-top { display: flex; flex-direction: column; align-items: flex-end; gap: 20px; position: static; margin: 0 -8px 0 0; padding: 8px; background: none; border: none; color: var(--ink); cursor: pointer; -webkit-tap-highlight-color: transparent; }
-      /* cascading bars (long / medium / short, right-aligned); they even out to full width while pressed */
-      .burger { display: flex; flex-direction: column; align-items: flex-end; gap: 18px; width: 92px; }
-      .burger i { display: block; height: 6px; background: var(--ink); border-radius: 3px; transition: width 0.45s cubic-bezier(0.2, 0.7, 0.1, 1); }
-      .burger i:nth-child(1) { width: 100%; }
-      .burger i:nth-child(2) { width: 66%; }
-      .burger i:nth-child(3) { width: 36%; }
-      .menu-top:active .burger i, .menu-fab:active .burger i { width: 100%; }
-      .menu-word { font-family: var(--serif); font-size: 20px; line-height: 1; letter-spacing: 0.3em; margin-right: -0.3em; text-transform: uppercase; }
+      /* header pair: the Menu is a square frame with the same width and height as the logo */
+      /* header = stacked Aboreto wordmark + a square Menu exactly as tall as the wordmark (cap-top of ROYAL to baseline of ESTATES = 1.7em) */
+      .landing { --wm-fs: min(11.5vw, 46px); --mn: calc(var(--wm-fs) * 1.7); }
+      .menu-top { display: flex; flex-direction: column; align-items: center; justify-content: center; box-sizing: border-box; height: var(--mn); width: var(--mn); position: relative; top: -15%; margin: 0; padding: 0; border: 3px solid var(--ink); background: var(--bg); color: var(--ink); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background 0.25s ease, color 0.25s ease; }
+      .menu-top:active { background: var(--ink); color: var(--bg); }
+      .menu-top .burger { display: none; }
+      .burger { display: flex; flex-direction: column; gap: 14px; width: 60px; }
+      .burger i { display: block; height: 3px; width: 100%; background: var(--ink); transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.1, 1); }
+      .menu-top:active .burger i, .menu-fab:active .burger i { transform: scaleX(0.7); }
+      .menu-word { font-family: var(--serif); font-size: 13px; line-height: 1; letter-spacing: 0.22em; margin-right: -0.22em; text-transform: uppercase; }
       .burger.mini { width: 24px; gap: 4px; }
-      .burger.mini i { height: 2px; border-radius: 1px; }
+      .burger.mini i { height: 2px; }
       .menu-fab { gap: 0.9rem; }
-      .menu-fab .menu-word { font-size: 15px; letter-spacing: 0.24em; margin-right: -0.24em; }
+      .menu-fab .menu-word { font-size: 15px; line-height: 1; letter-spacing: 0.24em; margin-right: -0.24em; }
       body:has(.contact-overlay.open, .detail-overlay.open, .legal-overlay.open, .menu-overlay.open) .menu-fab { display: none; }
       .menu-overlay { display: flex; flex-direction: column; align-items: center; position: fixed; inset: 0; z-index: 275; background: var(--accent); visibility: hidden; opacity: 0; transform: translateY(14px); transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.2,0.7,0.1,1), visibility 0s linear 0.5s; }
       .menu-overlay.open { visibility: visible; opacity: 1; transform: none; transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.2,0.7,0.1,1), visibility 0s; }
@@ -395,12 +496,19 @@
       .menu-bar .footer-mark { display: block; }
       .menu-close { display: flex; align-items: center; gap: 0.6rem; background: none; border: none; font-family: var(--serif); font-size: 17px; letter-spacing: 0.06em; color: var(--ink); cursor: pointer; }
       /* landing hero fills the first screen: logo / photo / headline, with a slim bar for language + explore */
-      .landing { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 30fr) minmax(0, 34fr) minmax(190px, 36fr); grid-template-areas: "logo" "photo" "gold"; height: 100svh; min-height: 640px; }
+      .landing { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 22fr) minmax(0, 41fr) minmax(190px, 37fr); grid-template-areas: "logo" "photo" "gold"; height: 100svh; min-height: 640px; }
       .landing .tile { padding: 20px; }
-      .landing .landing-logo { padding: 0 12px; flex-direction: row; align-items: center; justify-content: space-between; } /* logo hard left, menu hard right, same centre line */
+      /* header tile = two equal halves: logo centred in the left half, Menu centred in the right half */
+      .landing .landing-logo { flex-direction: row; align-items: center; justify-content: space-between; padding: 0 20px; }
       /* iPhone Safari draws a ~57px cream status-bar strip above the page; lift the header so it looks centred in the cream you actually see */
-      .landing-logo img, .menu-top { position: relative; top: -12%; }
-      .landing-logo img { width: auto; height: 55.5%; max-width: 50%; }
+      .wordmark { display: block; position: relative; top: -15%; height: 1.7em; font-family: 'Aboreto', serif; font-size: var(--wm-fs); line-height: 1; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink); white-space: nowrap; }
+      .wordmark span { display: block; }
+      .wordmark span:first-child { margin-top: -0.15em; } /* pulls the cap-top of ROYAL onto the box's top edge */
+      .landing-logo img { display: none; }
+      .closing { gap: 22px; padding: 30px 20px; }
+      .closing-mark { width: 92px; }
+      .closing-name { font-size: 20px; }
+      .closing-text { font-size: 14px; }
       .landing-gold { padding: 22px; }
       .landing-gold .t-cap { font-size: 17px; }
       .landing-gold .t-link { font-size: 17px; margin-top: 1.1rem; }
@@ -439,6 +547,7 @@
 <header class="landing pre" id="landing">
   <div class="tile landing-logo">
     <img src="logo.svg" alt="Royal Estates Premium" />
+    <div class="wordmark fade-up" role="img" aria-label="Royal Estates"><span>Royal</span><span>Estates</span></div>
     <button class="menu-top fade-up" id="menu-top" onclick="openMenu()" aria-label="Menu"><span class="burger" aria-hidden="true"><i></i><i></i><i></i></span><span class="menu-word" data-i18n="menu_label">Menu</span></button>
   </div>
 
@@ -484,6 +593,18 @@
   <div class="loading-state"><p>Loading properties…</p></div>
 </main>
 
+<!-- CLOSING: the monogram as a seal, with the company details beside it -->
+<section class="closing" id="closing">
+  <img class="closing-mark" src="logo.svg" alt="Royal Estates Premium" />
+  <div class="closing-text">
+    <p class="closing-name">Royal Estates Lda</p>
+    <p>AMI 23635 · Licensed broker · Portugal</p>
+    <p>Rua Francisco Rocha, Lt 50, R/C, 2530-110 Lourinhã</p>
+    <p><a href="tel:+351964480190">(+351) 964 480 190</a> · <a href="mailto:info@royalestates.pt">info@royalestates.pt</a></p>
+    <p class="closing-links"><a href="#" onclick="openSim(); return false;" data-i18n="menu_sim">Simulator</a><a href="#" onclick="openLegal('privacy'); return false;">Privacy</a><a href="#" onclick="openLegal('terms'); return false;">Terms</a><a href="#contact" onclick="openContact(); return false;">Contact</a></p>
+  </div>
+</section>
+
 <!-- FOOTER (minimal band) -->
 <footer class="footer-bar">
   <span class="footer-mark">Royal Estates</span>
@@ -491,6 +612,7 @@
   <span class="footer-links">
     <a href="https://royalestates.pt" target="_blank">Royal Estates</a>
     <a href="https://royalestates.luxe" target="_blank">Royal Estates Luxe</a>
+    <a href="#" onclick="openSim(); return false;" data-i18n="menu_sim">Simulator</a>
     <a href="#" onclick="openLegal('privacy'); return false;">Privacy</a>
     <a href="#" onclick="openLegal('terms'); return false;">Terms</a>
     <a href="#contact" id="contact-link" onclick="toggleContact(); return false;" data-i18n="nav_contact">Contact</a>
@@ -504,6 +626,7 @@
   <ul class="menu-list">
     <li><a href="#" class="current" onclick="menuGo('home'); return false;"><span class="sq"></span><span data-i18n="menu_home">Home</span></a></li>
     <li><a href="#listings-grid" onclick="menuGo('collection'); return false;" data-i18n="menu_collection">Collection</a></li>
+    <li><a href="#" onclick="menuGo('sim'); return false;" data-i18n="menu_sim">Simulator</a></li>
     <li><a href="#contact" onclick="menuGo('contact'); return false;" data-i18n="nav_contact">Contact</a></li>
     <li><a href="#" onclick="menuGo('privacy'); return false;" data-i18n="menu_privacy">Privacy</a></li>
     <li><a href="#" onclick="menuGo('terms'); return false;" data-i18n="menu_terms">Terms</a></li>
@@ -522,6 +645,129 @@
     <button class="menu-close" onclick="closeMenu()"><span class="sq open"></span><span data-i18n="menu_close">Close</span></button>
   </div>
 </nav>
+
+<!-- MORTGAGE SIMULATOR (Simulador) -->
+<section class="detail-overlay sim-overlay" id="sim-overlay" aria-hidden="true">
+  <div class="dv-media">
+    <img src="logo.svg" alt="" />
+    <p class="sim-caption" data-i18n="menu_sim">Simulator</p>
+  </div>
+  <div class="dv-panel" id="sim-panel">
+    <main class="sim">
+      <header class="sim-head">
+        <p class="sim-eyebrow">Royal Estates Premium</p>
+        <h1 data-en="How much will you pay each month for your home?">Quanto vai pagar por mês pela sua casa?</h1>
+        <p class="lead" data-en="Answer three simple questions. In under a minute you will have a clear idea of the monthly payment and how much it weighs on your budget.">Responda a três perguntas simples. Em menos de um minuto fica com uma ideia clara da prestação e do esforço que ela representa no seu orçamento.</p>
+      </header>
+
+      <section class="card" aria-label="A casa" data-en-aria="The home">
+        <div class="step"><b>1</b><h2 data-en="The home">A casa</h2></div>
+        <div class="fields">
+          <div class="field">
+            <label for="price" data-en="Home price">Preço da casa</label>
+            <div class="inp"><input id="price" type="number" min="0" step="5000" value="350000" inputmode="decimal"><span class="u">€</span></div>
+          </div>
+          <div class="field">
+            <label for="down" data-en="How much can you put down as a down payment? <span class=&quot;sub&quot; id=&quot;downPct&quot;></span>">Quanto tem para dar de entrada? <span class="sub" id="downPct"></span></label>
+            <span class="sub" data-en="This is the money you pay out of your own pocket. The bank lends the rest.">É o dinheiro que paga do seu bolso. O banco empresta o resto.</span>
+            <div class="inp"><input id="down" type="number" min="0" step="1000" value="70000" inputmode="decimal"><span class="u">€</span></div>
+            <div class="chips" aria-label="Entrada como parte do preço" data-en-aria="Down payment as a share of the price">
+              <button type="button" class="chip" data-down="10">10 %</button><button type="button" class="chip" data-down="20">20 %</button>
+              <button type="button" class="chip" data-down="30">30 %</button>
+            </div>
+          </div>
+          <div class="field">
+            <div class="rangeval"><label for="years" data-en="Over how many years do you want to pay?">Em quantos anos quer pagar?</label><strong data-en="<span id=&quot;yearsOut&quot;>30</span> years"><span id="yearsOut">30</span> anos</strong></div>
+            <input id="years" type="range" min="10" max="40" step="1" value="30">
+            <span class="sub" data-en="More years means a lower payment, but you pay more interest overall.">Mais anos significa prestação mais baixa, mas paga mais juros no total.</span>
+          </div>
+          <div class="field">
+            <div class="rangeval"><label for="rate" data-en="Annual interest rate">Taxa de juro anual</label><strong data-en="<span id=&quot;rateOut&quot;>4.3</span>%"><span id="rateOut">4,3</span> %</strong></div>
+            <input id="rate" type="range" min="1" max="8" step="0.1" value="4.3">
+            <span class="sub" data-en="With the October 2026 Euribor (around 3.3%) and a bank margin of 1%, it comes to roughly 4.3%. Your final rate depends on the bank's offer.">Com a Euribor de outubro de 2026 (cerca de 3,3 %) e uma margem do banco de 1 %, fica perto de 4,3 %. A sua taxa final depende da proposta do banco.</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" aria-label="O seu rendimento" data-en-aria="Your income">
+        <div class="step"><b>2</b><h2 data-en="Your income">O seu rendimento</h2></div>
+        <div class="fields">
+          <div class="field">
+            <label for="income" data-en="How much do you earn each month, after tax?">Quanto recebe por mês, depois de impostos?</label>
+            <span class="sub" data-en="Add up the income of everyone who will apply for the loan.">Some o rendimento de todas as pessoas que vão pedir o crédito.</span>
+            <div class="inp"><input id="income" type="number" min="0" step="100" value="4000" inputmode="decimal"><span class="u">€</span></div>
+          </div>
+          <div class="field">
+            <label for="debts" data-en="Do you already pay other loans? <span class=&quot;sub&quot;>(car, credit card, another loan)</span>">Já paga outros créditos? <span class="sub">(carro, cartão, outro empréstimo)</span></label>
+            <div class="inp"><input id="debts" type="number" min="0" step="10" value="0" inputmode="decimal"><span class="u" data-en="€ per month">€ por mês</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card result" aria-label="Resultado" data-en-aria="Result" aria-live="polite">
+        <div class="step"><b>3</b><h2 data-en="The result">O resultado</h2></div>
+        <p class="sub" data-en="Monthly loan payment">Prestação mensal do crédito</p>
+        <p class="big num"><span id="pmt">–</span><small data-en="per month">por mês</small></p>
+        <p class="plain" id="plain"></p>
+
+        <div class="split" id="split" role="img" aria-label="Quanto do que paga é a casa e quanto são juros" data-en-aria="How much of what you pay is the house and how much is interest"></div>
+        <div class="legend" id="splitLegend"></div>
+
+        <div class="facts">
+          <div class="fact"><div class="k" data-en="You borrow from the bank">Pede ao banco</div><div class="v" id="loan">–</div></div>
+          <div class="fact"><div class="k" data-en="Total interest you pay">Paga de juros, no total</div><div class="v" id="interest">–</div></div>
+          <div class="fact"><div class="k" data-en="Payment including insurance (approx.)">Prestação com seguros (aprox.)</div><div class="v" id="withIns">–</div></div>
+        </div>
+      </section>
+
+      <section class="card" aria-label="Peso no orçamento" data-en-aria="Weight on your budget">
+        <h3 data-en="How much does it weigh on your budget?">Quanto pesa no seu orçamento?</h3>
+        <p class="sub" data-en="Banks look at the share of your income that goes to loans. This is called the effort rate (debt-to-income ratio).">Os bancos olham para a parte do rendimento que vai para créditos. Chama-se taxa de esforço.</p>
+        <p style="margin-top:14px;font-size:17px"><b class="num" id="dsti" style="font-family:var(--serif);font-size:38px;font-weight:400">–</b> <span class="sub" data-en="of your income goes to loans">do seu rendimento vai para créditos</span></p>
+        <div class="meter" id="meter" hidden>
+          <div class="track"><div class="pin" id="pin"></div></div>
+          <div class="scale"><span style="left:0%;transform:none" data-en="0%">0 %</span><span style="left:35%" data-en="35%">35 %</span><span style="left:50%" data-en="50%">50 %</span><span style="left:100%;transform:translateX(-100%)" data-en="100%">100 %</span></div>
+        </div>
+        <div class="verdict" id="verdict"></div>
+        <p class="small" style="margin-top:10px" data-en="Rule of thumb: up to 35% is usually comfortable. Between 35% and 50% needs attention. Above 50% the bank will rarely approve. Each bank decides by its own criteria.">Regra prática: até 35 % costuma ser confortável. Entre 35 % e 50 % exige atenção. Acima de 50 % o banco dificilmente aprova. Cada banco decide pelos seus critérios.</p>
+      </section>
+
+      <section class="card" aria-label="E se os juros subirem" data-en-aria="What if interest rates rise">
+        <h3 data-en="What if interest rates rise?">E se os juros subirem?</h3>
+        <p class="sub" data-en="Most loans in Portugal have a variable rate. See what happens to the payment if the rate goes up.">A maioria dos créditos em Portugal tem taxa variável. Veja o que acontece à prestação se a taxa subir.</p>
+        <div class="tablewrap"><table id="stress"></table></div>
+      </section>
+
+      <section class="card" aria-label="Quanto ainda deve" data-en-aria="How much you still owe">
+        <h3 data-en="How much will you still owe over time?">Quanto ainda vai dever com o tempo?</h3>
+        <p class="sub" data-en="At the start, most of each payment is interest. Only slowly do you begin paying off the house.">No início, a maior parte da prestação são juros. Só devagar começa a pagar a casa.</p>
+        <div class="tablewrap"><table id="debt"></table></div>
+      </section>
+
+      <section class="card" aria-label="Palavras que vai ouvir" data-en-aria="Words you will hear">
+        <h3 data-en="What do these words mean?">O que querem dizer estas palavras?</h3>
+        <details><summary data-en="Down payment">Entrada</summary><p data-en="The money you pay out of your own pocket when buying. Banks usually finance up to 80% or 90% of the home's value, so you need to have the rest.">O dinheiro que paga do seu bolso na compra. Os bancos costumam financiar até 80 % ou 90 % do valor da casa, por isso precisa de ter o resto.</p></details>
+        <details><summary data-en="Interest rate (TAN)">Taxa de juro (TAN)</summary><p data-en="The price you pay the bank for lending you the money, as a percentage per year. The higher it is, the more you pay every month.">O preço que paga ao banco por lhe emprestar o dinheiro, em percentagem por ano. Quanto mais alta, mais paga todos os meses.</p></details>
+        <details><summary data-en="Euribor and margin (spread)">Euribor e margem (spread)</summary><p data-en="With a variable rate, the interest rate is the sum of two parts. The Euribor changes with the market, and the margin is the fixed amount the bank adds. That is why the payment can go up or down over time.">Na taxa variável, a taxa de juro é a soma de duas partes. A Euribor muda com o mercado, e a margem é o valor fixo que o banco acrescenta. Por isso a prestação pode subir ou descer ao longo do tempo.</p></details>
+        <details><summary data-en="Fixed, variable or mixed rate">Taxa fixa, variável ou mista</summary><p data-en="With a fixed rate, the payment does not change during the agreed period. With a variable rate, it follows the Euribor. With a mixed rate, it is fixed for the first years and then becomes variable.">Na fixa, a prestação não muda durante o período combinado. Na variável, acompanha a Euribor. Na mista, é fixa nos primeiros anos e depois passa a variável.</p></details>
+        <details><summary data-en="Effort rate">Taxa de esforço</summary><p data-en="The share of your income that goes to repaying loans. The lower it is, the more room you have for daily life and the unexpected.">A parte do seu rendimento que vai para pagar créditos. Quanto mais baixa, mais folga tem para o dia a dia e para imprevistos.</p></details>
+        <details><summary data-en="Insurance">Seguros</summary><p data-en="The bank normally requires life insurance and multi-risk home insurance. The amount depends on you and the property. Here we use an estimate of €50 per month.">O banco exige normalmente um seguro de vida e um seguro multirriscos da casa. O valor depende de si e do imóvel. Aqui usamos uma estimativa de 50 € por mês.</p></details>
+        <details><summary data-en="What is not included">O que não está incluído</summary><p data-en="Besides the down payment, buying has taxes and costs, such as IMT, stamp duty, deed and registration fees. There are also bank fees, for example for the valuation. Ask us for a full calculation.">Além da entrada, a compra tem impostos e despesas, como IMT, imposto do selo, escritura e registos. Também há comissões do banco, por exemplo de avaliação. Peça-nos um cálculo completo.</p></details>
+      </section>
+
+      <section class="card cta">
+        <h3 data-en="Would you like an analysis tailored to you?">Quer uma análise feita à sua medida?</h3>
+        <p data-en="This simulation is an estimate to help you decide. Talk to Royal Estates Premium and we will prepare a complete scenario with you, with the costs of the purchase and the real conditions from the banks.">Esta simulação é uma estimativa para o ajudar a decidir. Fale com a Royal Estates Premium e preparamos consigo um cenário completo, com os custos da compra e as condições reais dos bancos.</p>
+        <div class="contacts"><span>info@royalestates.pt</span><span>(+351) 964 480 190</span></div>
+        <p class="small" style="margin-top:12px;color:inherit;opacity:.75">Rua Francisco Rocha, Lt 50, R/C, 2530-110 Lourinhã · AMI 23635</p>
+      </section>
+
+      <p class="small sim-disclaimer" data-en="Indicative simulation with no contractual value; it is not financial advice or an offer of credit. The final conditions are set out in the bank's offer and its FINE (European Standardised Information Sheet).">Simulação indicativa, sem valor contratual, que não constitui aconselhamento financeiro nem oferta de crédito. As condições finais constam da proposta e da FINE (Ficha de Informação Normalizada Europeia) do banco.</p>
+      <footer class="foot"><span>Royal Estates Premium</span><span>premiumroyalestates.com</span></footer>
+    </main>
+  </div>
+  <button class="contact-close sim-close" onclick="closeSim()" aria-label="Close">×</button>
+</section>
 
 <!-- CONTACT / REQUEST ACCESS OVERLAY -->
 <section class="contact-overlay" id="contact" aria-hidden="true">
@@ -715,7 +961,11 @@
 
   async function init() {
     loadAccessCode();
-    const { data, error } = await db.from('properties').select('*').eq('active', true).order('created_at', { ascending: false });
+    // Preview builds (*.vercel.app, localhost) can show unfinished listings with ?drafts; production never does.
+    const showDrafts = /\.vercel\.app$|^localhost$|^127\./.test(location.hostname) && new URLSearchParams(location.search).has('drafts');
+    let q = db.from('properties').select('*');
+    if (!showDrafts) q = q.eq('active', true);
+    const { data, error } = await q.order('created_at', { ascending: false });
     if (error) {
       document.getElementById('listings-grid').innerHTML = '<div class="empty-state"><h3>Unable to load</h3><p>Please refresh the page.</p></div>';
       return;
@@ -726,7 +976,7 @@
   }
 
   function imgUrl(path) { return `${SUPABASE_URL}/storage/v1/object/public/property-images/${path}`; }
-  function fmtPrice(p) { return p ? '€ ' + Number(p).toLocaleString('de-DE') : 'Price on request'; }
+  function fmtPrice(p) { return p ? '€ ' + Number(p).toLocaleString('de-DE') : t_('price_request'); }
   function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
   function splitLocation(p) {
     if (p.location && p.location.includes('·')) {
@@ -736,7 +986,13 @@
     return { neighbourhood: p.location || '', city: cap(p.region) };
   }
 
+  // off-market listings are left out of the page completely until the visitor has unlocked them
+  function hiddenOffMarket(p) {
+    return !!(p.details && p.details.off_market) && !(isUnlocked || unlockedProperties.has(p.id));
+  }
+
   function renderGrid(list) {
+    list = list.filter(p => !hiddenOffMarket(p));
     const el = document.getElementById('listings-grid');
     if (!list.length) { el.innerHTML = '<div class="empty-state"><h3>No properties found</h3><p>Try a different filter.</p></div>'; return; }
     el.innerHTML = list.map(p => propertyHTML(p)).join('');
@@ -794,7 +1050,7 @@
     const i = (p.details && p.details.i18n) || {};
     const cur = i[currentLang] || {}, en = i.en || {};
     const g = k => ((Array.isArray(cur[k]) ? cur[k].length : cur[k]) ? cur[k] : en[k]);
-    return { exposure: g('exposure') || '', features: g('features') || [], areas: g('areas') || [], nearby: g('nearby') || [] };
+    return { exposure: g('exposure') || '', features: g('features') || [], areas: g('areas') || [], nearby: g('nearby') || [], facts: g('facts') || [] };
   }
 
   function specsHTML(p) {
@@ -804,8 +1060,9 @@
       ['d_area', p.area ? p.area + ' m²' : ''], ['d_gross', d.gross_area ? d.gross_area + ' m²' : ''], ['d_plot', d.plot_area ? d.plot_area + ' m²' : ''],
       ['d_floor', d.floor], ['d_year', p.year], ['d_energy', d.energy], ['d_exposure', x.exposure], ['d_feature', propFeature(p)]
     ].filter(it => it[1] !== undefined && it[1] !== null && it[1] !== '');
-    if (!items.length) return '';
-    return `<div class="detail-specs">${items.map(([k, v]) => `<div class="spec-item"><span class="spec-val">${esc(v)}</span><span class="spec-lbl">${t_(k)}</span></div>`).join('')}</div>`;
+    const all = items.map(([k, v]) => [t_(k), v]).concat((x.facts || []).map(f => [f.k, f.v]));
+    if (!all.length) return '';
+    return `<div class="detail-specs">${all.map(([label, v]) => `<div class="spec-item"><span class="spec-val">${esc(v)}</span><span class="spec-lbl">${esc(label)}</span></div>`).join('')}</div>`;
   }
 
   function sectionsHTML(p) {
@@ -821,10 +1078,32 @@
     if (d.stamp_duty) costs.push([t_('d_stamp'), eur(d.stamp_duty)]);
     if (costs.length) out += sec('d_costs', rows(costs));
     if (x.nearby.length) out += sec('d_nearby', rows(x.nearby.map(n => [n.n, n.min + ' ' + t_('min')])));
+    const gr = d.grapes || {};
+    if ((gr.red && gr.red.length) || (gr.white && gr.white.length)) {
+      const tags = (arr) => `<div class="dv-tags">${arr.map(v => `<span class="dv-tag">${esc(v)}</span>`).join('')}</div>`;
+      out += sec('d_grapes', `${gr.red && gr.red.length ? `<p class="dv-sub">${t_('d_red')}</p>${tags(gr.red)}` : ''}${gr.white && gr.white.length ? `<p class="dv-sub">${t_('d_white')}</p>${tags(gr.white)}` : ''}`);
+    }
+    const c = d.contact || {};
+    if (c.name || c.phone || c.email) {
+      out += sec('d_contact', `<div class="dv-contact">${c.name ? `<span>${esc(c.name)}</span>` : ''}${c.phone ? `<a href="tel:${esc(String(c.phone).replace(/[^+\d]/g, ''))}">${esc(c.phone)}</a>` : ''}${c.email ? `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>` : ''}</div>`);
+    }
     return out;
   }
 
+  function creditHTML(p) {
+    const c = p.details && p.details.credit;
+    return c ? `<p class="dv-credit">${t_('d_credit')}: ${esc(c)}</p>` : '';
+  }
+
   function brochureHTML(p) {
+    const b = (p.details && p.details.brochures) || {};
+    const icon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 3v13M6 11l6 6 6-6M4 21h16"/></svg>';
+    if (b.en || b.pt) {
+      const btn = (path, label) => path ? `<a class="dv-brochure" href="${imgUrl(path)}" target="_blank" rel="noopener"><span>${t_('brochure')}<small>${label}</small></span>${icon}</a>` : '';
+      // the visitor's language first
+      const order = currentLang === 'pt' ? [['pt', 'PDF · Português'], ['en', 'PDF · English']] : [['en', 'PDF · English'], ['pt', 'PDF · Português']];
+      return order.map(([l, label]) => btn(b[l], label)).join('');
+    }
     if (!p.brochure_url) return '';
     return `<a class="dv-brochure" href="${imgUrl(p.brochure_url)}" target="_blank" rel="noopener"><span>${t_('brochure')}<small>PDF · PT | EN</small></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 3v13M6 11l6 6 6-6M4 21h16"/></svg></a>`;
   }
@@ -832,7 +1111,7 @@
   function openDetail(id) {
     const p = allProperties.find(x => x.id === id);
     if (!p) return;
-    closeContact(); closeLegal();
+    closeContact(); closeLegal(); closeSim();
     const locked = p.is_locked && !isUnlocked && !unlockedProperties.has(p.id);
     if (locked) return openLockedDetail(p);
     pendingUnlockPropertyId = null;
@@ -869,6 +1148,7 @@
       ${sectionsHTML(p)}
       ${videoHTML}
       ${brochureHTML(p)}
+      ${creditHTML(p)}
       <button class="detail-enquire" id="enquire-btn" onclick="toggleEnquiryForm(${p.id}, ${safeTitle})">Enquire about this property</button>
       <div class="enquiry-form" id="enquiry-form">
         <div class="enquiry-field"><label>Your name *</label><input type="text" id="enq-name" placeholder="Ana Ferreira" /></div>
@@ -1081,7 +1361,7 @@
 
   function toggleContact() { document.getElementById('contact').classList.contains('open') ? closeContact() : openContact(); }
   function openContact(focus) {
-    closeDetail(); closeLegal();
+    closeDetail(); closeLegal(); closeSim();
     document.getElementById('contact').classList.add('open');
     document.getElementById('contact').setAttribute('aria-hidden', 'false');
     document.getElementById('contact-link').classList.add('open');
@@ -1097,7 +1377,19 @@
   function unlockAll() {
     const input = document.getElementById('global-code');
     const err = document.getElementById('global-error');
-    if (ACCESS_CODE && input.value.trim() === ACCESS_CODE) {
+    const typed = input.value.trim();
+    const own = typed ? allProperties.filter(p => p.password && p.password === typed) : [];
+    if (own.length && !(ACCESS_CODE && typed === ACCESS_CODE)) {
+      own.forEach(p => unlockedProperties.add(p.id));
+      sessionStorage.setItem('rep_unlocked_ids', JSON.stringify([...unlockedProperties]));
+      input.value = '';
+      err.classList.remove('show');
+      closeContact();
+      renderGrid(activeFilter === 'all' ? allProperties : allProperties.filter(p => p.type === activeFilter || p.region === activeFilter));
+      buildHeroSlides();
+      showToast(t_('all_unlocked'));
+      if (isPhone()) setTimeout(skipToProperties, 450);
+    } else if (ACCESS_CODE && typed === ACCESS_CODE) {
       isUnlocked = true;
       sessionStorage.setItem('rep_unlocked', 'true');
       input.value = '';
@@ -1120,6 +1412,18 @@
   }
 
   // ── MOBILE MENU ──
+  function openSim() {
+    closeContact(); closeDetail(); closeLegal(); closeMenu();
+    const o = document.getElementById('sim-overlay');
+    o.classList.add('open'); o.setAttribute('aria-hidden', 'false');
+    document.getElementById('sim-panel').scrollTop = 0;
+    o.scrollTop = 0;
+  }
+  function closeSim() {
+    const o = document.getElementById('sim-overlay');
+    o.classList.remove('open'); o.setAttribute('aria-hidden', 'true');
+  }
+
   function openMenu() {
     const o = document.getElementById('menu-overlay');
     o.classList.add('open'); o.setAttribute('aria-hidden', 'false');
@@ -1143,13 +1447,14 @@
     closeMenu();
     if (where === 'home') window.scrollTo({ top: 0, behavior: 'smooth' });
     else if (where === 'collection') setTimeout(() => document.getElementById('listings-grid').scrollIntoView({ behavior: 'smooth' }), 60);
+    else if (where === 'sim') openSim();
     else if (where === 'contact') openContact();
     else openLegal(where);
   }
 
   function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3200); }
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { closeMenu(); closeContact(); closeLegal(); closeDetail(); closeFs(); }
+    if (e.key === 'Escape') { closeMenu(); closeSim(); closeContact(); closeLegal(); closeDetail(); closeFs(); }
     if (e.ctrlKey && e.shiftKey && e.key === 'A') {
       e.preventDefault();
       window.location.href = 'admin.html';
@@ -1160,7 +1465,7 @@
   setTimeout(startHeroIntro, 7000); // safety net
 
   function openLegal(page) {
-    closeContact(); closeDetail();
+    closeContact(); closeDetail(); closeSim();
     document.querySelectorAll('.legal-page').forEach(p => p.style.display = 'none');
     document.getElementById('legal-' + page).style.display = 'block';
     const o = document.getElementById('legal-overlay');
@@ -1200,7 +1505,7 @@
       pw_sub:'Enter your access code to reveal the full details and pricing for this listing.',
       pw_btn:'Unlock listing', pw_error:'Incorrect code.',
       nav_collection:'Collection', nav_contact:'Contact',
-      tile_collection:'Properties Collection', tile_regions:'Lisbon · Cascais · Algarve', private_listing:'Private listing', verified_note:'Reserved for verified clients.', pw_placeholder:'Access code', unlock:'Unlock', hero_featured:'Featured', hero_explore:'Explore', hero_private:'A private collection', menu_label:'Menu', menu_close:'Close', menu_home:'Home', menu_collection:'Collection', menu_privacy:'Privacy', menu_terms:'Terms', d_typology:'Typology', d_area:'Living area', d_gross:'Gross area', d_plot:'Plot', d_beds:'Bedrooms', d_baths:'Bathrooms', d_floor:'Floor', d_year:'Year', d_energy:'Energy', d_exposure:'Exposure', d_feature:'Feature', d_ref:'Reference', d_features:'Features', d_areas:'Areas', d_costs:'Costs', d_imi:'IMI / year', d_imt:'IMT', d_stamp:'Stamp duty', d_nearby:'Nearby', min:'min', brochure:'Download brochure'
+      tile_collection:'Properties Collection', tile_regions:'Lisbon · Cascais · Algarve', private_listing:'Private listing', verified_note:'Reserved for verified clients.', pw_placeholder:'Access code', unlock:'Unlock', hero_featured:'Featured', price_request:'Price on request', d_grapes:'Grape varieties', d_red:'Red', d_white:'White', d_credit:'Photography', d_contact:'Contact', hero_explore:'Explore', hero_private:'A private collection', menu_label:'Menu', menu_sim:'Simulator', menu_close:'Close', menu_home:'Home', menu_collection:'Collection', menu_privacy:'Privacy', menu_terms:'Terms', d_typology:'Typology', d_area:'Living area', d_gross:'Gross area', d_plot:'Plot', d_beds:'Bedrooms', d_baths:'Bathrooms', d_floor:'Floor', d_year:'Year', d_energy:'Energy', d_exposure:'Exposure', d_feature:'Feature', d_ref:'Reference', d_features:'Features', d_areas:'Areas', d_costs:'Costs', d_imi:'IMI / year', d_imt:'IMT', d_stamp:'Stamp duty', d_nearby:'Nearby', min:'min', brochure:'Download brochure'
     },
     pt: {
       all:'Todos', apartment:'Apartamento', villa:'Moradia', townhouse:'Casa em banda',
@@ -1218,7 +1523,7 @@
       pw_sub:'Introduza o código de acesso para ver os detalhes completos e o preço deste imóvel.',
       pw_btn:'Desbloquear imóvel', pw_error:'Código incorreto.',
       nav_collection:'Coleção', nav_contact:'Contacto',
-      tile_collection:'Coleção de Imóveis', tile_regions:'Lisboa · Cascais · Algarve', private_listing:'Imóvel privado', verified_note:'Reservado a clientes verificados.', pw_placeholder:'Código de acesso', unlock:'Desbloquear', hero_featured:'Em destaque', hero_explore:'Explorar', hero_private:'Uma coleção privada', menu_label:'Menu', menu_close:'Fechar', menu_home:'Início', menu_collection:'Coleção', menu_privacy:'Privacidade', menu_terms:'Termos', d_typology:'Tipologia', d_area:'Área útil', d_gross:'Área bruta', d_plot:'Terreno', d_beds:'Quartos', d_baths:'Casas de banho', d_floor:'Piso', d_year:'Ano', d_energy:'Energia', d_exposure:'Exposição', d_feature:'Destaque', d_ref:'Referência', d_features:'Características', d_areas:'Áreas', d_costs:'Custos', d_imi:'IMI / ano', d_imt:'IMT', d_stamp:'Imposto de selo', d_nearby:'Na envolvente', min:'min', brochure:'Descarregar brochura'
+      tile_collection:'Coleção de Imóveis', tile_regions:'Lisboa · Cascais · Algarve', private_listing:'Imóvel privado', verified_note:'Reservado a clientes verificados.', pw_placeholder:'Código de acesso', unlock:'Desbloquear', hero_featured:'Em destaque', price_request:'Preço sob consulta', d_grapes:'Castas', d_red:'Tintas', d_white:'Brancas', d_credit:'Fotografia', d_contact:'Contacto', hero_explore:'Explorar', hero_private:'Uma coleção privada', menu_label:'Menu', menu_sim:'Simulador', menu_close:'Fechar', menu_home:'Início', menu_collection:'Coleção', menu_privacy:'Privacidade', menu_terms:'Termos', d_typology:'Tipologia', d_area:'Área útil', d_gross:'Área bruta', d_plot:'Terreno', d_beds:'Quartos', d_baths:'Casas de banho', d_floor:'Piso', d_year:'Ano', d_energy:'Energia', d_exposure:'Exposição', d_feature:'Destaque', d_ref:'Referência', d_features:'Características', d_areas:'Áreas', d_costs:'Custos', d_imi:'IMI / ano', d_imt:'IMT', d_stamp:'Imposto de selo', d_nearby:'Na envolvente', min:'min', brochure:'Descarregar brochura'
     }
   };
 
@@ -1254,6 +1559,7 @@
     if (submitBtn) submitBtn.textContent = t.btn_request;
 
     if (heroState.slides.length) heroShow(heroState.i);
+    if (window.simApplyLang) window.simApplyLang();
 
     // Re-render listings so descriptions switch language
     const filtered = activeFilter === 'all' ? allProperties : allProperties.filter(p => (p.type||'').toLowerCase() === activeFilter || (p.region||'').toLowerCase() === activeFilter);
@@ -1480,5 +1786,136 @@
   </div>
 </section>
 
+<script>
+// Simulador de prestação / Mortgage simulator.
+// The calculation functions (annuity, balance and every formula in update) are the original ones, untouched.
+// Only the wording and number formatting follow the site language (EN by default, PT when selected).
+(function(){
+'use strict';
+var $=function(id){return document.getElementById(id);};
+var LANG=function(){return (typeof currentLang!=='undefined'&&currentLang==='pt')?'pt':'en';};
+var FMT={
+  pt:{loc:'pt-PT', nf0:new Intl.NumberFormat('pt-PT',{style:'currency',currency:'EUR',maximumFractionDigits:0}), pct:' %'},
+  en:{loc:'en-GB', nf0:new Intl.NumberFormat('en-GB',{style:'currency',currency:'EUR',maximumFractionDigits:0}), pct:'%'}
+};
+var f0=function(v){return FMT[LANG()].nf0.format(Math.round(v));};
+var pc=function(v,d){return v.toLocaleString(FMT[LANG()].loc,{minimumFractionDigits:d||0,maximumFractionDigits:d||0})+FMT[LANG()].pct;};
+var num=function(id){var v=parseFloat($(id).value);return isFinite(v)&&v>0?v:0;};
+var INS=50, COMFORT=35, LIMIT=50;
+function annuity(b,r,n){ if(b<=0) return 0; if(r===0) return b/n; return b*r/(1-Math.pow(1+r,-n)); }
+function balance(P,r,n,k){ var pmt=annuity(P,r,n); if(r===0) return Math.max(0,P-pmt*k); return Math.max(0,P*Math.pow(1+r,k)-pmt*(Math.pow(1+r,k)-1)/r); }
+
+// wording used by update(); pt strings are the originals, character for character
+var W={
+  pt:{
+    ofPrice:' do preço)', noLoan:'A entrada cobre o preço da casa. Não precisa de crédito.',
+    plain:function(pm,y,tot,int){return 'Vai pagar cerca de <b>'+pm+' por mês</b> durante <b>'+y+' anos</b>. No fim, terá devolvido ao banco <b>'+tot+'</b>, dos quais <b>'+int+'</b> são juros.';},
+    house:'A casa: ', interest:'Juros: ',
+    noIncome:'Indique o seu rendimento mensal para ver o peso da prestação.',
+    good:'<b>Confortável.</b> A prestação cabe bem no seu orçamento.',
+    warn:function(c,mp,ml){return '<b>Exige atenção.</b> Fica com menos folga para imprevistos. Para ficar nos '+c+' %, a prestação do crédito teria de ser de cerca de <b>'+mp+'</b> por mês, o que corresponde a pedir até <b>'+ml+'</b>.';},
+    badHead:'<b>Acima do que os bancos costumam aceitar.</b> ',
+    badLoan:function(c,ml){return 'Para ficar nos '+c+' %, poderia pedir até cerca de <b>'+ml+'</b>. Uma entrada maior ou mais anos de prazo também ajudam.';},
+    badNone:'Com este rendimento e estes encargos, não sobra margem para um novo crédito.',
+    sHead:['Se a taxa for','Prestação','Mais que hoje'], today:'Hoje: ',
+    plus:function(s){return ' (+'+s+' ponto'+(s>1?'s':'')+')';},
+    dHead:['Passados','Ainda deve','Já pagou da casa'], yrs:function(y){return y+' anos';}
+  },
+  en:{
+    ofPrice:' of the price)', noLoan:'Your down payment covers the price of the house. You do not need a loan.',
+    plain:function(pm,y,tot,int){return 'You will pay about <b>'+pm+' per month</b> for <b>'+y+' years</b>. By the end, you will have paid the bank back <b>'+tot+'</b>, of which <b>'+int+'</b> is interest.';},
+    house:'The house: ', interest:'Interest: ',
+    noIncome:'Enter your monthly income to see how much the payment weighs on your budget.',
+    good:'<b>Comfortable.</b> The payment fits well within your budget.',
+    warn:function(c,mp,ml){return '<b>Needs attention.</b> You will have less room for the unexpected. To stay at '+c+'%, the loan payment would need to be around <b>'+mp+'</b> a month, which means borrowing up to <b>'+ml+'</b>.';},
+    badHead:'<b>Above what banks usually accept.</b> ',
+    badLoan:function(c,ml){return 'To stay at '+c+'%, you could borrow up to about <b>'+ml+'</b>. A larger down payment or a longer term would also help.';},
+    badNone:'With this income and these commitments, there is no room left for a new loan.',
+    sHead:['If the rate is','Payment','More than today'], today:'Today: ',
+    plus:function(s){return ' (+'+s+' point'+(s>1?'s':'')+')';},
+    dHead:['After','Still owed','Paid off so far'], yrs:function(y){return y+' years';}
+  }
+};
+
+function update(){
+  var w=W[LANG()];
+  var price=num('price'), down=Math.min(num('down'),price), P=price-down;
+  var years=Math.round(num('years')), n=years*12, rate=parseFloat($('rate').value), r=rate/100/12;
+  var income=num('income'), debts=num('debts');
+  $('yearsOut').textContent=years;
+  $('rateOut').textContent=rate.toLocaleString(FMT[LANG()].loc,{minimumFractionDigits:1,maximumFractionDigits:1});
+  $('downPct').textContent= price>0 ? '(' + pc(down/price*100,0) + w.ofPrice : '';
+
+  var pmt=annuity(P,r,n), total=pmt*n, interest=total-P, withIns=pmt+INS;
+  $('pmt').textContent=f0(pmt);
+  if(P<=0){
+    $('plain').innerHTML=w.noLoan;
+  } else {
+    $('plain').innerHTML=w.plain(f0(pmt),years,f0(total),f0(interest));
+  }
+  var sum=P+interest||1;
+  $('split').innerHTML='<i style="width:'+(P/sum*100)+'%;background:var(--cap)"></i><i style="width:'+(interest/sum*100)+'%;background:var(--int)"></i>';
+  $('splitLegend').innerHTML='<span><em style="background:var(--cap)"></em>'+w.house+f0(P)+' ('+pc(P/sum*100,0)+')</span><span><em style="background:var(--int)"></em>'+w.interest+f0(interest)+' ('+pc(interest/sum*100,0)+')</span>';
+  $('loan').textContent=f0(P); $('interest').textContent=f0(interest); $('withIns').textContent=f0(withIns);
+
+  // taxa de esforço
+  var meter=$('meter'), v=$('verdict');
+  if(income<=0){
+    $('dsti').textContent='–'; meter.hidden=true; v.className='verdict'; v.textContent=w.noIncome;
+  } else {
+    var d=(withIns+debts)/income*100;
+    $('dsti').textContent=pc(d,0);
+    meter.hidden=false; $('pin').style.left=Math.min(100,d)+'%';
+    var maxPmt=Math.max(0,income*COMFORT/100-debts-INS), maxLoan=maxPmt>0?maxPmt/annuity(1,r,n):0;
+    if(d<=COMFORT){ v.className='verdict good'; v.innerHTML=w.good; }
+    else if(d<=LIMIT){ v.className='verdict warn'; v.innerHTML=w.warn(COMFORT,f0(maxPmt),f0(maxLoan)); }
+    else { v.className='verdict bad'; v.innerHTML=w.badHead+(maxLoan>0?w.badLoan(COMFORT,f0(maxLoan)):w.badNone); }
+  }
+
+  // juros a subir
+  if(P>0){
+    var h='<tr><th>'+w.sHead[0]+'</th><th>'+w.sHead[1]+'</th><th>'+w.sHead[2]+'</th></tr>';
+    [0,1,2,3].forEach(function(s){
+      var rr=(rate+s)/100/12, pm=annuity(P,rr,n), diff=pm-pmt;
+      h+='<tr class="'+(s===0?'now':'')+'"><td>'+(s===0?w.today:'')+pc(rate+s,1)+(s>0?w.plus(s):'')+'</td><td>'+f0(pm)+'</td><td class="'+(s>0?'up':'')+'">'+(s===0?'–':'+'+f0(diff))+'</td></tr>';
+    });
+    $('stress').innerHTML=h;
+  } else $('stress').innerHTML='';
+
+  // dívida ao longo do tempo
+  if(P>0){
+    var hd='<tr><th>'+w.dHead[0]+'</th><th>'+w.dHead[1]+'</th><th>'+w.dHead[2]+'</th></tr>';
+    [5,10,15,20,25].filter(function(y){return y<years;}).concat([years]).forEach(function(y){
+      var b=y===years?0:balance(P,r,n,y*12);
+      hd+='<tr><td>'+w.yrs(y)+'</td><td>'+f0(b)+'</td><td>'+pc((P-b)/P*100,0)+'</td></tr>';
+    });
+    $('debt').innerHTML=hd;
+  } else $('debt').innerHTML='';
+}
+
+// static wording: PT markup is the original; data-en holds the English
+function applyLang(){
+  var en=LANG()==='en', panel=$('sim-panel');
+  panel.querySelectorAll('[data-en]').forEach(function(el){
+    if(el.dataset.pt===undefined) el.dataset.pt=el.innerHTML;
+    el.innerHTML=en?el.dataset.en:el.dataset.pt;
+  });
+  panel.querySelectorAll('[data-en-aria]').forEach(function(el){
+    if(el.dataset.ptAria===undefined) el.dataset.ptAria=el.getAttribute('aria-label');
+    el.setAttribute('aria-label',en?el.dataset.enAria:el.dataset.ptAria);
+  });
+  update();
+}
+window.simApplyLang=applyLang;
+
+var panel=$('sim-panel');
+panel.addEventListener('input',update);
+panel.addEventListener('click',function(e){
+  var b=e.target.closest('button[data-down]'); if(!b) return;
+  $('down').value=Math.round(num('price')*parseFloat(b.dataset.down)/100); update();
+});
+applyLang();
+})();
+</script>
 </body>
 </html>
