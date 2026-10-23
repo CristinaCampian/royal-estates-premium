@@ -793,7 +793,7 @@
         <h3 class="t-display access-title" data-i18n="code_title">Access code</h3>
         <p class="t-cap access-sub" data-i18n="code_sub">Enter your code to unlock every property.</p>
         <div class="dv-lock-row">
-          <input type="password" id="global-code" placeholder="Access code" autocomplete="off" onkeydown="if(event.key==='Enter') unlockAll()" />
+          <input type="password" id="global-code" placeholder="Access code" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter') unlockAll()" />
           <button class="dv-unlock" onclick="unlockAll()"><span data-i18n="unlock">Unlock</span> →</button>
         </div>
         <p class="pw-error" id="global-error" data-i18n="pw_error">Incorrect code.</p>
@@ -957,12 +957,18 @@
   }
   setTimeout(endWelcome, 6000);
 
-  async function loadAccessCode() {
-    try {
-      const { data, error } = await db.from('site_settings').select('value').eq('key', 'access_code').maybeSingle();
-      if (!error && data) ACCESS_CODE = (data.value || '').trim(); // empty = global code switched off
-    } catch (e) { /* keep fallback */ }
+  let accessCodeReady = null;
+  function loadAccessCode() {
+    return accessCodeReady = (async () => {
+      try {
+        const { data, error } = await db.from('site_settings').select('value').eq('key', 'access_code').maybeSingle();
+        if (!error && data) ACCESS_CODE = (data.value || '').trim(); // empty = global code switched off
+      } catch (e) { /* keep fallback */ }
+    })();
   }
+  // codes match without caring about capitals, spaces or dashes (phones capitalise and add spaces)
+  const normCode = v => String(v || '').toLowerCase().replace(/[\s\-_.]/g, '');
+  const sameCode = (a, b) => !!normCode(a) && normCode(a) === normCode(b);
 
   async function init() {
     loadAccessCode();
@@ -1364,7 +1370,7 @@
       <div class="dv-lock">
         <p class="dv-lock-note">${lockIcon}<span>${t_('verified_note')}</span></p>
         <div class="dv-lock-row">
-          <input type="password" id="pw-input" placeholder="${t_('pw_placeholder')}" autocomplete="off" onkeydown="if(event.key==='Enter') checkPw()" />
+          <input type="password" id="pw-input" placeholder="${t_('pw_placeholder')}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter') checkPw()" />
           <button class="dv-unlock" onclick="checkPw()">${t_('unlock')} →</button>
         </div>
         <p class="pw-error" id="pw-error">${t_('pw_error')}</p>
@@ -1376,7 +1382,8 @@
     setTimeout(() => { const i = document.getElementById('pw-input'); if (i) i.focus(); }, 800);
   }
 
-  function checkPw() {
+  async function checkPw() {
+    if (accessCodeReady) await accessCodeReady; // make sure the saved code has arrived before comparing
     const input = document.getElementById('pw-input');
     if (!input) return;
     const val = input.value.trim();
@@ -1385,11 +1392,11 @@
     let ok = false;
 
     // per-property password first, then the global access code
-    if (prop && prop.password && val === prop.password) {
+    if (prop && prop.password && sameCode(val, prop.password)) {
       unlockedProperties.add(id);
       sessionStorage.setItem('rep_unlocked_ids', JSON.stringify([...unlockedProperties]));
       ok = true;
-    } else if (ACCESS_CODE && val === ACCESS_CODE) {
+    } else if (ACCESS_CODE && sameCode(val, ACCESS_CODE)) {
       isUnlocked = true;
       sessionStorage.setItem('rep_unlocked', 'true');
       ok = true;
@@ -1436,12 +1443,13 @@
   }
 
   // one code unlocks every listing, whatever password each listing has of its own
-  function unlockAll() {
+  async function unlockAll() {
+    if (accessCodeReady) await accessCodeReady;
     const input = document.getElementById('global-code');
     const err = document.getElementById('global-error');
     const typed = input.value.trim();
-    const own = typed ? allProperties.filter(p => p.password && p.password === typed) : [];
-    if (own.length && !(ACCESS_CODE && typed === ACCESS_CODE)) {
+    const own = typed ? allProperties.filter(p => p.password && sameCode(p.password, typed)) : [];
+    if (own.length && !(ACCESS_CODE && sameCode(typed, ACCESS_CODE))) {
       own.forEach(p => unlockedProperties.add(p.id));
       sessionStorage.setItem('rep_unlocked_ids', JSON.stringify([...unlockedProperties]));
       input.value = '';
@@ -1451,7 +1459,7 @@
       buildHeroSlides();
       showToast(t_('all_unlocked'));
       if (isPhone()) setTimeout(skipToProperties, 450);
-    } else if (ACCESS_CODE && typed === ACCESS_CODE) {
+    } else if (ACCESS_CODE && sameCode(typed, ACCESS_CODE)) {
       isUnlocked = true;
       sessionStorage.setItem('rep_unlocked', 'true');
       input.value = '';
