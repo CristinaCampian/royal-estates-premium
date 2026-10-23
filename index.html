@@ -137,19 +137,22 @@
     .detail-modal { background: var(--bg); width: 100%; max-width: 960px; max-height: 90vh; overflow-y: auto; position: relative; display: grid; grid-template-columns: 1fr 1fr; }
 
 
-    .fs-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.96); z-index:600; align-items:center; justify-content:center; flex-direction:column; }
-    .fs-overlay.open { display:flex; }
-    .fs-main { max-width:92vw; max-height:82vh; object-fit:contain; display:block; }
-    .fs-close { position:absolute; top:1.2rem; right:1.5rem; background:none; border:none; color:#fff; font-size:2rem; cursor:pointer; line-height:1; opacity:0.7; transition:opacity 0.15s; }
+    .fs-overlay { display:none; position:fixed; inset:0; background:#050505; z-index:600; touch-action:pan-y; overscroll-behavior:contain; }
+    .fs-overlay.open { display:block; }
+    .fs-stage { position:absolute; inset:0 0 calc(88px + env(safe-area-inset-bottom)) 0; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+    .fs-main { width:100%; height:100%; object-fit:contain; display:block; will-change:transform,opacity; -webkit-user-drag:none; user-select:none; }
+    .fs-close { position:absolute; top:calc(0.8rem + env(safe-area-inset-top)); right:1rem; z-index:3; background:rgba(5,5,5,0.55); border:none; color:#fff; font-size:2rem; width:48px; height:48px; cursor:pointer; line-height:1; opacity:0.85; transition:opacity 0.15s; }
     .fs-close:hover { opacity:1; }
-    .fs-arrow { position:absolute; top:50%; transform:translateY(-50%); background:rgba(255,255,255,0.12); border:none; color:#fff; font-size:2rem; width:52px; height:52px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background 0.15s; }
+    .fs-arrow { position:absolute; top:calc(50% - 44px); transform:translateY(-50%); z-index:3; background:rgba(5,5,5,0.45); border:none; color:#fff; font-size:2rem; width:52px; height:52px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background 0.15s; }
     .fs-arrow:hover { background:rgba(255,255,255,0.25); }
-    .fs-arrow.left { left:1rem; }
-    .fs-arrow.right { right:1rem; }
-    .fs-counter { position:absolute; bottom:1.5rem; left:50%; transform:translateX(-50%); color:rgba(255,255,255,0.5); font-size:0.7rem; letter-spacing:0.12em; }
-    .fs-thumbs { display:flex; gap:0.5rem; margin-top:1rem; overflow-x:auto; max-width:92vw; padding-bottom:0.3rem; }
-    .fs-thumb { width:60px; height:44px; object-fit:cover; cursor:pointer; opacity:0.45; transition:opacity 0.15s; flex-shrink:0; border:1px solid transparent; }
-    .fs-thumb.active, .fs-thumb:hover { opacity:1; border-color:rgba(255,255,255,0.4); }
+    .fs-arrow.left { left:0.8rem; }
+    .fs-arrow.right { right:0.8rem; }
+    .fs-counter { position:absolute; top:calc(1.1rem + env(safe-area-inset-top)); left:1.1rem; z-index:3; color:rgba(255,255,255,0.75); font-size:0.7rem; letter-spacing:0.12em; }
+    .fs-thumbs { position:absolute; left:0; right:0; bottom:env(safe-area-inset-bottom); height:88px; display:flex; align-items:center; gap:0.5rem; overflow-x:auto; padding:0 0.8rem; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+    .fs-thumbs::-webkit-scrollbar { display:none; }
+    .fs-thumb { width:84px; height:60px; object-fit:cover; cursor:pointer; opacity:0.45; transition:opacity 0.15s; flex-shrink:0; border:1px solid transparent; }
+    .fs-thumb.active, .fs-thumb:hover { opacity:1; border-color:rgba(255,255,255,0.6); }
+    @media (max-width: 760px) { .fs-arrow { width:44px; height:44px; } .fs-thumb { width:64px; height:46px; } .fs-thumbs { height:72px; } .fs-stage { inset:0 0 calc(72px + env(safe-area-inset-bottom)) 0; } }
     .fullscreen-btn { position:absolute; bottom:0.7rem; right:0.7rem; background:rgba(255,255,255,0.85); border:none; font-size:0.6rem; letter-spacing:0.1em; text-transform:uppercase; padding:0.3rem 0.7rem; cursor:pointer; color:#1c1a17; transition:background 0.15s; z-index:2; }
     .fullscreen-btn:hover { background:#fff; }
 
@@ -282,7 +285,6 @@
     .dv-media { position: relative; background: var(--ink); overflow: hidden; min-height: 0; transform: scale(1.04); opacity: 0; transition: transform 0.9s cubic-bezier(0.2,0.7,0.1,1), opacity 0.6s ease; }
     .detail-overlay.open .dv-media { transform: none; opacity: 1; transition-delay: 0.1s; }
     .dv-media #gallery-main { width: 100%; height: 100%; object-fit: cover; display: block; cursor: zoom-in; touch-action: pan-y; }
-    #fs-overlay { touch-action: pan-y; }
     .dv-empty { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 23px; color: var(--mid); }
     .dv-panel { position: relative; background: var(--accent); padding: var(--pad) var(--pad) 40px; overflow-y: auto; display: flex; flex-direction: column; gap: 1.1rem; transform: translateX(105%); transition: transform 0.8s cubic-bezier(0.2,0.7,0.1,1); }
     .detail-overlay.open .dv-panel { transform: none; transition-delay: 0.05s; }
@@ -1191,17 +1193,20 @@
     updateFs();
   }
 
-  function updateFs() {
+  function updateFs(anim, dir) {
     const imgs = window._galleryImgs || [];
     const i = window._fsIdx || 0;
     const main = document.getElementById('fs-main');
     const counter = document.getElementById('fs-counter');
     const thumbs = document.getElementById('fs-thumbs');
-    if (main) main.src = imgs[i];
+    if (main) { if (anim) showImg(main, imgs[i], dir); else { main.src = imgs[i]; main.style.opacity = ''; main.style.transform = ''; } }
     if (counter) counter.textContent = `${i+1} / ${imgs.length}`;
     if (thumbs) {
-      thumbs.innerHTML = imgs.map((src, ti) => `<img src="${src}" class="fs-thumb${ti===i?' active':''}" onclick="fsGo(${ti})" />`).join('');
+      if (thumbs.children.length !== imgs.length) thumbs.innerHTML = imgs.map((src, ti) => `<img src="${src}" class="fs-thumb" loading="lazy" onclick="fsGo(${ti})" />`).join('');
+      [...thumbs.children].forEach((t, ti) => t.classList.toggle('active', ti === i));
+      const cur = thumbs.children[i]; if (cur) thumbs.scrollTo({ left: cur.offsetLeft - (thumbs.clientWidth - cur.clientWidth) / 2, behavior: anim ? 'smooth' : 'auto' });
     }
+    preloadAround(imgs, i);
     // sync gallery too
     const gMain = document.getElementById('gallery-main');
     const gCounter = document.getElementById('gallery-counter');
@@ -1211,22 +1216,50 @@
     window._galleryIdx = i;
   }
 
-  function fsGo(i) { window._fsIdx = i; updateFs(); }
-  function fsNav(dir) { const imgs = window._galleryImgs||[]; window._fsIdx = ((window._fsIdx||0)+dir+imgs.length)%imgs.length; updateFs(); }
+  function fsGo(i) { const d = i >= (window._fsIdx || 0) ? 1 : -1; window._fsIdx = i; updateFs(true, d); }
+  function fsNav(dir) { const imgs = window._galleryImgs||[]; window._fsIdx = ((window._fsIdx||0)+dir+imgs.length)%imgs.length; updateFs(true, dir); }
   function closeFs() { document.getElementById('fs-overlay').classList.remove('open'); }
 
-  function galleryGo(i) {
+  // swap a photo without a hard cut: the new file is loaded and decoded first, the old one slides/fades out, the new one slides/fades in
+  function showImg(el, src, dir) {
+    if (!el) return;
+    const tok = el._tok = (el._tok || 0) + 1;
+    const pre = new Image(); pre.src = src;
+    const ready = pre.decode ? pre.decode().catch(() => {}) : Promise.resolve();
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const gap = reduce ? 0 : (dir ? Math.max(Math.abs(el._dx || 0) + 40, 70) : 0);
+    el.style.transition = reduce ? 'none' : 'transform .17s ease-in, opacity .17s ease-in';
+    el.style.transform = dir ? `translateX(${-dir * gap}px)` : '';
+    el.style.opacity = '0';
+    const out = new Promise(res => setTimeout(res, reduce ? 0 : 175));
+    Promise.all([ready, out]).then(() => {
+      if (el._tok !== tok) return;
+      el.style.transition = 'none';
+      el.src = src;
+      el.style.transform = dir && !reduce ? `translateX(${dir * 50}px)` : '';
+      void el.offsetWidth;
+      el.style.transition = reduce ? 'none' : 'transform .26s cubic-bezier(.2,.7,.2,1), opacity .26s ease-out';
+      el.style.transform = ''; el.style.opacity = '1';
+      el._dx = 0;
+    });
+  }
+  function preloadAround(imgs, i) {
+    [1, -1, 2].forEach(k => { const src = imgs[(i + k + imgs.length) % imgs.length]; if (src) { const im = new Image(); im.src = src; } });
+  }
+
+  function galleryGo(i, dir) {
     const imgs = window._galleryImgs || [];
     if (!imgs.length) return;
     window._galleryIdx = (i + imgs.length) % imgs.length;
     const idx = window._galleryIdx;
-    document.getElementById('gallery-main').src = imgs[idx];
+    showImg(document.getElementById('gallery-main'), imgs[idx], dir);
+    preloadAround(imgs, idx);
     const counter = document.getElementById('gallery-counter');
     if (counter) counter.textContent = `${idx+1} / ${imgs.length}`;
     document.querySelectorAll('.gallery-thumb').forEach((t, ti) => t.classList.toggle('active', ti === idx));
   }
   function galleryNav(dir) {
-    galleryGo((window._galleryIdx || 0) + dir);
+    galleryGo((window._galleryIdx || 0) + dir, dir);
   }
 
   // sideways swipe on touch screens: the photo follows the finger, then the next/previous one is shown (arrows stay as well)
@@ -1234,7 +1267,7 @@
     if (!el) return;
     let x0 = 0, y0 = 0, dx = 0, on = false, horiz = null;
     el.addEventListener('touchstart', e => {
-      if (e.touches.length !== 1 || (window._galleryImgs || []).length < 2) return;
+      if (e.touches.length !== 1 || (window._galleryImgs || []).length < 2 || (e.target.closest && e.target.closest('.fs-thumbs'))) return;
       x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; dx = 0; on = true; horiz = null;
     }, { passive: true });
     el.addEventListener('touchmove', e => {
@@ -1243,13 +1276,13 @@
       if (horiz === null && (Math.abs(mx) > 8 || Math.abs(my) > 8)) horiz = Math.abs(mx) > Math.abs(my);
       if (!horiz) return;
       dx = mx;
-      const img = getImg(); if (img) { img.style.transition = 'none'; img.style.transform = `translateX(${dx}px)`; }
+      const img = getImg(); if (img) { img._tok = (img._tok || 0) + 1; img._dx = dx; img.style.opacity = ''; img.style.transition = 'none'; img.style.transform = `translateX(${dx}px)`; }
     }, { passive: true });
     const end = () => {
       if (!on) return; on = false;
       const img = getImg();
-      if (img) { img.style.transition = 'transform 0.2s ease'; img.style.transform = ''; }
       if (horiz && Math.abs(dx) > 50) go(dx < 0 ? 1 : -1);
+      else if (img) { img._dx = 0; img.style.transition = 'transform 0.2s ease'; img.style.transform = ''; }
     };
     el.addEventListener('touchend', end);
     el.addEventListener('touchcancel', end);
@@ -1597,9 +1630,9 @@
 <!-- FULLSCREEN OVERLAY -->
 <div class="fs-overlay" id="fs-overlay">
   <button class="fs-close" onclick="closeFs()">×</button>
-  <button class="fs-arrow left" onclick="fsNav(-1)">‹</button>
-  <img class="fs-main" id="fs-main" src="" alt="" />
-  <button class="fs-arrow right" onclick="fsNav(1)">›</button>
+  <button class="fs-arrow left" onclick="fsNav(-1)" aria-label="Previous">‹</button>
+  <div class="fs-stage"><img class="fs-main" id="fs-main" src="" alt="" draggable="false" /></div>
+  <button class="fs-arrow right" onclick="fsNav(1)" aria-label="Next">›</button>
   <div class="fs-thumbs" id="fs-thumbs"></div>
   <span class="fs-counter" id="fs-counter"></span>
 </div>
