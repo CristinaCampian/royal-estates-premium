@@ -180,6 +180,8 @@
     .detail-location { font-size: 0.72rem; color: var(--mid); letter-spacing: 0.08em; text-transform: uppercase; }
     .detail-specs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; padding: 1.2rem 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
     .spec-item { display: flex; flex-direction: column; gap: 0.15rem; }
+    .detail-specs .spec-item.long { grid-column: 1 / -1; }
+    .dv-panel .spec-item.long .spec-val { font-size: 15px; line-height: 1.5; }
     .spec-val { font-size: 0.85rem; font-weight: 400; }
     .spec-lbl { font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--mid); }
     .detail-price { font-family: 'Cormorant Garamond', serif; font-size: 2.2rem; font-weight: 400; }
@@ -279,7 +281,8 @@
     .detail-overlay.open { visibility: visible; opacity: 1; transition: opacity 0.35s ease, visibility 0s; }
     .dv-media { position: relative; background: var(--ink); overflow: hidden; min-height: 0; transform: scale(1.04); opacity: 0; transition: transform 0.9s cubic-bezier(0.2,0.7,0.1,1), opacity 0.6s ease; }
     .detail-overlay.open .dv-media { transform: none; opacity: 1; transition-delay: 0.1s; }
-    .dv-media #gallery-main { width: 100%; height: 100%; object-fit: cover; display: block; cursor: zoom-in; }
+    .dv-media #gallery-main { width: 100%; height: 100%; object-fit: cover; display: block; cursor: zoom-in; touch-action: pan-y; }
+    #fs-overlay { touch-action: pan-y; }
     .dv-empty { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 23px; color: var(--mid); }
     .dv-panel { position: relative; background: var(--accent); padding: var(--pad) var(--pad) 40px; overflow-y: auto; display: flex; flex-direction: column; gap: 1.1rem; transform: translateX(105%); transition: transform 0.8s cubic-bezier(0.2,0.7,0.1,1); }
     .detail-overlay.open .dv-panel { transform: none; transition-delay: 0.05s; }
@@ -1062,7 +1065,7 @@
     ].filter(it => it[1] !== undefined && it[1] !== null && it[1] !== '');
     const all = items.map(([k, v]) => [t_(k), v]).concat((x.facts || []).map(f => [f.k, f.v]));
     if (!all.length) return '';
-    return `<div class="detail-specs">${all.map(([label, v]) => `<div class="spec-item"><span class="spec-val">${esc(v)}</span><span class="spec-lbl">${esc(label)}</span></div>`).join('')}</div>`;
+    return `<div class="detail-specs">${all.map(([label, v]) => `<div class="spec-item${String(v).length > 30 ? ' long' : ''}"><span class="spec-val">${esc(v)}</span><span class="spec-lbl">${esc(label)}</span></div>`).join('')}</div>`;
   }
 
   function sectionsHTML(p) {
@@ -1078,11 +1081,6 @@
     if (d.stamp_duty) costs.push([t_('d_stamp'), eur(d.stamp_duty)]);
     if (costs.length) out += sec('d_costs', rows(costs));
     if (x.nearby.length) out += sec('d_nearby', rows(x.nearby.map(n => [n.n, n.min + ' ' + t_('min')])));
-    const gr = d.grapes || {};
-    if ((gr.red && gr.red.length) || (gr.white && gr.white.length)) {
-      const tags = (arr) => `<div class="dv-tags">${arr.map(v => `<span class="dv-tag">${esc(v)}</span>`).join('')}</div>`;
-      out += sec('d_grapes', `${gr.red && gr.red.length ? `<p class="dv-sub">${t_('d_red')}</p>${tags(gr.red)}` : ''}${gr.white && gr.white.length ? `<p class="dv-sub">${t_('d_white')}</p>${tags(gr.white)}` : ''}`);
-    }
     const c = d.contact || {};
     if (c.name || c.phone || c.email) {
       out += sec('d_contact', `<div class="dv-contact">${c.name ? `<span>${esc(c.name)}</span>` : ''}${c.phone ? `<a href="tel:${esc(String(c.phone).replace(/[^+\d]/g, ''))}">${esc(c.phone)}</a>` : ''}${c.email ? `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>` : ''}</div>`);
@@ -1230,6 +1228,34 @@
   function galleryNav(dir) {
     galleryGo((window._galleryIdx || 0) + dir);
   }
+
+  // sideways swipe on touch screens: the photo follows the finger, then the next/previous one is shown (arrows stay as well)
+  function attachSwipe(el, getImg, go) {
+    if (!el) return;
+    let x0 = 0, y0 = 0, dx = 0, on = false, horiz = null;
+    el.addEventListener('touchstart', e => {
+      if (e.touches.length !== 1 || (window._galleryImgs || []).length < 2) return;
+      x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; dx = 0; on = true; horiz = null;
+    }, { passive: true });
+    el.addEventListener('touchmove', e => {
+      if (!on) return;
+      const t = e.touches[0], mx = t.clientX - x0, my = t.clientY - y0;
+      if (horiz === null && (Math.abs(mx) > 8 || Math.abs(my) > 8)) horiz = Math.abs(mx) > Math.abs(my);
+      if (!horiz) return;
+      dx = mx;
+      const img = getImg(); if (img) { img.style.transition = 'none'; img.style.transform = `translateX(${dx}px)`; }
+    }, { passive: true });
+    const end = () => {
+      if (!on) return; on = false;
+      const img = getImg();
+      if (img) { img.style.transition = 'transform 0.2s ease'; img.style.transform = ''; }
+      if (horiz && Math.abs(dx) > 50) go(dx < 0 ? 1 : -1);
+    };
+    el.addEventListener('touchend', end);
+    el.addEventListener('touchcancel', end);
+  }
+  attachSwipe(document.getElementById('detail-media'), () => document.getElementById('gallery-main'), galleryNav);
+  attachSwipe(document.getElementById('fs-overlay'), () => document.getElementById('fs-main'), fsNav);
 
   function closeDetail() {
     const o = document.getElementById('detail-overlay');

@@ -428,15 +428,6 @@
             <textarea id="d-facts" placeholder="Land | 66.5 ha&#10;Divisions | 13&#10;Footprint | 888 m²&#10;Vineyard | On request" style="min-height:110px"></textarea>
             <span class="field-hint">One per line: label | value. They appear in the facts grid on the site. Use the Português tab for the Portuguese wording.</span>
           </div>
-          <div class="field">
-            <label>Red grape varieties</label>
-            <textarea id="d-grapes-red" placeholder="Touriga Nacional&#10;Aragonês" style="min-height:90px"></textarea>
-            <span class="field-hint">One per line or comma-separated. Grape names are the same in both languages.</span>
-          </div>
-          <div class="field">
-            <label>White grape varieties</label>
-            <textarea id="d-grapes-white" placeholder="Verdelho&#10;Arinto" style="min-height:90px"></textarea>
-          </div>
         </div>
         <div style="margin-top:1.2rem;margin-bottom:1.2rem;border-top:1px solid var(--rule)"></div>
         <div class="form-grid-3">
@@ -994,8 +985,6 @@
     if (v('d-prefix')) d.prefix = slugify(v('d-prefix'));
     const contact = { name: v('d-contact-name'), phone: v('d-contact-phone'), email: v('d-contact-email') };
     if (contact.name || contact.phone || contact.email) d.contact = contact;
-    const red = parseFeatures(document.getElementById('d-grapes-red').value), white = parseFeatures(document.getElementById('d-grapes-white').value);
-    if (red.length || white.length) d.grapes = { red, white };
     if (brochureState.en || brochureState.pt) d.brochures = { en: brochureState.en, pt: brochureState.pt };
     return d;
   }
@@ -1015,7 +1004,6 @@
     document.getElementById('f-offmarket').checked = !!d.off_market;
     set('d-credit', d.credit); set('d-prefix', d.prefix);
     const c = d.contact || {}; set('d-contact-name', c.name); set('d-contact-phone', c.phone); set('d-contact-email', c.email);
-    const g = d.grapes || {}; set('d-grapes-red', (g.red || []).join('\n')); set('d-grapes-white', (g.white || []).join('\n'));
     brochureState = { en: (d.brochures && d.brochures.en) || null, pt: (d.brochures && d.brochures.pt) || null };
     ['en', 'pt'].forEach(l => { document.getElementById('d-brochure-' + l).value = ''; document.getElementById('d-brochure-' + l + '-cur').textContent = brochureState[l] ? 'Current file: ' + brochureState[l] : ''; });
   }
@@ -1191,7 +1179,7 @@
     document.getElementById('f-region').value = '';
     Object.values(NEUTRAL_IDS).forEach(id => document.getElementById(id).value = '');
     LANG_DETAIL_IDS.forEach(([k, id]) => document.getElementById(id).value = '');
-    ['d-credit','d-prefix','d-contact-name','d-contact-phone','d-contact-email','d-grapes-red','d-grapes-white'].forEach(id => document.getElementById(id).value = '');
+    ['d-credit','d-prefix','d-contact-name','d-contact-phone','d-contact-email'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('f-offmarket').checked = false;
     brochureState = { en: null, pt: null };
     ['en', 'pt'].forEach(l => { document.getElementById('d-brochure-' + l).value = ''; document.getElementById('d-brochure-' + l + '-cur').textContent = ''; });
