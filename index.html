@@ -1287,8 +1287,11 @@
     el.addEventListener('touchend', end);
     el.addEventListener('touchcancel', end);
   }
-  attachSwipe(document.getElementById('detail-media'), () => document.getElementById('gallery-main'), galleryNav);
-  attachSwipe(document.getElementById('fs-overlay'), () => document.getElementById('fs-main'), fsNav);
+  // the fullscreen markup sits below this script, so attach once the page is parsed
+  document.addEventListener('DOMContentLoaded', () => {
+    attachSwipe(document.getElementById('detail-media'), () => document.getElementById('gallery-main'), galleryNav);
+    attachSwipe(document.getElementById('fs-overlay'), () => document.getElementById('fs-main'), fsNav);
+  });
 
   function closeDetail() {
     const o = document.getElementById('detail-overlay');
