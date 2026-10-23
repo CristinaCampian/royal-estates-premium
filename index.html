@@ -264,6 +264,11 @@
     .detail-share { position: absolute; top: 20px; right: 60px; width: 32px; height: 32px; border-radius: 0; border: none; background: rgba(28,26,23,0.15); color: var(--ink); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s; z-index: 2; }
     .detail-share:hover { background: rgba(28,26,23,0.3); }
     .detail-share svg { width: 16px; height: 16px; }
+    .detail-share-btn { background: transparent; color: var(--ink); border: 1px solid var(--ink); padding: 0.95rem; font-family: 'Inter', sans-serif; font-size: 0.66rem; letter-spacing: 0.18em; text-transform: uppercase; cursor: pointer; width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.7rem; transition: background 0.15s, color 0.15s; }
+    .detail-share-btn:hover { background: var(--ink); color: var(--bg); }
+    .detail-share-btn svg { width: 15px; height: 15px; }
+    .dv-panel .detail-share-btn { border-radius: 0; margin-top: 0.6rem; }
+    .share-fab { display: none; }
     .dv-panel .detail-eyebrow, .dv-panel .detail-title { padding-right: 96px; }
     .contact-big { font-family: var(--serif); display: block; font-size: 23px; letter-spacing: 0.02em; line-height: 1.3; color: var(--ink); text-decoration: none; }
     a.contact-big:first-of-type { text-decoration: underline; text-underline-offset: 4px; }
@@ -473,6 +478,15 @@
       .contact-overlay, .detail-overlay, .legal-overlay { inset: 0; }
       .menu-fab { display: flex; align-items: center; gap: 0.6rem; position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 270; background: var(--bg); color: var(--ink); border: none; padding: 0.8rem 1.2rem; font-family: 'Inter', sans-serif; font-size: 17px; letter-spacing: 0.01em; box-shadow: 0 3px 14px rgba(28,26,23,0.22); cursor: pointer; opacity: 0; pointer-events: none; transform: translateY(10px); transition: opacity 0.3s ease, transform 0.3s ease; }
       .menu-fab.show { opacity: 1; pointer-events: auto; transform: none; }
+      /* a listing is open: the Menu button gives way to a square Share button in the same corner */
+      .share-fab { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 270; width: 52px; height: 52px; align-items: center; justify-content: center; background: var(--bg); color: var(--ink); border: none; box-shadow: 0 3px 14px rgba(28,26,23,0.22); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+      .share-fab svg { width: 22px; height: 22px; }
+      .share-fab:active { background: var(--ink); color: var(--bg); }
+      body:has(.detail-overlay.open) .share-fab { display: flex; }
+      body:has(.fs-overlay.open) .share-fab { display: none; }
+      .detail-share { display: none; }
+      .dv-panel .detail-eyebrow, .dv-panel .detail-title { padding-right: 48px; }
+      .dv-panel { padding-bottom: 96px; }
       /* header pair: the Menu is a square frame with the same width and height as the logo */
       /* header = stacked Aboreto wordmark + a square Menu exactly as tall as the wordmark (cap-top of ROYAL to baseline of ESTATES = 1.7em) */
       .landing { --wm-fs: min(11.5vw, 46px); --mn: calc(var(--wm-fs) * 1.7); }
@@ -629,6 +643,7 @@
 </footer>
 
 <!-- MOBILE: floating menu button + full-screen menu -->
+<button class="share-fab" id="share-fab" onclick="shareProperty(window._shareId)" aria-label="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></button>
 <button class="menu-fab" id="menu-fab" onclick="openMenu()" aria-label="Menu"><span class="burger mini" aria-hidden="true"><i></i><i></i><i></i></span><span class="menu-word" data-i18n="menu_label">Menu</span></button>
 <nav class="menu-overlay" id="menu-overlay" aria-hidden="true">
   <div class="menu-logo"><img src="logo.svg" alt="Royal Estates Premium" /></div>
@@ -1150,6 +1165,7 @@
     const locked = p.is_locked && !isUnlocked && !unlockedProperties.has(p.id);
     if (locked) return openLockedDetail(p);
     pendingUnlockPropertyId = null;
+    window._shareId = p.id;
     setHash(propHash(p));
     const gallery = (p.images && p.images.length) ? p.images : (p.image_url ? [p.image_url] : []);
     window._galleryImgs = gallery.map(imgUrl);
@@ -1187,6 +1203,7 @@
       ${brochureHTML(p)}
       ${creditHTML(p)}
       <button class="detail-enquire" id="enquire-btn" onclick="toggleEnquiryForm(${p.id}, ${safeTitle})">Enquire about this property</button>
+      <button class="detail-share-btn" onclick="shareProperty(${p.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg><span>${t_('share_btn')}</span></button>
       <div class="enquiry-form" id="enquiry-form">
         <div class="enquiry-field"><label>Your name *</label><input type="text" id="enq-name" placeholder="Ana Ferreira" /></div>
         <div class="enquiry-field"><label>Email address *</label><input type="email" id="enq-email" placeholder="ana@email.com" /></div>
@@ -1387,6 +1404,7 @@
 
   function openLockedDetail(p) {
     pendingUnlockPropertyId = p.id;
+    window._shareId = p.id;
     setHash(propHash(p));
     window._galleryImgs = [];
     const cover = (p.images && p.images.length) ? p.images[0] : p.image_url;
@@ -1609,7 +1627,7 @@
       pw_sub:'Enter your access code to reveal the full details and pricing for this listing.',
       pw_btn:'Unlock listing', pw_error:'Incorrect code.',
       nav_collection:'Collection', nav_contact:'Contact',
-      tile_collection:'Properties Collection', tile_regions:'Lisbon · Cascais · Algarve', private_listing:'Private listing', verified_note:'Reserved for verified clients.', pw_placeholder:'Access code', unlock:'Unlock', hero_featured:'Featured', share:'Share this property', link_copied:'Link copied', price_request:'Price on request', d_grapes:'Grape varieties', d_red:'Red', d_white:'White', d_credit:'Photography', d_contact:'Contact', hero_explore:'Explore', hero_private:'A private collection', menu_label:'Menu', menu_sim:'Simulator', menu_close:'Close', menu_home:'Home', menu_collection:'Collection', menu_privacy:'Privacy', menu_terms:'Terms', d_typology:'Typology', d_area:'Living area', d_gross:'Gross area', d_plot:'Plot', d_beds:'Bedrooms', d_baths:'Bathrooms', d_floor:'Floor', d_year:'Year', d_energy:'Energy', d_exposure:'Exposure', d_feature:'Feature', d_ref:'Reference', d_features:'Features', d_areas:'Areas', d_costs:'Costs', d_imi:'IMI / year', d_imt:'IMT', d_stamp:'Stamp duty', d_nearby:'Nearby', min:'min', brochure:'Download brochure'
+      tile_collection:'Properties Collection', tile_regions:'Lisbon · Cascais · Algarve', private_listing:'Private listing', verified_note:'Reserved for verified clients.', pw_placeholder:'Access code', unlock:'Unlock', hero_featured:'Featured', share:'Share this property', share_btn:'Share property', link_copied:'Link copied', price_request:'Price on request', d_grapes:'Grape varieties', d_red:'Red', d_white:'White', d_credit:'Photography', d_contact:'Contact', hero_explore:'Explore', hero_private:'A private collection', menu_label:'Menu', menu_sim:'Simulator', menu_close:'Close', menu_home:'Home', menu_collection:'Collection', menu_privacy:'Privacy', menu_terms:'Terms', d_typology:'Typology', d_area:'Living area', d_gross:'Gross area', d_plot:'Plot', d_beds:'Bedrooms', d_baths:'Bathrooms', d_floor:'Floor', d_year:'Year', d_energy:'Energy', d_exposure:'Exposure', d_feature:'Feature', d_ref:'Reference', d_features:'Features', d_areas:'Areas', d_costs:'Costs', d_imi:'IMI / year', d_imt:'IMT', d_stamp:'Stamp duty', d_nearby:'Nearby', min:'min', brochure:'Download brochure'
     },
     pt: {
       all:'Todos', apartment:'Apartamento', villa:'Moradia', townhouse:'Casa em banda',
@@ -1627,7 +1645,7 @@
       pw_sub:'Introduza o código de acesso para ver os detalhes completos e o preço deste imóvel.',
       pw_btn:'Desbloquear imóvel', pw_error:'Código incorreto.',
       nav_collection:'Coleção', nav_contact:'Contacto',
-      tile_collection:'Coleção de Imóveis', tile_regions:'Lisboa · Cascais · Algarve', private_listing:'Imóvel privado', verified_note:'Reservado a clientes verificados.', pw_placeholder:'Código de acesso', unlock:'Desbloquear', hero_featured:'Em destaque', share:'Partilhar este imóvel', link_copied:'Ligação copiada', price_request:'Preço sob consulta', d_grapes:'Castas', d_red:'Tintas', d_white:'Brancas', d_credit:'Fotografia', d_contact:'Contacto', hero_explore:'Explorar', hero_private:'Uma coleção privada', menu_label:'Menu', menu_sim:'Simulador', menu_close:'Fechar', menu_home:'Início', menu_collection:'Coleção', menu_privacy:'Privacidade', menu_terms:'Termos', d_typology:'Tipologia', d_area:'Área útil', d_gross:'Área bruta', d_plot:'Terreno', d_beds:'Quartos', d_baths:'Casas de banho', d_floor:'Piso', d_year:'Ano', d_energy:'Energia', d_exposure:'Exposição', d_feature:'Destaque', d_ref:'Referência', d_features:'Características', d_areas:'Áreas', d_costs:'Custos', d_imi:'IMI / ano', d_imt:'IMT', d_stamp:'Imposto de selo', d_nearby:'Na envolvente', min:'min', brochure:'Descarregar brochura'
+      tile_collection:'Coleção de Imóveis', tile_regions:'Lisboa · Cascais · Algarve', private_listing:'Imóvel privado', verified_note:'Reservado a clientes verificados.', pw_placeholder:'Código de acesso', unlock:'Desbloquear', hero_featured:'Em destaque', share:'Partilhar este imóvel', share_btn:'Partilhar imóvel', link_copied:'Ligação copiada', price_request:'Preço sob consulta', d_grapes:'Castas', d_red:'Tintas', d_white:'Brancas', d_credit:'Fotografia', d_contact:'Contacto', hero_explore:'Explorar', hero_private:'Uma coleção privada', menu_label:'Menu', menu_sim:'Simulador', menu_close:'Fechar', menu_home:'Início', menu_collection:'Coleção', menu_privacy:'Privacidade', menu_terms:'Termos', d_typology:'Tipologia', d_area:'Área útil', d_gross:'Área bruta', d_plot:'Terreno', d_beds:'Quartos', d_baths:'Casas de banho', d_floor:'Piso', d_year:'Ano', d_energy:'Energia', d_exposure:'Exposição', d_feature:'Destaque', d_ref:'Referência', d_features:'Características', d_areas:'Áreas', d_costs:'Custos', d_imi:'IMI / ano', d_imt:'IMT', d_stamp:'Imposto de selo', d_nearby:'Na envolvente', min:'min', brochure:'Descarregar brochura'
     }
   };
 
