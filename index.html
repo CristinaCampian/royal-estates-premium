@@ -2018,7 +2018,7 @@
   function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3200); }
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') { closeMenu(); closeSim(); closeContact(); closeLegal(); closeDetail(); closeFs(); }
-    if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+    if (e.code === 'KeyA' && e.ctrlKey && e.altKey && e.shiftKey) {   // Ctrl+Alt+Shift+A (Ctrl+Shift+A is Chrome's tab search)
       e.preventDefault();
       window.location.href = 'admin.html';
     }
