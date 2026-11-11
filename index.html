@@ -29,17 +29,18 @@
     /* ══ DESIGN TOKENS — Atlantic variant of the "porcelain + ink + one dark" system ══
        Swap fonts by changing --font-display / --font-body only (e.g. to TWK Ghost / Neue Haas Grotesk). */
     :root {
-      --color-porcelain: #f6f5f0;
-      --color-stone: #f0eeea;
-      --color-ink: #0c1620;
-      --color-atlantic: #10302b;          /* the one dark section colour */
-      --color-eyebrow: #2f5d50;           /* the one small accent (eyebrow labels) */
-      --color-linen: #dbd4ca;
-      --color-ink-faded: #55606a;         /* secondary text on porcelain, 5.9:1 */
-      --color-ink-o10: color-mix(in srgb, #0c1620 10%, transparent);
-      --color-ink-o20: color-mix(in srgb, #0c1620 20%, transparent);
-      --color-porcelain-o20: color-mix(in srgb, #f6f5f0 20%, transparent);
-      --color-porcelain-o40: color-mix(in srgb, #f6f5f0 40%, transparent);
+      --color-porcelain: #f0ebe2;         /* page (the original warm beige) */
+      --color-stone: #e9e3d8;
+      --color-ink: #1c1a17;
+      --color-atlantic: #1c1a17;          /* the one dark section colour (original near-black) */
+      --color-eyebrow: #7d6238;           /* small bronze text + focus rings, 4.8:1 on the page */
+      --color-bronze: #9c7c4f;            /* the original bronze, used for fills */
+      --color-linen: #cfc7b8;
+      --color-ink-faded: #6b6459;         /* secondary text on the page, 4.9:1 */
+      --color-ink-o10: color-mix(in srgb, #1c1a17 10%, transparent);
+      --color-ink-o20: color-mix(in srgb, #1c1a17 20%, transparent);
+      --color-porcelain-o20: color-mix(in srgb, #f0ebe2 20%, transparent);
+      --color-porcelain-o40: color-mix(in srgb, #f0ebe2 40%, transparent);
       --color-scrim: rgba(0, 0, 0, 0.4);
       --color-menu-backdrop: rgba(110, 94, 94, 0.3);
 
@@ -71,9 +72,10 @@
       --ink: var(--color-ink);
       --mid: var(--color-ink-faded);
       --rule: var(--color-linen);
-      --accent: var(--color-eyebrow);
+      --accent: var(--color-bronze);
       --dark: var(--color-atlantic);
     }
+    :root { color-scheme: light; }
     html { font-size: 16px; scroll-behavior: smooth; }
     body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-weight: 400; font-size: var(--text-main); line-height: 1.5; min-height: 100vh; text-wrap: pretty; }
 
@@ -744,8 +746,11 @@
     .contact-top { background: var(--color-stone); }
     .contact-bottom { background: var(--color-porcelain); }
     .contact-big { font-size: var(--text-h4); }
-    .contact-close, .detail-share { background: var(--color-ink-o10); }
-    .contact-close:hover, .detail-share:hover { background: var(--color-ink-o20); }
+    .detail-share { background: var(--color-ink-o10); }
+    .detail-share:hover { background: var(--color-ink-o20); }
+    /* close button on the simulator / contact / legal overlays: solid white so it is visible on any colour behind it */
+    .contact-close, .sim-close { background: #fff; color: var(--color-ink); }
+    .contact-close:hover, .sim-close:hover { background: var(--color-porcelain); }
     .legal-panel { background: var(--color-stone); }
     .doc-title { font-size: var(--text-h1); line-height: 1.1; }
     .doc h2 { font-size: var(--text-h4); }
@@ -793,7 +798,7 @@
        MOTION ROUND — expanding nav panel, video hero, rotating headline,
        reveals, gallery bars, view transition (overrides above)
        ══════════════════════════════════════════════════════════════════ */
-    :root { --color-paper-white: #fefdf9; }
+    :root { --color-paper-white: #f8f4ec; }
     .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
     /* Lenis */
@@ -869,6 +874,9 @@
     ::view-transition-image-pair(pv) { isolation: auto; }
     ::view-transition-old(pv), ::view-transition-new(pv) { height: 100%; object-fit: cover; mix-blend-mode: normal; }
     ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .35s; }
+    /* the morph measures where the panel photo is when the panel opens, so the photo must not still be scaling/fading in: that was the "snap" after the animation */
+    html.vt-opening .detail-overlay .dv-media { transform: none !important; opacity: 1 !important; transition: none !important; }
+    @media (max-width: 980px) { html.vt-opening .detail-overlay .dv-panel { transform: none !important; transition: none !important; } }
 
     /* ── gallery: flat 4px progress bars along the bottom ── */
     .g-bars { position: absolute; left: var(--pad); right: var(--pad); bottom: 12px; z-index: 3; display: flex; gap: 6px; }
@@ -1665,6 +1673,7 @@
       </div>`;
     document.getElementById('detail-panel').scrollTop = 0;
     const o = document.getElementById('detail-overlay');
+    o.scrollTop = 0;   // phones: the whole overlay scrolls, so it must be reset too or a listing opens part-way down
     o.classList.add('open');
     o.setAttribute('aria-hidden', 'false');
   }
@@ -1872,6 +1881,7 @@
       </div>`;
     document.getElementById('detail-panel').scrollTop = 0;
     const o = document.getElementById('detail-overlay');
+    o.scrollTop = 0;   // phones: the whole overlay scrolls, so it must be reset too or a listing opens part-way down
     o.classList.add('open');
     o.setAttribute('aria-hidden', 'false');
     setTimeout(() => { const i = document.getElementById('pw-input'); if (i) i.focus(); }, 800);
@@ -2322,12 +2332,14 @@
       const visible = r && r.bottom > 0 && r.top < innerHeight;
       if (!document.startViewTransition || reduce() || !visible) { openOrig(id); buildBars(); return; }
       img.style.viewTransitionName = 'pv';
+      document.documentElement.classList.add('vt-opening');
+      setTimeout(() => document.documentElement.classList.remove('vt-opening'), 1600);   // safety: never leave the flag on if the browser skips the transition
       const vt = document.startViewTransition(() => {
         img.style.viewTransitionName = '';
         openOrig(id); buildBars();
         const g = $('gallery-main'); if (g) g.style.viewTransitionName = 'pv';
       });
-      vt.finished.finally(() => { const g = $('gallery-main'); if (g) g.style.viewTransitionName = ''; img.style.viewTransitionName = ''; });
+      vt.finished.finally(() => { const g = $('gallery-main'); if (g) g.style.viewTransitionName = ''; img.style.viewTransitionName = ''; document.documentElement.classList.remove('vt-opening'); });
     };
 
     // ── Gallery: flat 4px progress bars, keyboard arrows, mouse drag (touch swipe already exists) ──
