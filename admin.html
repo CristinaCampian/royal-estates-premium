@@ -1440,12 +1440,45 @@
     pendingDeleteId = id;
     document.getElementById('confirm-overlay').classList.add('open');
     document.getElementById('confirm-yes').onclick = async () => {
-      await db.from('properties').delete().eq('id', pendingDeleteId);
+      const id = pendingDeleteId;
+      const doomed = properties.find(x => x.id === id);
+      const { error } = await db.from('properties').delete().eq('id', id);
       closeConfirm();
+      if (error) { showToast('Delete failed: ' + error.message); return; }
+      let note = '';
+      if (doomed) {
+        try {
+          const r = await removeListingFiles(doomed, id);
+          note = r.failed ? ' — ' + r.failed + ' file(s) could not be removed from storage' : (r.removed ? ' and ' + r.removed + ' file(s) removed' : '');
+        } catch (e) { console.error(e); note = ' — files could not be removed from storage'; }
+      }
       await loadProperties();
       renderDashboard();
-      showToast('Property deleted');
+      showToast('Property deleted' + note);
     };
+  }
+
+  // Remove a deleted listing's photos, brochure and optimiser backups from the bucket.
+  // Files that another listing still uses are kept. Returns how many files went and how many could not be removed.
+  function storageName(v) {
+    if (!v || typeof v !== 'string') return null;
+    const marker = '/' + BUCKET + '/';
+    const i = v.indexOf(marker);
+    const n = i >= 0 ? v.slice(i + marker.length).split('?')[0] : v;
+    return /^https?:/i.test(n) ? null : n;
+  }
+  async function removeListingFiles(p, id) {
+    const names = new Set([...(Array.isArray(p.images) ? p.images : []), p.image_url, p.brochure_url].map(storageName).filter(Boolean));
+    const { data: rest } = await db.from('properties').select('images,image_url,brochure_url').neq('id', id);
+    (rest || []).forEach(o => [...(Array.isArray(o.images) ? o.images : []), o.image_url, o.brochure_url].map(storageName).filter(Boolean).forEach(n => names.delete(n)));
+    const paths = [...names, ...[...names].map(n => BACKUP_DIR + '/' + n)];
+    let removed = 0;
+    for (let i = 0; i < paths.length; i += 100) {
+      const { data, error } = await db.storage.from(BUCKET).remove(paths.slice(i, i + 100));
+      if (error) throw error;
+      removed += (data || []).filter(d => names.has(d.name)).length;   // count the listing's own files, not _backup/ copies
+    }
+    return { removed, failed: names.size - removed };
   }
   function closeConfirm() { document.getElementById('confirm-overlay').classList.remove('open'); pendingDeleteId = null; }
 

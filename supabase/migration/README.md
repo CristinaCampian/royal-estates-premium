@@ -9,6 +9,7 @@ The SQL was tested on a real Postgres engine (PGlite) with a harness that simula
 |---|---|---|---|
 | 1 | Additive only: admin list, private tables, functions, throttle, **new random codes** | `01-additive.sql` | `01-rollback.sql` |
 | 1b | `site_settings` writes: admins only (run right after step 1) | `02-admin-only-settings.sql` | `02-rollback.sql` |
+| 4 | Storage: admin `remove()` actually deletes (bucket had no SELECT policy, so deletes silently did nothing); needed by the admin's delete-cleanup | `04-storage-admin-select.sql` | `04-rollback.sql` |
 | 2 | Switch the front end over (deploy, no SQL) | this branch | redeploy the previous build |
 | 3 | Final lockdown: drop `password`, hide `access_code`, restrict anonymous reads | `03-lockdown.sql` | `03-rollback.sql` |
 
