@@ -1220,7 +1220,7 @@
         <h3 class="t-display access-title" data-i18n="code_title">Unlock all properties</h3>
         <p class="t-cap access-sub" data-i18n="code_sub">Have a master code? Enter it here to unlock every property at once. A code for a single property goes on that property's card.</p>
         <div class="dv-lock-row">
-          <input type="password" id="global-code" placeholder="Master code" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter') unlockAll()" />
+          <input type="password" id="global-code" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="Master code" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter') unlockAll()" />
           <button class="dv-unlock" onclick="unlockAll()"><span data-i18n="unlock">Unlock</span> →</button>
         </div>
         <p class="pw-error" id="global-error" role="alert">Incorrect code.</p>
@@ -1526,7 +1526,7 @@
       ${tlabel ? `<p class="p-meta">${t_('private_listing')}</p>` : ''}
       <form class="p-unlock" onsubmit="return cardUnlock(event, ${p.id})" autocomplete="off">
         <label class="sr-only" for="cu-${p.id}">${t_('pw_placeholder')}</label>
-        <input id="cu-${p.id}" type="password" placeholder="${t_('pw_placeholder')}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
+        <input id="cu-${p.id}" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="${t_('pw_placeholder')}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
         <button type="submit" class="p-unlock-btn">${t_('unlock')}<svg class="arrow" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M1 6h10M6.5 1.5L11 6l-4.5 4.5"/></svg></button>
       </form>
       <p class="pw-error" role="alert"></p>
@@ -1889,7 +1889,7 @@
       <div class="dv-lock">
         <p class="dv-lock-note">${lockIcon}<span>${t_('verified_note')}</span></p>
         <div class="dv-lock-row">
-          <input type="password" id="pw-input" placeholder="${t_('pw_placeholder')}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter') checkPw()" />
+          <input type="password" id="pw-input" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="${t_('pw_placeholder')}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter') checkPw()" />
           <button class="dv-unlock" onclick="checkPw()">${t_('unlock')} →</button>
         </div>
         <p class="pw-error" id="pw-error" role="alert">${t_('pw_error')}</p>
@@ -2109,7 +2109,7 @@
       access_title:'No code? Request access',
       access_sub:'This selection is shared on a private basis. Leave your details and we will be in touch directly within 48 hours.',
       label_first:'First name', label_last:'Last name', label_email:'Email', label_role:'Role', label_budget:'Budget range',
-      btn_request:'Request access', hero_cta:'Access the collection', all_unlocked:'Access granted — all listings unlocked', code_title:'Unlock all properties', code_sub:'Have a master code? Enter it here to unlock every property at once. A code for a single property goes on that property\'s card.', unlock_all:'Unlock all properties', too_many:'Too many attempts. Please try again in a few minutes.', unlock_error:'Could not check the code. Please try again.', listing_unlocked:'Listing unlocked',
+      btn_request:'Request access', hero_cta:'Access the collection', all_unlocked:'Access granted — all listings unlocked', code_title:'Unlock all properties', code_sub:'Have a master code? Enter it here to unlock every property at once. A code for a single property goes on that property\'s card.', unlock_all:'Unlock all properties', too_many:'Too many wrong codes. Please try again in 15 minutes.', unlock_error:'Could not check the code. Please try again.', listing_unlocked:'Listing unlocked',
       contact_label:'Contact us', website_label:'Website', legal_label:'Legal',
       pw_eyebrow:'Private portfolio', pw_title:'Enter your access code',
       pw_sub:'Enter your access code to reveal the full details and pricing for this listing.',
@@ -2127,7 +2127,7 @@
       access_title:'Sem código? Solicite acesso',
       access_sub:'Esta seleção é partilhada em regime privado. Deixe os seus dados e entraremos em contacto direto nas próximas 48 horas.',
       label_first:'Nome', label_last:'Apelido', label_email:'Email', label_role:'Função', label_budget:'Intervalo de orçamento',
-      btn_request:'Solicitar acesso', hero_cta:'Aceder à coleção', all_unlocked:'Acesso concedido — todos os imóveis desbloqueados', code_title:'Desbloquear todos os imóveis', code_sub:'Tem um código mestre? Introduza-o aqui para desbloquear todos os imóveis. O código de um imóvel individual introduz-se no cartão desse imóvel.', unlock_all:'Desbloquear todos os imóveis', too_many:'Demasiadas tentativas. Tente novamente dentro de alguns minutos.', unlock_error:'Não foi possível verificar o código. Tente novamente.', listing_unlocked:'Imóvel desbloqueado',
+      btn_request:'Solicitar acesso', hero_cta:'Aceder à coleção', all_unlocked:'Acesso concedido — todos os imóveis desbloqueados', code_title:'Desbloquear todos os imóveis', code_sub:'Tem um código mestre? Introduza-o aqui para desbloquear todos os imóveis. O código de um imóvel individual introduz-se no cartão desse imóvel.', unlock_all:'Desbloquear todos os imóveis', too_many:'Demasiadas tentativas. Tente novamente dentro de 15 minutos.', unlock_error:'Não foi possível verificar o código. Tente novamente.', listing_unlocked:'Imóvel desbloqueado',
       contact_label:'Contacte-nos', website_label:'Website', legal_label:'Legal',
       pw_eyebrow:'Portfólio privado', pw_title:'Introduza o seu código de acesso',
       pw_sub:'Introduza o código de acesso para ver os detalhes completos e o preço deste imóvel.',

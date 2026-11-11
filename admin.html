@@ -209,6 +209,7 @@
     .auth-btn { background: var(--color-atlantic); color: var(--color-porcelain); }
     .auth-btn:hover, .btn-primary:hover { background: var(--color-ink); }
     .auth-error, .form-err { font-size: 15px; }
+    .code-in { width: 10ch; text-align: center; letter-spacing: .25em; font: 500 16px/1.2 var(--font-body); padding: .45rem .3rem; border: 1px solid var(--rule); background: #fff; color: var(--color-ink); }
     /* Light-only page: stops browser "force dark" from turning typed text white on the light fields */
     :root { color-scheme: light; }
     input, select, textarea { color: var(--color-ink); caret-color: var(--color-ink); }
@@ -635,7 +636,7 @@
     <!-- ACCESS CODES -->
     <div class="page" id="page-codes">
       <div class="page-header">
-        <div><h1 class="page-title">Access codes</h1><p class="page-sub">A listing's code unlocks only that listing. The master code unlocks every listing.</p></div>
+        <div><h1 class="page-title">Access codes</h1><p class="page-sub">A listing's code unlocks only that listing. The master code unlocks every listing. Codes are exactly 4 digits.</p></div>
       </div>
       <p class="field-hint" id="codes-msg" style="display:none;font-size:15px;margin-bottom:1rem"></p>
       <div class="form-panel">
@@ -643,7 +644,7 @@
         <div id="master-row" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap"></div>
       </div>
       <div class="table-wrap"><table><thead><tr><th>Listing</th><th>Status</th><th>Code</th><th></th></tr></thead><tbody id="codes-rows"></tbody></table></div>
-      <p class="field-hint" style="margin-top:1rem;font-size:14px">Capitals, spaces and dashes do not matter when a client types a code. Creating a new code replaces the old one immediately.</p>
+      <p class="field-hint" style="margin-top:1rem;font-size:14px">To set your own code, type 4 digits and press Set; or press New random code. 0000, 1111, 1234 and 4321 are never allowed, and no two codes (listing or master) can be the same. Spaces a client types are ignored. Replacing a code stops the old one immediately. After 5 wrong tries a visitor is locked out for 15 minutes.</p>
     </div>
 
     <!-- SETTINGS -->
@@ -797,8 +798,32 @@
 
 
   // ── ACCESS CODES (stored in property_access / access_secrets; only signed-in admins can read them) ──
-  let codeRows = {}, masterCode = null;
-  const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';   // no I, O, 0, 1
+  // Codes are exactly 4 digits (migration 07). Setting / regenerating goes through admin-only database functions that enforce the rules.
+  let codeRows = {}, masterCode = null, shortCodesReady = false;
+  const BANNED_CODES = ['0000', '1111', '1234', '4321'];
+  const CODE_ERRORS = {
+    code_format: 'A code must be exactly 4 digits (0-9), nothing else.',
+    code_reserved: '0000, 1111, 1234 and 4321 cannot be used.',
+    code_in_use: 'That code is already in use by another listing or by the master code.',
+    not_admin: 'Only an admin account can change codes.',
+    no_such_listing: 'That listing no longer exists.',
+    no_free_codes: 'No free 4-digit codes are left.'
+  };
+  const codeErr = e => { const m = String((e && e.message) || ''); for (const k in CODE_ERRORS) if (m.includes(k)) return CODE_ERRORS[k]; return m || 'Could not save.'; };
+  // client-side check for instant feedback; the database repeats every rule
+  function checkCode4(c, owner) {
+    if (!/^[0-9]{4}$/.test(c)) return CODE_ERRORS.code_format;
+    if (BANNED_CODES.includes(c)) return CODE_ERRORS.code_reserved;
+    for (const [k, v] of Object.entries(codeRows)) if (v === c && String(k) !== String(owner)) return CODE_ERRORS.code_in_use;
+    if (owner !== 'master' && masterCode === c) return CODE_ERRORS.code_in_use;
+    return '';
+  }
+  function codesStatus(text, bad) {
+    const msg = document.getElementById('codes-msg'); if (!msg) return;
+    msg.style.display = text ? 'block' : 'none'; msg.textContent = text || ''; msg.style.color = bad ? 'var(--red)' : '';
+  }
+  // pre-07 fallback only (long random codes); not used once 07 is installed
+  const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   function genCode(n, grp) {
     const b = new Uint8Array(n); crypto.getRandomValues(b);
     let out = '';
@@ -808,41 +833,75 @@
   async function loadCodes() {
     const a = await db.from('property_access').select('property_id,code');
     const m = await db.from('access_secrets').select('value').eq('key', 'master_code').maybeSingle();
-    const msg = document.getElementById('codes-msg');
     const err = a.error || m.error;
-    if (msg) { msg.style.display = err ? 'block' : 'none'; msg.textContent = err ? 'Codes are not available yet: run supabase/migration/01-additive.sql in the Supabase SQL editor first. (' + err.message + ')' : ''; }
+    if (err) codesStatus('Codes are not available yet: run supabase/migration/01-additive.sql in the Supabase SQL editor first. (' + err.message + ')', true);
     codeRows = {}; (a.data || []).forEach(r => { codeRows[r.property_id] = r.code; });
     masterCode = m.data ? m.data.value : null;
+    // are the 4-digit functions installed? This call cannot change anything: 0000 is refused before any write.
+    const probe = await db.rpc('admin_set_code', { p_id: 0, p_code: '0000' });
+    shortCodesReady = !!(probe.error && /code_reserved|code_format|not_admin/.test(probe.error.message || ''));
+    if (!err) codesStatus(shortCodesReady ? '' : '4-digit codes are not switched on yet: run supabase/migration/07-short-codes.sql in the Supabase SQL editor. Until then "New code" still makes the older long codes.', !shortCodesReady);
     renderCodes();
   }
   function renderCodes() {
     const body = document.getElementById('codes-rows'); if (!body) return;
     const codeCell = c => c ? `<span style="font:500 17px/1.4 var(--font-body);letter-spacing:.1em;user-select:all">${escHtml(c)}</span>` : '<span style="color:var(--red)">No code yet</span>';
+    const setBox = key => shortCodesReady
+      ? `<input class="code-in" id="ci-${key}" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="4 digits" aria-label="New 4-digit code" onkeydown="if(event.key==='Enter') ${key === 'master' ? 'setMaster()' : 'setCode(' + key + ')'}" />
+         <button class="btn btn-ghost btn-sm" onclick="${key === 'master' ? 'setMaster()' : 'setCode(' + key + ')'}">Set</button>` : '';
     const locked = properties.filter(p => p.is_locked);
     body.innerHTML = locked.map(p => {
       const c = codeRows[p.id], off = p.details && p.details.off_market;
-      return `<tr><td>${escHtml(p.title)}</td><td>${off ? 'Off-market' : 'Locked'}${p.active ? '' : ' · inactive'}</td><td>${codeCell(c)}</td><td class="td-actions">
-        <button class="btn btn-ghost btn-sm" ${c ? '' : 'disabled'} onclick="copyCode(codeRows[${p.id}])">Copy</button>
-        <button class="btn btn-primary btn-sm" onclick="newCode(${p.id})">${c ? 'New code' : 'Create code'}</button></td></tr>`;
+      return `<tr><td>${escHtml(p.title)}</td><td>${off ? 'Off-market' : 'Locked'}${p.active ? '' : ' · inactive'}</td><td>${codeCell(c)}</td><td class="td-actions"><div style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center">
+        ${setBox(p.id)}
+        <button class="btn btn-primary btn-sm" onclick="newCode(${p.id})">${c ? 'New random code' : 'Create code'}</button>
+        <button class="btn btn-ghost btn-sm" ${c ? '' : 'disabled'} onclick="copyCode(codeRows[${p.id}])">Copy</button></div></td></tr>`;
     }).join('') || '<tr><td colspan="4" style="color:var(--mid)">No locked listings. Tick "Locked" on a listing to give it a code.</td></tr>';
     const mr = document.getElementById('master-row');
     if (mr) mr.innerHTML = `${codeCell(masterCode)}
-      <button class="btn btn-ghost btn-sm" ${masterCode ? '' : 'disabled'} onclick="copyCode(masterCode)">Copy</button>
-      <button class="btn btn-primary btn-sm" onclick="newMasterCode()">${masterCode ? 'New master code' : 'Create master code'}</button>`;
+      ${setBox('master')}
+      <button class="btn btn-primary btn-sm" onclick="newMasterCode()">${masterCode ? 'New random master code' : 'Create master code'}</button>
+      <button class="btn btn-ghost btn-sm" ${masterCode ? '' : 'disabled'} onclick="copyCode(masterCode)">Copy</button>`;
+  }
+  async function setCode(id) {
+    const el = document.getElementById('ci-' + id); const c = el ? el.value : '';
+    const bad = checkCode4(c, id); if (bad) { codesStatus(bad, true); return; }
+    if (codeRows[id] && !confirm('Replace this listing\'s code? The current code stops working immediately.')) return;
+    const { data, error } = await db.rpc('admin_set_code', { p_id: id, p_code: c });
+    if (error) { codesStatus(codeErr(error), true); return; }
+    codeRows[id] = data; renderCodes(); codesStatus(''); showToast('Code saved');
   }
   async function newCode(id) {
     if (codeRows[id] && !confirm('Replace this listing\'s code? The current code stops working immediately.')) return;
-    const code = genCode(10, 5);
-    const { error } = await db.from('property_access').upsert({ property_id: id, code, updated_at: new Date().toISOString() }, { onConflict: 'property_id' });
-    if (error) { showToast('Could not save: ' + error.message); return; }
-    codeRows[id] = code; renderCodes(); showToast('New code saved');
+    if (!shortCodesReady) {   // before migration 07
+      const code = genCode(10, 5);
+      const { error } = await db.from('property_access').upsert({ property_id: id, code, updated_at: new Date().toISOString() }, { onConflict: 'property_id' });
+      if (error) { codesStatus('Could not save: ' + error.message, true); return; }
+      codeRows[id] = code; renderCodes(); showToast('New code saved'); return;
+    }
+    const { data, error } = await db.rpc('admin_regenerate_code', { p_id: id });
+    if (error) { codesStatus(codeErr(error), true); return; }
+    codeRows[id] = data; renderCodes(); codesStatus(''); showToast('New code saved');
+  }
+  async function setMaster() {
+    const el = document.getElementById('ci-master'); const c = el ? el.value : '';
+    const bad = checkCode4(c, 'master'); if (bad) { codesStatus(bad, true); return; }
+    if (masterCode && !confirm('Replace the master code? The current one stops working immediately.')) return;
+    const { data, error } = await db.rpc('admin_set_master', { p_code: c });
+    if (error) { codesStatus(codeErr(error), true); return; }
+    masterCode = data; renderCodes(); codesStatus(''); showToast('Master code saved');
   }
   async function newMasterCode() {
     if (masterCode && !confirm('Replace the master code? The current one stops working immediately.')) return;
-    const value = genCode(12, 4);
-    const { error } = await db.from('access_secrets').upsert({ key: 'master_code', value, updated_at: new Date().toISOString() }, { onConflict: 'key' });
-    if (error) { showToast('Could not save: ' + error.message); return; }
-    masterCode = value; renderCodes(); showToast('New master code saved');
+    if (!shortCodesReady) {   // before migration 07
+      const value = genCode(12, 4);
+      const { error } = await db.from('access_secrets').upsert({ key: 'master_code', value, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+      if (error) { codesStatus('Could not save: ' + error.message, true); return; }
+      masterCode = value; renderCodes(); showToast('New master code saved'); return;
+    }
+    const { data, error } = await db.rpc('admin_regenerate_master');
+    if (error) { codesStatus(codeErr(error), true); return; }
+    masterCode = data; renderCodes(); codesStatus(''); showToast('New master code saved');
   }
   async function copyCode(text) {
     if (!text) return;
