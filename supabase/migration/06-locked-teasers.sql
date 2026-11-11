@@ -5,9 +5,9 @@
 -- Public after this step, per locked listing (and only while "teaser_on" is true):
 --   · type          e.g. penthouse            (already a normal listing field)
 --   · teaser_area   e.g. "Silver Coast"       (a label YOU type in the admin; the real `location` stays private)
---   · teaser_image  teaser/xxxx.webp          (a ~32px-wide, blurred copy made in the admin; never the original photo)
+--   · teaser_image  teaser/xxxx.webp          (a ~40px-wide blurred copy made in the admin; never the original photo)
 -- Still private: title, real location, price, description, photos, size, everything else.
--- Off-market listings stay completely hidden (they are not in the view at all).
+-- With teaser_on = false the card shows only a lock (type, area and image are all NULL). Off-market listings are not in the view at all.
 -- Safe to run while the site is live: additive (new columns with defaults + a view that keeps its old columns first).
 -- ════════════════════════════════════════════════════════════════════════════
 begin;
@@ -16,8 +16,8 @@ alter table public.properties add column if not exists teaser_on    boolean not 
 alter table public.properties add column if not exists teaser_area  text;
 alter table public.properties add column if not exists teaser_image text;
 
--- guard rails: a teaser image can only live in the teaser/ folder (so it can never point at a full-size listing photo),
--- and the area label is a short label, not a paragraph.
+-- guard rails: a teaser image can only live directly in the teaser/ folder and must be a .webp (so it can never point at a
+-- full-size listing photo; no sub-folders, no "..", no uppercase tricks), and the area label is a short label, not a paragraph.
 alter table public.properties drop constraint if exists properties_teaser_image_chk;
 alter table public.properties add  constraint properties_teaser_image_chk
   check (teaser_image is null or teaser_image ~ '^teaser/[A-Za-z0-9._-]+\.webp$');
@@ -25,7 +25,9 @@ alter table public.properties drop constraint if exists properties_teaser_area_c
 alter table public.properties add  constraint properties_teaser_area_chk
   check (teaser_area is null or char_length(teaser_area) <= 60);
 
--- same rows as before (active, locked, not off-market); first two columns unchanged so the current site keeps working
+-- same rows as before (active, locked, not off-market); first two columns unchanged so the current site keeps working.
+-- Exactly five columns, nothing else. (The view runs with its owner's rights, which is what lets it show these columns of locked
+-- rows; callers can only narrow the result with filters on these five columns, never widen it.)
 create or replace view public.locked_teasers as
   select p.id,
          p.created_at,
@@ -36,5 +38,13 @@ create or replace view public.locked_teasers as
    where p.active and p.is_locked
      and coalesce((p.details ->> 'off_market')::boolean, false) = false;
 
+-- the view: visitors may SELECT, nothing else (Supabase hands new objects to anon/authenticated by default, so say it explicitly)
+revoke all on public.locked_teasers from public, anon, authenticated;
 grant select on public.locked_teasers to anon, authenticated;
+
+-- HARDENING (new in this version, easy to veto: delete these two lines before running): visitors never write to properties.
+-- Supabase's defaults gave anon INSERT/UPDATE/DELETE/TRUNCATE/REFERENCES/TRIGGER there. RLS already blocks the first three, but
+-- TRUNCATE is not subject to RLS. anon keeps SELECT: the site reads the public listings from this table (RLS limits that to
+-- active, unlocked, not off-market rows, which is policy "public listings").
+revoke insert, update, delete, truncate, references, trigger on public.properties from anon;
 commit;

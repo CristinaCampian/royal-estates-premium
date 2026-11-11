@@ -9,5 +9,8 @@ create view public.locked_teasers as
     from public.properties p
    where p.active and p.is_locked
      and coalesce((p.details ->> 'off_market')::boolean, false) = false;
+revoke all on public.locked_teasers from public, anon, authenticated;
 grant select on public.locked_teasers to anon, authenticated;
+-- put back the write privileges Supabase gives anon by default (RLS still blocks them; only needed for an exact undo)
+grant insert, update, delete, truncate, references, trigger on public.properties to anon;
 commit;
