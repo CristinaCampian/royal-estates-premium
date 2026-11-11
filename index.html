@@ -831,8 +831,8 @@
     .np-lang { display: flex; align-items: center; gap: 6px; margin: 0; }
     .np-lang .lang-opt { font: 400 16px/1 var(--font-body); color: var(--mid); padding: 10px 6px; }
     .np-lang .lang-opt.active { color: var(--ink); font-weight: 500; }
-    .np-img { align-self: start; aspect-ratio: 4 / 5; overflow: hidden; background: var(--color-stone); }
-    .np-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .np-img { position: relative; align-self: stretch; overflow: hidden; min-height: 0; background: var(--color-stone); }   /* one slot, as tall as the links column */
+    .np-img img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
     /* staggered fade-in of the drawer content; closing reverses with no delay */
     .np-links li, .np-eyebrow, .np-contact li, .np-lang, .np-img img { opacity: 0; transition: opacity .5s var(--ease), transform .5s var(--ease); transition-delay: 0s; }
     .np-img img { transform: scale(1.04) translateY(8px); }
@@ -902,9 +902,6 @@
     .np-rule { height: 1px; margin: 0 24px; background: var(--color-ink-o10); }
     .np-body { padding: 24px 24px 28px; gap: 24px; align-items: stretch; }
     .np-links a { font-size: clamp(2.5rem, 2.3rem + .6vw, 2.75rem); line-height: 1.1; padding: 7px 0; }
-    .np-img { display: grid; grid-template-rows: none; grid-auto-rows: 1fr; gap: 12px; align-self: stretch; aspect-ratio: auto; overflow: visible; background: none; min-height: 0; }
-    .np-pic { position: relative; overflow: hidden; background: var(--color-stone); min-height: 0; }
-    .np-pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
     .np-drawer:focus, .np-links a:focus:not(:focus-visible), .np-contact a:focus:not(:focus-visible) { outline: none; }
     @media (max-width: 640px) { .np-rule { margin: 0 20px; } .np-body { padding: 20px 20px 24px; } .np-links a { font-size: 2.25rem; } }
 
@@ -966,10 +963,7 @@
             <li><a href="mailto:info@royalestates.pt">info@royalestates.pt <svg class="ext" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><path d="M2 10L10 2M4 2h6v6"/></svg></a></li>
           </ul>
         </div>
-        <div class="np-img">
-          <div class="np-pic"><img src="assets/hero-poster.jpg" alt="Algarve coastline" width="1280" height="720" loading="lazy" decoding="async" /></div>
-          <div class="np-pic"><img src="assets/menu-image-lisbon.jpg" alt="Lisbon street scene" width="1000" height="1250" loading="lazy" decoding="async" /></div>
-        </div>
+        <div class="np-img"><img src="assets/menu-image-lisbon.jpg" alt="Lisbon street scene" width="1000" height="1250" loading="lazy" decoding="async" /></div>
       </div>
     </div>
   </div>

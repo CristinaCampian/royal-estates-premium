@@ -1,67 +1,83 @@
 # Unlock rebuild: runbook
 
 Goal: a code unlocks **one** listing, a separate **master code** unlocks all, and locked data never reaches anonymous visitors.
-Nothing here has been run. Nothing runs by itself. You run each SQL file yourself in the Supabase SQL editor
-(project `mejkdoabupmfwcldysgd`), in order, and check in between.
+Nothing here runs by itself. You run each SQL file yourself in the Supabase SQL editor (project `mejkdoabupmfwcldysgd`), in order.
+The SQL was tested on a real Postgres engine (PGlite) with a harness that simulates Supabase's roles, default grants and RLS:
+68 checks pass (see "What was tested"). It has **not** been run on your Supabase project.
 
 | Step | What | File | Rollback |
 |---|---|---|---|
-| 1 | Additive only: new private tables, functions, throttle, **new random codes** | `01-additive.sql` | `01-rollback.sql` |
-| 2 | Switch the front end over (deploy, no SQL) | this branch | redeploy the previous build (below) |
+| 1 | Additive only: admin list, private tables, functions, throttle, **new random codes** | `01-additive.sql` | `01-rollback.sql` |
+| 2 | Switch the front end over (deploy, no SQL) | this branch | redeploy the previous build |
 | 3 | Final lockdown: drop `password`, hide `access_code`, restrict anonymous reads | `03-lockdown.sql` | `03-rollback.sql` |
 
-Order matters: **1 → deploy → test → 3**. Never run 3 while the old site is live (it would break the old site).
+Order: **1 → deploy the new site + admin → test → 3**. Never run 3 while the old site or old admin is live (they use `properties.password` and `site_settings.access_code`).
 Photos: Level A (public bucket, random file names that are only revealed after unlocking).
 
-## Pre-migration checklist (before step 1)
+## Pre-migration checklist
 
-- [ ] **Backup.** The free plan has no automatic backup you can rely on, so do both:
-  - Supabase dashboard → Database → Backups: download one if your plan lists any.
-  - In the SQL editor run: `create table public._bak_properties as select * from public.properties; create table public._bak_site_settings as select * from public.site_settings;`
-    then Table editor → `_bak_properties` → Export to CSV, and keep the CSV (it contains the old codes: store it privately, never in the repo).
-  - Optional full dump with the CLI: `supabase db dump --db-url "<connection string>" -f backup.sql`
-- [ ] Record today's policies and keep the result: `select tablename, policyname, cmd, roles, qual, with_check from pg_policies where schemaname = 'public' order by 1, 2;`
-- [ ] Confirm you can sign in to `/admin` with your admin account (step 1 gives codes only to signed-in admins).
-- [ ] Tell clients that **all old codes will stop working** and that new ones will be sent.
-- [ ] Do not merge this branch to `main` yet: test on the Vercel preview first.
+- [ ] **Turn off public sign-ups** (no SQL): Supabase dashboard → Authentication → Sign In / Providers → switch off **Allow new users to sign up**. Today they are ON (`disable_signup: false`), which means anyone with an e-mail address can create a "signed-in" account.
+- [ ] See who has accounts: SQL editor → `select id, email, created_at, last_sign_in_at from auth.users order by created_at;` Delete any account you don't recognise (Authentication → Users).
+- [ ] **Backup.** The free plan has no backup you can rely on, so:
+  - `create table public._bak_properties as select * from public.properties;` and `create table public._bak_site_settings as select * from public.site_settings;`
+  - Table editor → `_bak_properties` → Export to CSV. Keep the CSV privately (it holds the old codes), never in the repo.
+  - Optional full dump: `supabase db dump --db-url "<connection string>" -f backup.sql`
+- [ ] Save today's policies: `select tablename, policyname, cmd, roles, qual, with_check from pg_policies where schemaname = 'public' order by 1, 2;` Look for any policy `to authenticated using (true)`: it lets ANY signed-in account edit that table. Tell me what you find.
+- [ ] Check the id type: `select data_type from information_schema.columns where table_name = 'properties' and column_name = 'id';` (should be `bigint` or `integer`; step 1 checks this too).
+- [ ] Know your admin sign-in e-mail (Authentication → Users).
+- [ ] Tell clients all old codes will stop working and new ones will be sent.
+- [ ] Do not merge this branch to `main` until step 1 is done and the preview is tested.
 
-## Step 1: run `01-additive.sql`
+## How to run a file in the SQL editor
 
-- It creates `property_access` (one code per locked listing), `access_secrets` (the master code), `access_attempts` (throttle), the view `locked_teasers`, and the functions `unlock_property`, `unlock_all`.
-- It **generates new random codes**: 10 characters per locked listing (e.g. `7KQ4M-ZT9XD`), 12 for the master (e.g. `4HDM-X7TQ-2WNP`). Capitals, spaces and dashes don't matter when typing.
-- The last two queries print all new codes in the editor. They are also visible later in **Admin → Access codes**.
-- Nothing existing changes: the live site and old codes keep working until step 3.
-- Check: `select count(*) from public.property_access;` equals the number of locked listings.
+1. Supabase dashboard → **SQL Editor** → **New query**.
+2. Open the file from this repo, select all, copy, paste into the editor. (Never run a file you haven't read.)
+3. For step 1 only: replace **every** `PUT-YOUR-ADMIN-EMAIL-HERE` (3 places) with your admin e-mail first (editor: Ctrl+H).
+4. Click **Run** (bottom right). Wait for "Success". If you get an error, nothing half-done stays for steps 3; for step 1 re-running is safe.
+5. Read the result panel as described below.
+
+## Step 1: `01-additive.sql`
+
+- Creates the admin list (`admins`), `property_access` (one code per locked listing), `access_secrets` (master code), `access_attempts` (throttle), the view `locked_teasers`, and the functions `unlock_property` / `unlock_all`. Nothing existing changes.
+- It **generates new random codes** (10 characters per locked listing, 12 for the master). The last two queries show them in the result panel (tabs at the bottom): **copy them somewhere private now**. They also appear later in Admin → Access codes.
+- It stops with "No admin registered" if the e-mail is wrong: fix it and run again.
+- Check: `select count(*) from public.property_access;` = number of locked listings; `select count(*) from public.admins;` = 1.
+- **Check the throttle sees real addresses** (important): on the preview site type a wrong code on a locked card once, then run `select client, ok, at from public.access_attempts order by id desc limit 3;` The `client` must be **your public IP address**. If it says `unknown`, tell me: the throttle is then inactive (nobody gets locked out, but guessing isn't limited).
 - Rollback: run `01-rollback.sql`.
 
-## Step 2: front end (this branch)
+## Step 2: front end
 
-- Public listings come from `properties` (anonymous reads, `is_locked = false`); locked cards come from the `locked_teasers` view (just an id).
-- Each locked card has its own code field → `unlock_property(id, code)`. The master option → `unlock_all(code)`.
-- The codes you type are kept in `sessionStorage` for the tab session and re-checked on reload.
-- Deploy this branch as a preview, run the **test checklist** below, then merge/deploy to production.
-- Rollback: in Vercel, promote the previous production deployment (or `git revert` the merge). The old front end works again as long as step 3 has **not** been run.
+- Deploy this branch as a preview. Public listings come from `properties` (`is_locked = false`), locked cards from `locked_teasers` (just an id). Codes are checked by `unlock_property` / `unlock_all`, remembered per tab session and re-checked on reload.
+- The Admin gets an **Access codes** page (reads `property_access` / `access_secrets`, admin accounts only) and loses the old password / global-code fields.
+- Run the **test checklist** below on the preview, then merge to `main` so production gets the new site and admin.
+- Rollback: Vercel → Deployments → promote the previous production deployment (or `git revert`). Works as long as step 3 has not been run.
 
-## Step 3: run `03-lockdown.sql`
+## Step 3: `03-lockdown.sql`
 
-- Runs in one transaction and refuses to run if a locked listing has no code or step 1 is missing.
-- Saves what it changes in `_rollback_*` tables, then: restricts anonymous reads to public listings, removes the public read of `site_settings`, blanks the old `access_code`, drops `properties.password`.
-- Rollback: `03-rollback.sql` (restores the **compromised** old codes; redeploy the old front end too; use only to recover, then fix forward).
+- One transaction. It refuses to run if step 1 is missing/incomplete, no admin exists, no master code exists, or **any locked listing has no code**, and in all those cases it changes nothing.
+- Saves what it changes in `_rollback_*` tables, restricts anonymous reads to public listings, removes the public read of `site_settings`, blanks the old `access_code`, limits `site_settings` writes to admins, drops `properties.password`.
+- Rollback: `03-rollback.sql` (restores the **compromised** old codes, so redeploy the old site and admin too; use only to recover, then fix forward).
+- Before running it, production (`main`) must already serve the new site **and** new admin.
 
-## Test checklist (do this on the preview after step 1, and again after step 3)
+## Test checklist (preview after step 1, and again after step 3)
 
 Use a private window for "visitor" checks.
 
-1. **One code opens one listing.** Unlock a single locked card with its own code. Only that card turns into a full listing; every other locked card stays locked. Reload the tab: it is still unlocked (session memory). Close the tab and reopen: locked again.
-2. **A wrong code opens nothing.** Type a random code on a card: "Incorrect code", nothing changes. Ten wrong tries in a row: "Too many attempts. Try again later."
-3. **Another listing's code doesn't work.** Type listing A's code on listing B's card: refused.
-4. **The master code opens everything.** Use **Unlock all properties** with the master code: all locked cards open at once.
-5. **Master code on one card** also opens that card (and only it) unless you use the Unlock-all option.
-6. **The public API no longer leaks.** (after step 3) In a private window, open DevTools → Network, reload, and look at the `properties` request: no locked listing appears. Or from a terminal:
+1. **One code opens one listing.** Unlock one locked card with its own code: only that card opens; others stay locked. Reload the tab: still unlocked. Close the tab and reopen: locked again.
+2. **Wrong code opens nothing.** Another listing's code is refused too. Ten wrong tries in a row from one address: "Too many attempts". A different device/network is unaffected.
+3. **Master code opens everything** via **Unlock all properties**.
+4. **The public API no longer leaks** (after step 3). In a private window, DevTools → Network → the `properties` request, or from a terminal:
    `curl -s "https://mejkdoabupmfwcldysgd.supabase.co/rest/v1/properties?select=*" -H "apikey: <anon key>"`
-   - none of the returned rows has `is_locked = true`, a `password` field, or the photos/description/price of a locked listing;
-   - `.../rest/v1/property_access?select=*` returns `[]` or a permission error;
-   - `.../rest/v1/site_settings?select=*` returns `[]` or a permission error;
-   - `.../rest/v1/locked_teasers?select=*` returns only `id` and `created_at`.
-7. **Admin still works.** Sign in to `/admin`: listings table, create/edit/save a listing, upload photos, Access codes page shows every code and the master code, Copy works.
-8. **Old codes are dead.** An old per-listing code or `premium2025`-style global code no longer unlocks anything.
+   - no row has `is_locked = true`, a `password` field, or the photos/description/price of a locked listing;
+   - `.../rest/v1/property_access?select=*`, `.../access_secrets?select=*`, `.../access_attempts?select=*`, `.../admins?select=*` return an error or `[]`;
+   - `.../rest/v1/site_settings?select=*` returns `[]`;
+   - `.../rest/v1/locked_teasers?select=*` returns only `id` and `created_at`;
+   - `.../rest/v1/rpc/gen_code` and `.../rpc/_check_throttle` return a permission error.
+5. **Admin works.** Sign in: listings table, edit/save a listing, photo upload, **Access codes** shows every code and the master code, Copy and New code work.
+6. **Old codes are dead.** An old per-listing code or the old global code unlocks nothing.
+
+## What was tested (PGlite, 68 checks, all pass)
+
+Placeholder e-mail refused · step 1 re-runnable and changes no existing data · new codes generated (format, length, differ from old) · anon cannot read the private tables or call internal functions · a random signed-in account reads and changes ZERO codes, only the registered admin can · weak codes rejected · right code opens only its listing (also typed lower-case with spaces) · other listing's code, wrong, empty and SQL-looking codes return nothing · master opens one or all · listing code does not unlock all · old global code dead · throttle is per address (not per listing, not global), ignores a forged first `x-forwarded-for` entry, prefers `cf-connecting-ip`, never locks out when no address exists · step 3 refuses without step 1 / with a locked listing without a code and changes nothing · after step 3 anon sees only public rows, `password` is gone, `site_settings` hidden, admin still sees everything, signed-in non-admins can't edit, unlock still works · `03-rollback`, `01-rollback` and repeats work.
+
+Not tested (needs your project): PostgREST's real `request.headers` (hence the throttle check above), your existing policies, Supabase Auth.
