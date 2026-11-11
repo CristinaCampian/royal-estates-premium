@@ -594,6 +594,17 @@
             <span class="toggle-label">Active (visible on site)</span>
           </div>
         </div>
+        <div id="teaser-fields" style="margin-top:1rem;display:none">
+          <div class="toggle-row">
+            <label class="toggle"><input type="checkbox" id="f-teaser" checked /><div class="toggle-track"></div></label>
+            <span class="toggle-label">On the locked card, show the type, an area and a blurred preview</span>
+          </div>
+          <div class="field" style="max-width:420px;margin-top:0.8rem">
+            <label for="f-teaser-area">Area shown on the locked card (public)</label>
+            <input type="text" id="f-teaser-area" maxlength="60" placeholder="e.g. Silver Coast" />
+            <span class="field-hint">Visible to everyone. Leave it empty to show only the type. The real location stays private. The preview is a ~40px blurred copy of the first photo, made automatically when you save.</span>
+          </div>
+        </div>
         <div class="form-actions">
           <button class="btn btn-primary" onclick="saveProperty()">Save property</button>
           <button class="btn btn-ghost" onclick="resetForm()">Clear form</button>
@@ -671,6 +682,17 @@
 
       </div>
 
+      <!-- BLURRED PREVIEWS FOR LOCKED CARDS (needs migration step 6) -->
+      <div class="form-panel" id="teaser-panel" style="margin-top:2rem;display:none">
+        <div class="form-panel-title">Blurred previews for locked cards</div>
+        <p class="field-hint" style="font-size:15px;max-width:70ch;margin-bottom:1.2rem">
+          Locked cards show the type, an area label you type, and a heavily blurred ~40px copy of the first photo (never the original). New and edited listings get theirs when you save.
+          This creates the preview for listings that do not have one yet, without re-saving them. It does not touch photos, brochures or any other field. Set the area text per listing under Properties, then edit.
+        </p>
+        <div class="table-wrap"><table><thead><tr><th>Locked listing</th><th>Area</th><th>Preview</th><th></th></tr></thead><tbody id="teaser-rows"><tr><td colspan="4" style="color:var(--mid)">Loading…</td></tr></tbody></table></div>
+        <p style="margin-top:1rem"><button class="btn btn-primary" onclick="makeAllTeasers()">Create missing previews</button> <span class="field-hint" id="teaser-status"></span></p>
+      </div>
+
       <!-- PHOTO OPTIMISATION (one-time tool) -->
       <div class="form-panel" id="optimise-panel" style="margin-top:2rem">
         <div class="form-panel-title">Optimise existing photos</div>
@@ -741,9 +763,33 @@
     renderDashboard();
   }
 
+  // ── Blurred previews for locked cards (needs migration step 6; without it these controls stay hidden and nothing is sent) ──
+  const hasTeaserCols = () => properties.some(r => 'teaser_on' in r);
+  function loadImageEl(src) { return new Promise((ok, no) => { const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => ok(im); im.onerror = () => no(new Error('could not load the cover photo')); im.src = src; }); }
+  // a ~40px-wide copy: the file itself carries almost no detail (the site blurs it again on top)
+  async function makeTeaserBlob(srcUrl) {
+    const im = await loadImageEl(srcUrl);
+    const W = 40, H = Math.max(20, Math.min(56, Math.round(W * im.naturalHeight / im.naturalWidth)));
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const x = c.getContext('2d'); x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high'; x.drawImage(im, 0, 0, W, H);
+    const blob = await new Promise(r => c.toBlob(r, 'image/webp', 0.6));
+    if (!blob || blob.type !== 'image/webp') throw new Error('this browser cannot make WebP previews');
+    return blob;
+  }
+  // uploads a new teaser file for the cover photo and returns its path (names never contain the title)
+  async function uploadTeaser(coverPath) {
+    const blob = await makeTeaserBlob(`${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${coverPath}`);
+    const path = `teaser/t-${Date.now().toString(36)}-${rand(6)}.webp`;
+    const { error } = await db.storage.from(BUCKET).upload(path, blob, { contentType: 'image/webp', cacheControl: '3600', upsert: false });
+    if (error) throw error;
+    return path;
+  }
   async function loadProperties() {
     const { data } = await db.from('properties').select('*').order('created_at', { ascending: false });
     properties = data || [];
+    const tf = document.getElementById('teaser-fields'); if (tf) tf.style.display = hasTeaserCols() ? '' : 'none';
+    const tp = document.getElementById('teaser-panel'); if (tp) tp.style.display = hasTeaserCols() ? '' : 'none';
+    if (typeof renderTeaserRows === 'function') renderTeaserRows();
     renderPropertiesTable();
     if (typeof renderOptimise === 'function') renderOptimise();
     loadCodes();
@@ -1236,6 +1282,28 @@
   let optimiseBusy = false, backupNames = new Set();
   const escHtml = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const photoPathsOf = p => [...new Set([...(p.images || []), p.image_url].filter(x => x && !/^https?:/.test(x)))];
+  function renderTeaserRows() {
+    const body = document.getElementById('teaser-rows'); if (!body) return;
+    const esc = v => String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    const rows = properties.filter(p => p.is_locked);
+    body.innerHTML = rows.length ? rows.map(p => `<tr><td>${esc(p.title)}</td><td>${p.teaser_area ? esc(p.teaser_area) : '<span style="color:var(--mid)">—</span>'}</td><td>${p.teaser_image ? 'yes' : '<span style="color:var(--mid)">none</span>'}</td><td>${p.teaser_on === false ? 'off' : ''}</td></tr>`).join('') : '<tr><td colspan="4" style="color:var(--mid)">No locked listings.</td></tr>';
+  }
+  async function makeAllTeasers() {
+    const st = document.getElementById('teaser-status');
+    const todo = properties.filter(p => p.is_locked && p.teaser_on !== false && !p.teaser_image && (p.image_url || (p.images && p.images[0])));
+    if (!todo.length) { st.textContent = 'Nothing to do.'; return; }
+    let done = 0, failed = 0;
+    for (const p of todo) {
+      st.textContent = 'Working… ' + (done + failed + 1) + ' of ' + todo.length;
+      try {
+        const path = await uploadTeaser((p.images && p.images[0]) || p.image_url);
+        const { error } = await db.from('properties').update({ teaser_image: path }).eq('id', p.id);
+        if (error) { failed++; await db.storage.from(BUCKET).remove([path]); } else done++;
+      } catch (e) { console.error(e); failed++; }
+    }
+    st.textContent = 'Created ' + done + (failed ? ', failed ' + failed + ' (see the browser console)' : '') + '.';
+    await loadProperties();
+  }
   const optLog = (msg) => { const el = document.getElementById('optimise-log'); if (!el) return; el.style.display = 'block'; el.textContent += msg + '\n'; el.scrollTop = el.scrollHeight; };
   const kb = n => Math.round(n / 1024) + ' KB';
 
@@ -1341,6 +1409,7 @@
     }
     const imagePath = photoList.length > 0 ? photoList[0].path || photoList[0].preview : null;
     const allImagePaths = photoList.map(p => p.path).filter(Boolean);
+    const editId0 = document.getElementById('edit-id').value;
 
     const payload = {
       title:          formI18n.en.title.trim(),
@@ -1365,6 +1434,23 @@
     if (imagePath) payload.image_url = imagePath;
     if (brochureState.en || brochureState.pt) payload.brochure_url = brochureState.en || brochureState.pt;
 
+    // locked-card preview: type + area + blurred copy of the cover. A failure here never blocks the save.
+    let teaserNote = '', oldTeaser = null;
+    if (hasTeaserCols()) {
+      const before = editId0 ? properties.find(x => String(x.id) === String(editId0)) : null;
+      const on = document.getElementById('f-teaser').checked;
+      const area = document.getElementById('f-teaser-area').value.trim();
+      payload.teaser_on = on;
+      payload.teaser_area = area ? area.slice(0, 60) : null;
+      const stale = !before || !before.teaser_image || (imagePath && before.image_url !== imagePath);
+      if (on && imagePath && stale) {
+        try { payload.teaser_image = await uploadTeaser(imagePath); } catch (e) { console.error(e); teaserNote = ' (blurred preview failed: ' + (e.message || e) + ')'; }
+      } else if (!on || !imagePath) {
+        payload.teaser_image = null;
+      }
+      if (before && before.teaser_image && 'teaser_image' in payload && payload.teaser_image !== before.teaser_image) oldTeaser = before.teaser_image;
+    }
+
     const editId = document.getElementById('edit-id').value;
     let error;
 
@@ -1381,6 +1467,7 @@
       return;
     }
 
+    if (oldTeaser) { try { await db.storage.from(BUCKET).remove([oldTeaser]); } catch (e) { console.error(e); } }
     let brochureNote = '';
     try {
       if (!(brochureState.en || brochureState.pt)) {
@@ -1392,7 +1479,7 @@
       brochureNote = ' (brochure failed: ' + (e.message || e) + ')';
     }
 
-    showFormMsg('Saved successfully' + brochureNote);
+    showFormMsg('Saved successfully' + brochureNote + teaserNote);
     resetForm();
     await loadProperties();
     renderDashboard();
@@ -1418,6 +1505,8 @@
     document.getElementById('f-youtube').value  = p.youtube_id || '';
     document.getElementById('f-locked').checked = p.is_locked;
     document.getElementById('f-active').checked = p.active;
+    document.getElementById('f-teaser').checked = p.teaser_on !== false;
+    document.getElementById('f-teaser-area').value = p.teaser_area || '';
 
     // Load bilingual fields into formI18n and show English first
     document.getElementById('f-label').value = p.label || '';
@@ -1473,9 +1562,9 @@
     return /^https?:/i.test(n) ? null : n;
   }
   async function removeListingFiles(p, id) {
-    const names = new Set([...(Array.isArray(p.images) ? p.images : []), p.image_url, p.brochure_url].map(storageName).filter(Boolean));
-    const { data: rest } = await db.from('properties').select('images,image_url,brochure_url').neq('id', id);
-    (rest || []).forEach(o => [...(Array.isArray(o.images) ? o.images : []), o.image_url, o.brochure_url].map(storageName).filter(Boolean).forEach(n => names.delete(n)));
+    const names = new Set([...(Array.isArray(p.images) ? p.images : []), p.image_url, p.brochure_url, p.teaser_image].map(storageName).filter(Boolean));
+    const { data: rest } = await db.from('properties').select('*').neq('id', id);
+    (rest || []).forEach(o => [...(Array.isArray(o.images) ? o.images : []), o.image_url, o.brochure_url, o.teaser_image].map(storageName).filter(Boolean).forEach(n => names.delete(n)));
     const paths = [...names, ...[...names].map(n => BACKUP_DIR + '/' + n)];
     let removed = 0;
     for (let i = 0; i < paths.length; i += 100) {
@@ -1504,6 +1593,8 @@
     ['en', 'pt'].forEach(l => { document.getElementById('d-brochure-' + l).value = ''; document.getElementById('d-brochure-' + l + '-cur').textContent = ''; });
     document.getElementById('f-locked').checked = true;
     document.getElementById('f-active').checked = true;
+    document.getElementById('f-teaser').checked = true;
+    document.getElementById('f-teaser-area').value = '';
     resetFormLang();
   }
 

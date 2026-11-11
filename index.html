@@ -917,6 +917,12 @@
     .property.locked { cursor: default; }
     .property .tile-placeholder.lock-ph { color: var(--color-porcelain); background: var(--dark); }
     .property.locked .tile-media { background: var(--dark); }
+    /* blurred preview on a locked card: the file itself is only ~32px wide; the blur here is a second layer, not the protection */
+    .property.locked .tile-media img.teaser-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 1; filter: blur(14px) saturate(.9); transform: scale(1.15); }
+    .property.locked:hover .tile-media img.teaser-img, .property.locked:focus-within .tile-media img.teaser-img { transform: scale(1.15); }
+    .property .tile-placeholder.lock-ph.has-preview { position: absolute; inset: 0; background: rgba(28,26,23,.32); }
+    .teaser-detail { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: blur(18px); transform: scale(1.15); }
+    .teaser-over { position: relative; z-index: 1; color: var(--color-porcelain); background: rgba(28,26,23,.32); }
     .p-unlock { display: flex; align-items: center; border-bottom: 1px solid var(--ink); margin-top: 10px; max-width: 420px; }
     .p-unlock input { flex: 1; min-width: 0; background: transparent; border: 0; border-radius: 0; font: 400 var(--text-main)/1.5 var(--font-body); letter-spacing: .12em; padding: 10px 0; color: var(--ink); }
     .p-unlock input::placeholder { color: var(--mid); letter-spacing: 0; }
@@ -1367,9 +1373,12 @@
   const rpcMsg = err => (err && /too_many_attempts/.test(err.message || '')) ? t_('too_many') : (err ? t_('unlock_error') : t_('pw_error'));
 
   // locked cards are only an id: nothing else about a locked listing reaches the browser until its code is accepted
-  function teaserRow(t) { return { id: t.id, created_at: t.created_at, is_locked: true, _teaser: true, title: '', images: [] }; }
+  // what the owner chose to show on a locked card: type, an area label, a blurred preview (public by design, never the original photo)
+  function teaserRow(t) { return { id: t.id, created_at: t.created_at, is_locked: true, _teaser: true, title: '', images: [], type: t.type || null, _area: t.teaser_area || '', _preview: t.teaser_image || '' }; }
   async function fetchTeasers() {
-    let r = await db.from('locked_teasers').select('id,created_at');
+    let r = await db.from('locked_teasers').select('id,created_at,type,teaser_area,teaser_image');
+    if (!r.error) return r.data || [];
+    r = await db.from('locked_teasers').select('id,created_at');   // migration step 6 not run yet: bare lock cards
     if (!r.error) return r.data || [];
     // migration step 1 not run yet: ask for the bare minimum columns, never full rows
     r = await db.from('properties').select('id,created_at,details').eq('is_locked', true).eq('active', true);
@@ -1508,10 +1517,13 @@
     const onclick = `onclick="openDetail(${p.id})"`;
 
     if (locked) {
+      const tlabel = [cap(p.type), p._area].filter(Boolean).join(' · ');
+      const prev = p._preview ? `<img class="teaser-img" data-src="${imgUrl(p._preview)}" alt="" decoding="async" />` : '';
       return `
-    <div class="property locked" data-id="${p.id}">
-      <div class="tile-media"><div class="tile-placeholder lock-ph">${lockIcon.replace('<svg', '<svg width="34" height="34" aria-hidden="true"')}</div></div>
-      <h3 class="p-title">${t_('private_listing')}</h3>
+    <div class="property locked" data-type="${p.type || ''}" data-id="${p.id}">
+      <div class="tile-media">${prev}<div class="tile-placeholder lock-ph${prev ? ' has-preview' : ''}">${lockIcon.replace('<svg', '<svg width="34" height="34" aria-hidden="true"')}</div></div>
+      <h3 class="p-title">${tlabel || t_('private_listing')}</h3>
+      ${tlabel ? `<p class="p-meta">${t_('private_listing')}</p>` : ''}
       <form class="p-unlock" onsubmit="return cardUnlock(event, ${p.id})" autocomplete="off">
         <label class="sr-only" for="cu-${p.id}">${t_('pw_placeholder')}</label>
         <input id="cu-${p.id}" type="password" placeholder="${t_('pw_placeholder')}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
@@ -1866,11 +1878,14 @@
     setHash(propHash(p));
     window._galleryImgs = [];
     const lockIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="1"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
-    document.getElementById('detail-media').innerHTML = `<div class="dv-empty">${t_('private_listing')}</div>`;
+    const dlabel = [cap(p.type), p._area].filter(Boolean).join(' · ');
+    document.getElementById('detail-media').innerHTML = p._preview
+      ? `<img class="teaser-img teaser-detail" src="${imgUrl(p._preview)}" alt="" /><div class="dv-empty teaser-over">${t_('private_listing')}</div>`
+      : `<div class="dv-empty">${t_('private_listing')}</div>`;
     document.getElementById('detail-panel').innerHTML = `
       <button class="contact-close" onclick="closeDetail()" aria-label="Close">×</button>
       <button class="detail-share" onclick="shareProperty(${p.id})" aria-label="${t_('share')}" title="${t_('share')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></button>
-      <h2 class="detail-title">${t_('private_listing')}</h2>
+      <h2 class="detail-title">${dlabel || t_('private_listing')}</h2>
       <div class="dv-lock">
         <p class="dv-lock-note">${lockIcon}<span>${t_('verified_note')}</span></p>
         <div class="dv-lock-row">
