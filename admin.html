@@ -8,7 +8,9 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="icon" href="favicon-48.png" sizes="48x48" type="image/png" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Newsreader:opsz,wght@6..72,300;6..72,400&display=swap" rel="stylesheet" />
+  <link rel="preload" href="fonts/Newsreader-300-400.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="fonts/Inter-var.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="fonts/fonts.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="brochure.js"></script>
@@ -564,7 +566,7 @@
           <div class="field" style="grid-column: span 2">
             <label>File name prefix</label>
             <input type="text" id="d-prefix" placeholder="quinta-das-flores" />
-            <span class="field-hint">Photos and brochures are saved as prefix-01-xxxxx.jpg. The random ending keeps the web addresses unguessable. Empty = the English title.</span>
+            <span class="field-hint">Photos are resized in the browser (about 2000px, WebP) and, like brochures, saved as prefix-01-xxxxx. The random ending keeps the web addresses unguessable. Empty = the English title.</span>
           </div>
         </div>
         <div class="form-grid" style="margin-top:1.2rem">
@@ -1148,6 +1150,26 @@
     return path;
   }
 
+  // Resize in the browser before upload: long side max 2000px, WebP quality ~0.8 (Supabase image transformations are not on this plan)
+  const PHOTO_MAX = 2000, PHOTO_QUALITY = 0.8;
+  async function resizePhoto(file) {
+    const keep = () => { let ext = (file.name.split('.').pop() || 'jpg').toLowerCase(); if (ext === 'jpeg') ext = 'jpg'; return { blob: file, type: file.type || 'image/jpeg', ext }; };
+    try {
+      const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
+      const k = Math.min(1, PHOTO_MAX / Math.max(bmp.width, bmp.height));
+      const w = Math.round(bmp.width * k), h = Math.round(bmp.height * k);
+      const c = document.createElement('canvas'); c.width = w; c.height = h;
+      c.getContext('2d').drawImage(bmp, 0, 0, w, h);
+      if (bmp.close) bmp.close();
+      let blob = await new Promise(res => c.toBlob(res, 'image/webp', PHOTO_QUALITY));
+      let ext = 'webp';
+      if (!blob || blob.type !== 'image/webp') { blob = await new Promise(res => c.toBlob(res, 'image/jpeg', 0.85)); ext = 'jpg'; }
+      if (!blob) return keep();
+      if (k === 1 && blob.size >= file.size && /^image\/(jpeg|webp|png)$/.test(file.type)) return keep();   // already small: don't make it bigger
+      return { blob, type: blob.type, ext };
+    } catch (e) { return keep(); }
+  }
+
   async function saveProperty() {
     captureFormLangFields();
     if (!formI18n.en.title.trim()) { showFormErr('English property title is required'); return; }
@@ -1159,9 +1181,9 @@
     for (let i = 0; i < photoList.length; i++) {
       const photo = photoList[i];
       if (!(photo.file && !photo.path)) continue;
-      let ext = photo.file.name.split('.').pop().toLowerCase(); if (ext === 'jpeg') ext = 'jpg';
-      const path = `${prefix}-${String(i + 1).padStart(2, '0')}-${rand()}.${ext}`;
-      const { error: uploadErr } = await db.storage.from(BUCKET).upload(path, photo.file, { cacheControl: '3600', upsert: false });
+      const out = await resizePhoto(photo.file);   // ~2000px long side, WebP q0.8 (falls back to the original if the browser can't)
+      const path = `${prefix}-${String(i + 1).padStart(2, '0')}-${rand()}.${out.ext}`;
+      const { error: uploadErr } = await db.storage.from(BUCKET).upload(path, out.blob, { contentType: out.type, cacheControl: '3600', upsert: false });
       if (uploadErr) { showFormErr('Image upload failed: ' + uploadErr.message); return; }
       photo.path = path;
     }

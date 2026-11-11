@@ -16,8 +16,12 @@
       localStorage.setItem('rep_welcome_ts', Date.now());
     } catch (e) { /* storage blocked: always show it */ }
   </script>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Newsreader:opsz,wght@6..72,300;6..72,400&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link rel="preconnect" href="https://mejkdoabupmfwcldysgd.supabase.co" crossorigin />
+  <link rel="preload" href="fonts/Newsreader-300-400.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="fonts/Inter-var.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="fonts/fonts.css" />
+  <link rel="preload" href="assets/hero-poster.jpg" as="image" fetchpriority="high" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -647,9 +651,7 @@
     .navpanel .menu-word { font: 500 15px/1 var(--font-body); letter-spacing: 0; margin: 0; text-transform: none; }
     .bars { display: flex; flex-direction: column; gap: 6px; width: 22px; }
     .bars i { display: block; height: 1.5px; background: currentColor; transition: transform .5s var(--ease); }
-    .nav-toggle:hover .bars i:first-child { transform: translateX(3px); }
-    .nav-toggle:hover .bars i:last-child { transform: translateX(-3px); }
-    body:has(.contact-overlay.open, .detail-overlay.open, .legal-overlay.open, .menu-overlay.open) .navpanel { display: none; }
+    body:has(.contact-overlay.open, .detail-overlay.open, .legal-overlay.open) .navpanel, body:has(.contact-overlay.open, .detail-overlay.open, .legal-overlay.open) .np-backdrop { display: none; }
     .menu-fab, .menu-top, .wordmark, .landing .landing-logo, .hero-explore-m, .sq { display: none !important; }
 
     /* hero: full-bleed photo, flat scrim, display headline */
@@ -785,6 +787,113 @@
       .dv-panel { padding-bottom: 96px; }
     }
     @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .landing .hero-explore svg { animation: none; } }
+
+    /* ══════════════════════════════════════════════════════════════════
+       MOTION ROUND — expanding nav panel, video hero, rotating headline,
+       reveals, gallery bars, view transition (overrides above)
+       ══════════════════════════════════════════════════════════════════ */
+    :root { --color-paper-white: #fefdf9; }
+    .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+    /* Lenis */
+    html.lenis, html.lenis body { height: auto; }
+    .lenis.lenis-smooth { scroll-behavior: auto !important; }
+    .lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+    .lenis.lenis-stopped { overflow: hidden; }
+
+    /* ── expanding nav panel ── */
+    .navpanel { display: block; height: auto; padding: 0; width: calc(100% - 2 * var(--gutter)); max-width: 425px; background: var(--color-paper-white); border-radius: var(--radius-nav); overflow: hidden; transition: max-width .75s var(--ease) .2s; }
+    .navpanel[data-nav-status="active"] { max-width: 575px; }
+    .np-top { height: 68px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px 0 20px; }
+    .nav-toggle { position: relative; width: 43px; height: 43px; min-height: 0; padding: 0; gap: 0; display: block; background: none; border: 0; color: var(--ink); cursor: pointer; }
+    .nav-toggle:hover, .nav-toggle:focus-visible { outline: 1px solid var(--ink); outline-offset: 0; }
+    .bars { position: absolute; inset: 0; display: block; width: auto; gap: 0; }
+    .bars i { position: absolute; left: 8.5px; top: 50%; width: 26px; height: 1px; background: var(--ink); transition: transform .5s var(--ease); }
+    .navpanel .bars i:first-child, .navpanel .nav-toggle:hover .bars i:first-child { transform: translateY(-3.5px); }
+    .navpanel .bars i:last-child, .navpanel .nav-toggle:hover .bars i:last-child { transform: translateY(2.5px); }
+    .navpanel[data-nav-status="active"] .bars i:first-child, .navpanel[data-nav-status="active"] .nav-toggle:hover .bars i:first-child { transform: translateY(-.5px) rotate(45deg); }
+    .navpanel[data-nav-status="active"] .bars i:last-child, .navpanel[data-nav-status="active"] .nav-toggle:hover .bars i:last-child { transform: translateY(-.5px) rotate(-45deg); }
+
+    .np-drawer { display: grid; grid-template-rows: 0fr; transform: translateY(-.625rem); visibility: hidden; transition: grid-template-rows .5s var(--ease), transform .5s var(--ease), visibility 0s linear .5s; }
+    .navpanel[data-nav-status="active"] .np-drawer { grid-template-rows: 1fr; transform: none; visibility: visible; transition: grid-template-rows .5s var(--ease), transform .5s var(--ease), visibility 0s; }
+    .np-inner { overflow: hidden; min-height: 0; }
+    .navpanel[data-nav-status="active"] .np-inner { overflow-y: auto; max-height: calc(100svh - 24px - 68px - 24px); }
+    .np-body { display: grid; grid-template-columns: minmax(0, 1fr) 270px; gap: 24px; padding: 8px 24px 28px; }
+    .np-links, .np-contact { list-style: none; }
+    .np-links a { display: block; font-family: var(--font-display); font-weight: 400; font-size: clamp(1.75rem, 1.7rem + .2vw, 1.85rem); line-height: 1.1; letter-spacing: var(--tracking-heading); color: var(--ink); text-decoration: none; padding: 3px 0; transition: color .2s ease; }
+    .np-links a:hover, .np-links a:focus-visible { color: var(--color-eyebrow); }
+    .np-meta { display: flex; align-items: center; justify-content: space-between; margin: 18px 0 4px; }
+    .np-eyebrow { margin: 0; }
+    .np-contact a { display: inline-flex; align-items: center; gap: 8px; font-size: 18px; line-height: 1.5; padding: 3px 0; color: var(--ink); text-decoration: none; }
+    .np-contact .ext { width: 12px; height: 12px; flex-shrink: 0; }
+    .np-contact a:hover { color: var(--color-eyebrow); }
+    .np-lang { display: flex; align-items: center; gap: 6px; margin: 0; }
+    .np-lang .lang-opt { font: 400 16px/1 var(--font-body); color: var(--mid); padding: 10px 6px; }
+    .np-lang .lang-opt.active { color: var(--ink); font-weight: 500; }
+    .np-img { align-self: start; aspect-ratio: 4 / 5; overflow: hidden; background: var(--color-stone); }
+    .np-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    /* staggered fade-in of the drawer content; closing reverses with no delay */
+    .np-links li, .np-eyebrow, .np-contact li, .np-lang, .np-img img { opacity: 0; transition: opacity .5s var(--ease), transform .5s var(--ease); transition-delay: 0s; }
+    .np-img img { transform: scale(1.04) translateY(8px); }
+    .navpanel[data-nav-status="active"] .np-links li, .navpanel[data-nav-status="active"] .np-eyebrow, .navpanel[data-nav-status="active"] .np-contact li, .navpanel[data-nav-status="active"] .np-lang, .navpanel[data-nav-status="active"] .np-img img { opacity: 1; transition-delay: calc(.2s + var(--i, 0) * 50ms); }
+    .navpanel[data-nav-status="active"] .np-img img { transform: none; }
+    .np-backdrop { position: fixed; inset: 0; z-index: 235; background: var(--color-menu-backdrop); opacity: 0; pointer-events: none; transition: opacity .5s var(--ease); }
+    .navpanel[data-nav-status="active"] + .np-backdrop { opacity: 1; pointer-events: auto; }
+    @media (max-width: 640px) {
+      .np-body { grid-template-columns: minmax(0, 1fr); padding: 4px 20px 24px; }
+      .np-img { display: none; }
+    }
+
+    /* ── video hero ── */
+    .hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; background: var(--dark); }
+    .landing-photo.has-video { cursor: default; }
+    .landing-photo.has-video .slides, .landing-photo.has-video .tile-top, .landing-photo.has-video .tile-bottom, .landing-photo.has-video .hero-count, .landing-photo.has-video .empty-msg { display: none !important; }
+    .landing .hero-headline { max-width: none; }
+    .rw-line { display: block; white-space: nowrap; }
+    .rw-word { display: inline-block; overflow: hidden; vertical-align: bottom; padding-bottom: .2em; margin-bottom: -.2em; }
+    .rw-word .ch { display: inline-block; will-change: transform; }
+    .hero-sub { margin-top: 20px; max-width: 30em; font-size: var(--text-large); line-height: 1.5; color: var(--color-porcelain); }
+
+    /* ── reveals + hover ── */
+    .rv-mask { display: block; overflow: hidden; padding-bottom: .12em; margin-bottom: -.12em; }
+    .rv-line { display: inline-block; will-change: transform; }
+    .property .tile-media img { transition: transform .5s var(--ease); }
+    .property:hover .tile-media img, .property:focus-visible .tile-media img { transform: scale(1.03); }
+    .p-view { display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; font-size: var(--text-main); color: var(--ink); }
+    .p-view .arrow { width: 12px; height: 12px; transition: transform .5s var(--ease); }
+    .property:hover .p-view .arrow, .property:focus-visible .p-view .arrow { transform: translateX(4px); }
+
+    /* ── view transition: card photo grows into the panel photo ── */
+    ::view-transition-group(pv) { animation-duration: .75s; animation-timing-function: cubic-bezier(0.625, 0.05, 0, 1); }
+    ::view-transition-image-pair(pv) { isolation: auto; }
+    ::view-transition-old(pv), ::view-transition-new(pv) { height: 100%; object-fit: cover; mix-blend-mode: normal; }
+    ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .35s; }
+
+    /* ── gallery: flat 4px progress bars along the bottom ── */
+    .g-bars { position: absolute; left: var(--pad); right: var(--pad); bottom: 12px; z-index: 3; display: flex; gap: 6px; }
+    .g-bars button { flex: 1; height: 24px; padding: 10px 0; border: 0; border-radius: 0; background-color: var(--color-porcelain-o20); background-clip: content-box; cursor: pointer; transition: background-color .5s var(--ease); }
+    .g-bars button.on { background-color: var(--color-porcelain); }
+    .dv-media .gallery-counter { bottom: 44px; }
+    .dv-media .fullscreen-btn { bottom: 44px; }
+    .dv-media #gallery-main { cursor: grab; user-select: none; -webkit-user-drag: none; }
+    .dv-media #gallery-main:active { cursor: grabbing; }
+
+    /* ── gate: the access form fades in over the hero image, same scrim and type ── */
+    .contact-overlay { transition: opacity .5s var(--ease), visibility 0s linear .9s; }
+    .contact-overlay.open { transition: opacity .5s var(--ease), visibility 0s; }
+    .contact-logo { position: relative; background: var(--dark) url("assets/hero-poster.jpg") center / cover no-repeat; }
+    .contact-logo::before { content: ""; position: absolute; inset: 0; background: var(--color-scrim); }
+    .contact-logo img { position: relative; filter: invert(.95); }
+
+    @media (prefers-reduced-motion: reduce) {
+      .navpanel, .np-drawer, .np-inner, .np-backdrop, .np-links li, .np-eyebrow, .np-contact li, .np-lang, .np-img img { transition: opacity .25s linear !important; }
+      .np-drawer { transform: none; }
+      .np-links li, .np-eyebrow, .np-contact li, .np-lang, .np-img img { transform: none; }
+      .navpanel { transition: none !important; }
+      .navpanel[data-nav-status="active"] { max-width: 575px; }
+      .bars i, .p-view .arrow, .property .tile-media img { transition: none !important; }
+      ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+    }
     @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
   </style>
 </head>
@@ -797,11 +906,44 @@
 </div>
 <noscript><style>.welcome { display: none; } body.welcoming { overflow: auto; }</style></noscript>
 
-<!-- FLOATING NAV PANEL -->
-<div class="navpanel" id="navpanel">
-  <a class="nav-brand" href="#" onclick="window.scrollTo({top:0,behavior:'smooth'}); return false;" aria-label="Royal Estates Premium"><img src="logo.svg" alt="" width="28" height="26" /><span>Royal Estates</span></a>
-  <button class="nav-toggle" onclick="openMenu()" aria-label="Menu" aria-controls="menu-overlay"><span class="menu-word" data-i18n="menu_label">Menu</span><span class="bars" aria-hidden="true"><i></i><i></i></span></button>
-</div>
+<!-- FLOATING NAV PANEL: expands in place (state in data-nav-status) -->
+<nav class="navpanel" id="navpanel" data-nav-status="not-active" aria-label="Main">
+  <div class="np-top">
+    <a class="nav-brand" href="#" onclick="window.scrollTo({top:0,behavior:'smooth'}); return false;" aria-label="Royal Estates Premium"><img src="logo.svg" alt="" width="28" height="26" /><span>Royal Estates</span></a>
+    <button class="nav-toggle" id="np-toggle" type="button" aria-expanded="false" aria-controls="np-drawer" aria-label="Menu"><span class="bars" aria-hidden="true"><i></i><i></i></span></button>
+  </div>
+  <div class="np-drawer" id="np-drawer" inert>
+    <div class="np-inner">
+      <div class="np-body">
+        <div class="np-col">
+          <ul class="np-links">
+            <li><a href="#" onclick="menuGo('home'); return false;" data-i18n="menu_home">Home</a></li>
+            <li><a href="#listings-grid" onclick="menuGo('collection'); return false;" data-i18n="menu_collection">Collection</a></li>
+            <li><a href="#" onclick="menuGo('sim'); return false;" data-i18n="menu_sim">Simulator</a></li>
+            <li><a href="#contact" onclick="menuGo('contact'); return false;" data-i18n="nav_contact">Contact</a></li>
+            <li><a href="#" onclick="menuGo('privacy'); return false;" data-i18n="menu_privacy">Privacy</a></li>
+            <li><a href="#" onclick="menuGo('terms'); return false;" data-i18n="menu_terms">Terms</a></li>
+          </ul>
+          <div class="np-meta">
+            <span class="eyebrow np-eyebrow" data-i18n="nav_contact">Contact</span>
+            <div class="np-lang">
+            <button class="lang-opt active" type="button" onclick="setLang('en', this)">EN</button>
+            <span class="lang-sep" aria-hidden="true">|</span>
+            <button class="lang-opt" type="button" onclick="setLang('pt', this)">PT</button>
+          </div>
+          </div>
+          <ul class="np-contact">
+            <li><a href="tel:+351964480190">(+351) 964 480 190 <svg class="ext" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><path d="M2 10L10 2M4 2h6v6"/></svg></a></li>
+            <li><a href="mailto:info@royalestates.pt">info@royalestates.pt <svg class="ext" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><path d="M2 10L10 2M4 2h6v6"/></svg></a></li>
+            <li><a href="https://www.google.com/maps/search/?api=1&query=Rua+Francisco+Rocha+Lt+50+2530-110+Lourinh%C3%A3" target="_blank" rel="noopener">Google Maps <svg class="ext" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><path d="M2 10L10 2M4 2h6v6"/></svg></a></li>
+          </ul>
+        </div>
+        <div class="np-img" aria-hidden="true"><img id="np-img" src="assets/hero-poster.jpg" alt="" width="270" height="338" loading="lazy" /></div>
+      </div>
+    </div>
+  </div>
+</nav>
+<div class="np-backdrop" id="np-backdrop" aria-hidden="true"></div>
 
 <!-- LANDING HERO -->
 <header class="landing pre" id="landing">
@@ -812,6 +954,11 @@
   </div>
 
   <div class="tile landing-photo empty" id="landing-photo" onclick="heroOpen()">
+    <video class="hero-video" id="hero-video" autoplay muted loop playsinline preload="auto" poster="assets/hero-poster.jpg">
+      <source src="assets/hero-720.mp4" type="video/mp4" media="(max-width: 768px)">
+      <source src="assets/hero-1080.mp4" type="video/mp4">
+    </video>
+    <script>if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { var hv = document.getElementById('hero-video'); if (hv) hv.remove(); }</script>
     <div class="slides" id="hero-slides"></div>
     <div class="empty-msg" data-i18n="hero_private">A private collection</div>
     <div class="tile-top fade-up"><span class="tag" data-i18n="hero_featured">Featured</span></div>
@@ -825,7 +972,8 @@
   <div class="tile landing-gold">
     <span class="eyebrow hero-eyebrow fade-up">Curated residential portfolio</span>
     <div>
-      <h1 class="t-display hero-headline"><span class="ln"><span>Exceptional homes.</span></span><span class="ln"><span>Considered living.</span></span></h1>
+      <h1 class="hero-headline" id="hero-headline"><span class="sr-only" id="rw-sr">For families, legacy, investors, Portugal</span><span class="rw-line" aria-hidden="true"><span class="rw-prefix" id="rw-prefix">For_</span><span class="rw-word" id="rw-word">families</span></span></h1>
+      <p class="hero-sub fade-up" id="hero-sub">Exceptional homes. Considered living.</p>
       <button class="hero-explore hero-explore-m fade-up" onclick="skipToProperties()" aria-label="Scroll to the properties"><svg viewBox="0 0 40 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="square" aria-hidden="true"><path d="M2 3l18 14L38 3"/></svg></button>
       <a class="t-link fade-up" href="#contact" onclick="openContact('code'); return false;"><span data-i18n="hero_cta">Access the collection</span> <svg class="arrow" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M1 6h10M6.5 1.5L11 6l-4.5 4.5"/></svg></a>
     </div>
@@ -888,33 +1036,10 @@
 <!-- MOBILE: floating menu button + full-screen menu -->
 <button class="share-fab" id="share-fab" onclick="shareProperty(window._shareId)" aria-label="Share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></button>
 <button class="menu-fab" id="menu-fab" onclick="openMenu()" aria-label="Menu"><span class="burger mini" aria-hidden="true"><i></i><i></i><i></i></span><span class="menu-word" data-i18n="menu_label">Menu</span></button>
-<nav class="menu-overlay" id="menu-overlay" aria-hidden="true">
-  <div class="menu-logo"><img src="logo.svg" alt="Royal Estates Premium" /></div>
-  <ul class="menu-list">
-    <li><a href="#" class="current" onclick="menuGo('home'); return false;"><span class="sq"></span><span data-i18n="menu_home">Home</span></a></li>
-    <li><a href="#listings-grid" onclick="menuGo('collection'); return false;" data-i18n="menu_collection">Collection</a></li>
-    <li><a href="#" onclick="menuGo('sim'); return false;" data-i18n="menu_sim">Simulator</a></li>
-    <li><a href="#contact" onclick="menuGo('contact'); return false;" data-i18n="nav_contact">Contact</a></li>
-    <li><a href="#" onclick="menuGo('privacy'); return false;" data-i18n="menu_privacy">Privacy</a></li>
-    <li><a href="#" onclick="menuGo('terms'); return false;" data-i18n="menu_terms">Terms</a></li>
-  </ul>
-  <div class="menu-lang">
-    <button class="lang-opt active" onclick="setLang('en', this)">EN</button>
-    <span class="lang-sep">|</span>
-    <button class="lang-opt" onclick="setLang('pt', this)">PT</button>
-  </div>
-  <div class="menu-ext">
-    <a href="https://royalestates.pt" target="_blank" rel="noopener">Royal Estates <svg class="ext" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.1" aria-hidden="true"><path d="M2 10L10 2M4 2h6v6"/></svg></a>
-    <a href="https://royalestates.luxe" target="_blank" rel="noopener">Royal Estates Luxe <svg class="ext" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.1" aria-hidden="true"><path d="M2 10L10 2M4 2h6v6"/></svg></a>
-  </div>
-  <div class="menu-bar">
-    <span class="footer-mark">Royal Estates</span>
-    <button class="menu-close" onclick="closeMenu()"><span class="sq open"></span><span data-i18n="menu_close">Close</span></button>
-  </div>
-</nav>
+
 
 <!-- MORTGAGE SIMULATOR (Simulador) -->
-<section class="detail-overlay sim-overlay" id="sim-overlay" aria-hidden="true">
+<section class="detail-overlay sim-overlay" id="sim-overlay" data-lenis-prevent aria-hidden="true">
   <div class="dv-media">
     <img src="logo.svg" alt="" />
     <p class="sim-caption" data-i18n="menu_sim">Simulator</p>
@@ -1037,7 +1162,7 @@
 </section>
 
 <!-- CONTACT / REQUEST ACCESS OVERLAY -->
-<section class="contact-overlay" id="contact" aria-hidden="true">
+<section class="contact-overlay" id="contact" data-lenis-prevent aria-hidden="true">
   <div class="contact-logo"><img src="logo.svg" alt="Royal Estates Premium" /></div>
   <div class="contact-panels">
     <div class="contact-top">
@@ -1098,7 +1223,7 @@
 </section>
 
 <!-- LISTING DETAIL (side panel) -->
-<section class="detail-overlay" id="detail-overlay" aria-hidden="true">
+<section class="detail-overlay" id="detail-overlay" data-lenis-prevent aria-hidden="true">
   <div class="dv-media" id="detail-media"></div>
   <div class="dv-panel" id="detail-panel"></div>
 </section>
@@ -1131,6 +1256,7 @@
     const wrap = document.getElementById('hero-slides');
     const tile = document.getElementById('landing-photo');
     if (!wrap || !tile) return;
+    if (tile.classList.contains('has-video')) { wrap.innerHTML = ''; heroState.slides = []; clearInterval(heroState.timer); return; }
     const open = allProperties.filter(p => !(p.is_locked && !isUnlocked && !unlockedProperties.has(p.id)));
     const slides = [];
     open.forEach(p => {
@@ -1164,6 +1290,7 @@
     document.getElementById('hero-idx').textContent = String(i + 1).padStart(2, '0');
   }
   function heroOpen() {
+    if (document.getElementById('landing-photo').classList.contains('has-video')) return;
     const sl = heroState.slides[heroState.i];
     if (sl) openDetail(sl.id);
   }
@@ -1176,26 +1303,8 @@
     heroState.played = true;
     const L = document.getElementById('landing');
     if (!L) return;
-    if (!window.gsap || reducedMotion()) { L.classList.remove('pre'); return; }
-    const tl = gsap.timeline({ defaults: { ease: 'power3.out' }, onComplete: () => gsap.set('#landing .tile', { clearProps: 'clipPath' }) });
-    tl.fromTo('#landing .tile', { clipPath: 'inset(100% 0% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.15, ease: 'power4.inOut', stagger: 0.12 }, 0)
-      .fromTo('.landing-logo img', { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 1.3 }, 0.4)
-      .fromTo('#hero-slides', { scale: 1.16 }, { scale: 1, duration: 2, ease: 'power2.out' }, 0.1)
-      .fromTo('.hero-headline .ln > span', { yPercent: 115 }, { yPercent: 0, duration: 1.05, stagger: 0.14 }, 0.8)
-      .fromTo('#landing .fade-up', { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, stagger: 0.07 }, 1.0);
     L.classList.remove('pre');
-    // gentle parallax on scroll (plain listener: ScrollTrigger interfered with smooth scrolling to the properties)
-    let ticking = false;
-    window.addEventListener('scroll', () => {
-      if (ticking || !heroState.visible) return;
-      ticking = true;
-      requestAnimationFrame(() => {
-        const y = Math.min(window.scrollY, window.innerHeight);
-        L.style.setProperty('--py', (y * 0.07).toFixed(1) + 'px');
-        L.style.setProperty('--ly', (-y * 0.06).toFixed(1) + 'px');
-        ticking = false;
-      });
-    }, { passive: true });
+    if (window.heroIntroMotion) window.heroIntroMotion(); else window.__heroIntroPending = true;
   }
 
   // ── WELCOME SCREEN: shown at least ~1.8s, and until the collection has loaded (max 6s) ──
@@ -1271,6 +1380,14 @@
     const el = document.getElementById('listings-grid');
     if (!list.length) { el.innerHTML = '<div class="empty-state"><h3>No properties found</h3><p>Try a different filter.</p></div>'; return; }
     el.innerHTML = list.map(p => propertyHTML(p)).join('');
+    lazyCards(el);
+  }
+  // card photos load only when they are about to scroll into view (the browser's own lazy-loading starts ~1-2 screens early, which pulls in every cover at once)
+  const lazyIO = ('IntersectionObserver' in window) ? new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting) { e.target.src = e.target.dataset.src; lazyIO.unobserve(e.target); }
+  }), { rootMargin: '200px 0px' }) : null;
+  function lazyCards(root) {
+    root.querySelectorAll('img[data-src]').forEach(im => { if (lazyIO) lazyIO.observe(im); else im.src = im.dataset.src; });
   }
 
   function propDesc(p) {
@@ -1294,7 +1411,7 @@
     const lockIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="1"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
 
     const media = coverImg
-      ? `<img src="${imgUrl(coverImg)}" alt="${p.title}" loading="lazy" />`
+      ? `<img data-src="${imgUrl(coverImg)}" alt="${p.title}" decoding="async" />`
       : `<div class="tile-placeholder"><span>${locked ? t_('private_listing') : (loc.city || '')}</span></div>`;
 
     const priceText = locked ? '€ ●●● ●●●' : fmtPrice(p.price);
@@ -1303,12 +1420,13 @@
 
     const meta = [loc.city, !locked ? specsLine : ''].filter(Boolean).join(' · ');
     return `
-    <article class="property${locked ? ' locked' : ''}" data-type="${p.type||''}" data-region="${p.region||''}" ${onclick} tabindex="0" role="link" onkeydown="if(event.key==='Enter'){openDetail(${p.id})}">
+    <div class="property${locked ? ' locked' : ''}" data-type="${p.type||''}" data-region="${p.region||''}" data-id="${p.id}" ${onclick} tabindex="0" role="link" onkeydown="if(event.key==='Enter'){openDetail(${p.id})}">
       <div class="tile-media">${media}</div>
       <h3 class="p-title"><span class="p-name">${propTitle(p)}</span>${locked ? `<span class="p-lock">${lockIcon}</span>` : ''}</h3>
       <p class="p-meta">${meta}${!locked && hasVid ? ' · Video' : ''}</p>
       <p class="p-price tag-price">${priceText}</p>
-    </article>`;
+      <span class="p-view">${t_('view')}<svg class="arrow" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M1 6h10M6.5 1.5L11 6l-4.5 4.5"/></svg></span>
+    </div>`;
   }
 
   function esc(v) { return String(v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
@@ -1747,7 +1865,7 @@
       renderGrid(activeFilter === 'all' ? allProperties : allProperties.filter(p => p.type === activeFilter || p.region === activeFilter));
       buildHeroSlides();
       showToast(t_('all_unlocked'));
-      if (isPhone()) setTimeout(skipToProperties, 450);
+      setTimeout(skipToProperties, 450);
     } else if (ACCESS_CODE && sameCode(typed, ACCESS_CODE)) {
       isUnlocked = true;
       sessionStorage.setItem('rep_unlocked', 'true');
@@ -1757,7 +1875,7 @@
       renderGrid(activeFilter === 'all' ? allProperties : allProperties.filter(p => p.type === activeFilter || p.region === activeFilter));
       buildHeroSlides();
       showToast(t_('all_unlocked'));
-      if (isPhone()) setTimeout(skipToProperties, 450); // phones: take them straight to the properties
+      setTimeout(skipToProperties, 450); // straight to the properties
     } else {
       err.classList.add('show');
       input.value = '';
@@ -1799,13 +1917,17 @@
   })();
 
   const isPhone = () => window.matchMedia('(max-width: 640px)').matches;
+  function scrollToEl(t) {
+    if (typeof t === 'number') window.scrollTo({ top: t, behavior: 'smooth' });
+    else if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
   function skipToProperties() {
-    document.getElementById('listings-grid').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    scrollToEl(document.getElementById('collection'));
   }
   function menuGo(where) {
     closeMenu();
-    if (where === 'home') window.scrollTo({ top: 0, behavior: 'smooth' });
-    else if (where === 'collection') setTimeout(() => document.getElementById('listings-grid').scrollIntoView({ behavior: 'smooth' }), 60);
+    if (where === 'home') scrollToEl(0);
+    else if (where === 'collection') setTimeout(() => scrollToEl(document.getElementById('collection')), 60);
     else if (where === 'sim') openSim();
     else if (where === 'contact') openContact();
     else openLegal(where);
@@ -1864,7 +1986,7 @@
       pw_sub:'Enter your access code to reveal the full details and pricing for this listing.',
       pw_btn:'Unlock listing', pw_error:'Incorrect code.',
       nav_collection:'Collection', nav_contact:'Contact',
-      tile_collection:'Properties Collection', tile_regions:'Lisbon · Cascais · Algarve', private_listing:'Private listing', verified_note:'Reserved for verified clients.', pw_placeholder:'Access code', unlock:'Unlock', hero_featured:'Featured', share:'Share this property', share_btn:'Share property', link_copied:'Link copied', price_request:'Price on request', d_grapes:'Grape varieties', d_red:'Red', d_white:'White', d_credit:'Photography', d_contact:'Contact', hero_explore:'Explore', hero_private:'A private collection', menu_label:'Menu', menu_sim:'Simulator', menu_close:'Close', menu_home:'Home', menu_collection:'Collection', menu_privacy:'Privacy', menu_terms:'Terms', d_typology:'Typology', d_area:'Living area', d_gross:'Gross area', d_plot:'Plot', d_beds:'Bedrooms', d_baths:'Bathrooms', d_floor:'Floor', d_year:'Year', d_energy:'Energy', d_exposure:'Exposure', d_feature:'Feature', d_ref:'Reference', d_features:'Features', d_areas:'Areas', d_costs:'Costs', d_imi:'IMI / year', d_imt:'IMT', d_stamp:'Stamp duty', d_nearby:'Nearby', min:'min', brochure:'Download brochure'
+      tile_collection:'Properties Collection', tile_regions:'Lisbon · Cascais · Algarve', private_listing:'Private listing', verified_note:'Reserved for verified clients.', pw_placeholder:'Access code', unlock:'Unlock', hero_featured:'Featured', share:'Share this property', share_btn:'Share property', link_copied:'Link copied', price_request:'Price on request', d_grapes:'Grape varieties', d_red:'Red', d_white:'White', d_credit:'Photography', d_contact:'Contact', hero_explore:'Explore', hero_private:'A private collection', menu_label:'Menu', view:'View', menu_sim:'Simulator', menu_close:'Close', menu_home:'Home', menu_collection:'Collection', menu_privacy:'Privacy', menu_terms:'Terms', d_typology:'Typology', d_area:'Living area', d_gross:'Gross area', d_plot:'Plot', d_beds:'Bedrooms', d_baths:'Bathrooms', d_floor:'Floor', d_year:'Year', d_energy:'Energy', d_exposure:'Exposure', d_feature:'Feature', d_ref:'Reference', d_features:'Features', d_areas:'Areas', d_costs:'Costs', d_imi:'IMI / year', d_imt:'IMT', d_stamp:'Stamp duty', d_nearby:'Nearby', min:'min', brochure:'Download brochure'
     },
     pt: {
       all:'Todos', apartment:'Apartamento', villa:'Moradia', townhouse:'Casa em banda',
@@ -1882,7 +2004,7 @@
       pw_sub:'Introduza o código de acesso para ver os detalhes completos e o preço deste imóvel.',
       pw_btn:'Desbloquear imóvel', pw_error:'Código incorreto.',
       nav_collection:'Coleção', nav_contact:'Contacto',
-      tile_collection:'Coleção de Imóveis', tile_regions:'Lisboa · Cascais · Algarve', private_listing:'Imóvel privado', verified_note:'Reservado a clientes verificados.', pw_placeholder:'Código de acesso', unlock:'Desbloquear', hero_featured:'Em destaque', share:'Partilhar este imóvel', share_btn:'Partilhar imóvel', link_copied:'Ligação copiada', price_request:'Preço sob consulta', d_grapes:'Castas', d_red:'Tintas', d_white:'Brancas', d_credit:'Fotografia', d_contact:'Contacto', hero_explore:'Explorar', hero_private:'Uma coleção privada', menu_label:'Menu', menu_sim:'Simulador', menu_close:'Fechar', menu_home:'Início', menu_collection:'Coleção', menu_privacy:'Privacidade', menu_terms:'Termos', d_typology:'Tipologia', d_area:'Área útil', d_gross:'Área bruta', d_plot:'Terreno', d_beds:'Quartos', d_baths:'Casas de banho', d_floor:'Piso', d_year:'Ano', d_energy:'Energia', d_exposure:'Exposição', d_feature:'Destaque', d_ref:'Referência', d_features:'Características', d_areas:'Áreas', d_costs:'Custos', d_imi:'IMI / ano', d_imt:'IMT', d_stamp:'Imposto de selo', d_nearby:'Na envolvente', min:'min', brochure:'Descarregar brochura'
+      tile_collection:'Coleção de Imóveis', tile_regions:'Lisboa · Cascais · Algarve', private_listing:'Imóvel privado', verified_note:'Reservado a clientes verificados.', pw_placeholder:'Código de acesso', unlock:'Desbloquear', hero_featured:'Em destaque', share:'Partilhar este imóvel', share_btn:'Partilhar imóvel', link_copied:'Ligação copiada', price_request:'Preço sob consulta', d_grapes:'Castas', d_red:'Tintas', d_white:'Brancas', d_credit:'Fotografia', d_contact:'Contacto', hero_explore:'Explorar', hero_private:'Uma coleção privada', menu_label:'Menu', view:'Ver', menu_sim:'Simulador', menu_close:'Fechar', menu_home:'Início', menu_collection:'Coleção', menu_privacy:'Privacidade', menu_terms:'Termos', d_typology:'Tipologia', d_area:'Área útil', d_gross:'Área bruta', d_plot:'Terreno', d_beds:'Quartos', d_baths:'Casas de banho', d_floor:'Piso', d_year:'Ano', d_energy:'Energia', d_exposure:'Exposição', d_feature:'Destaque', d_ref:'Referência', d_features:'Características', d_areas:'Áreas', d_costs:'Custos', d_imi:'IMI / ano', d_imt:'IMT', d_stamp:'Imposto de selo', d_nearby:'Na envolvente', min:'min', brochure:'Descarregar brochura'
     }
   };
 
@@ -1905,10 +2027,10 @@
 
     const eyebrow = document.querySelector('.hero-eyebrow');
     const headline = document.querySelector('.hero-headline');
-    const sub = document.querySelector('.hero-sub');
+    const sub = document.getElementById('hero-sub');
     if (eyebrow) eyebrow.textContent = t.hero_eyebrow;
-    if (headline) headline.innerHTML = t.hero_headline.split('<br>').map(l => `<span class="ln"><span>${l}</span></span>`).join('');
-    if (sub) sub.textContent = t.hero_sub;
+    if (window.rwSetLang) window.rwSetLang(lang);
+    if (sub) sub.textContent = t.hero_headline.replace(/<br>/g, ' ');
 
     const fieldLabels = document.querySelectorAll('.access-form .field label');
     const lk = ['label_first','label_last','label_email','label_role','label_budget'];
@@ -1925,10 +2047,227 @@
     renderGrid(filtered);
   }
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.min.js"></script>
+<script>
+  // ━━━━━━━━━━━━━━ MOTION SETTINGS ━━━━━━━━━━━━━━
+  const LENIS_ENABLED = true;   // smooth scrolling: set to false to switch it off (one line)
+  const LENIS_LERP    = 0.1;    // gentle; lower = floatier, higher = snappier
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  (function () {
+    const $ = id => document.getElementById(id);
+    const reduce = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const EASE = 'cubic-bezier(0.625, 0.05, 0, 1)';
+    const G = window.gsap, ST = window.ScrollTrigger;
+    if (G && ST) G.registerPlugin(ST);
+    if (G) G.defaults({ ease: 'expo.out' });   // close to the 0.625/0.05/0/1 curve
+
+    // ── Smooth scroll (Lenis) wired to ScrollTrigger ──
+    let lenis = null;
+    if (LENIS_ENABLED && window.Lenis && G && !reduce()) {
+      lenis = new Lenis({ lerp: LENIS_LERP, smoothWheel: true });
+      if (ST) lenis.on('scroll', ST.update);
+      G.ticker.add(t => lenis.raf(t * 1000));
+      G.ticker.lagSmoothing(0);
+    }
+    window.scrollToEl = function (t) {
+      if (lenis) { lenis.scrollTo(t, { duration: 1.1 }); return; }
+      if (typeof t === 'number') window.scrollTo({ top: t, behavior: reduce() ? 'auto' : 'smooth' });
+      else if (t) t.scrollIntoView({ behavior: reduce() ? 'auto' : 'smooth', block: 'start' });
+    };
+
+    // ── Expanding nav panel (state: data-nav-status) ──
+    const np = $('navpanel'), tg = $('np-toggle'), dr = $('np-drawer'), bd = $('np-backdrop');
+    const isOpen = () => np && np.dataset.navStatus === 'active';
+    if (np) {
+      [...dr.querySelectorAll('.np-links li, .np-eyebrow, .np-contact li, .np-lang, .np-img img')].forEach((el, i) => el.style.setProperty('--i', i));
+      np.setAttribute('data-lenis-prevent', '');
+    }
+    window.openMenu = function () {
+      if (!np || isOpen()) return;
+      np.dataset.navStatus = 'active';
+      tg.setAttribute('aria-expanded', 'true');
+      dr.inert = false;
+      setTimeout(() => { if (isOpen()) { const a = dr.querySelector('a'); if (a) a.focus({ preventScroll: true }); } }, reduce() ? 0 : 400);
+    };
+    window.closeMenu = function (returnFocus) {
+      if (!np || !isOpen()) return;
+      const hadFocus = np.contains(document.activeElement);
+      np.dataset.navStatus = 'not-active';
+      tg.setAttribute('aria-expanded', 'false');
+      dr.inert = true;
+      if (returnFocus !== false && hadFocus) tg.focus({ preventScroll: true });
+    };
+    if (np) {
+      tg.addEventListener('click', () => isOpen() ? closeMenu() : openMenu());
+      bd.addEventListener('click', () => closeMenu());
+      document.addEventListener('keydown', e => {
+        if (!isOpen()) return;
+        if (e.key === 'Escape') { e.preventDefault(); closeMenu(); return; }
+        if (e.key !== 'Tab') return;
+        const f = [...np.querySelectorAll('a[href], button')].filter(el => !el.closest('[inert]') && el.offsetParent !== null);
+        if (!f.length) return;
+        const first = f[0], last = f[f.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      });
+    }
+
+    // ── Hero video (reduced motion: the inline script already removed it; the slideshow stays) ──
+    const hv = $('hero-video'), photo = $('landing-photo');
+    if (hv && photo && !reduce()) {
+      photo.classList.add('has-video');
+      const p = hv.play && hv.play(); if (p && p.catch) p.catch(() => {});   // autoplay blocked: the poster stays
+    }
+
+    // ── Rotating headline: "For_ families / legacy / investors / Portugal" ──
+    const RW = {
+      en: { prefix: 'For_',  words: ['families', 'legacy', 'investors', 'Portugal'],   sr: 'For families, legacy, investors, Portugal' },
+      pt: { prefix: 'Para_', words: ['famílias', 'legado', 'investidores', 'Portugal'], sr: 'Para famílias, legado, investidores, Portugal' }
+    };
+    let rwLang = 'en', rwI = 0, rwBusy = false, rwTimer = null, rwStarted = false;
+    const wordEl = $('rw-word');
+    const setWord = w => { if (wordEl) wordEl.innerHTML = [...w].map(c => `<span class="ch">${c}</span>`).join(''); };
+    function rwRender() {
+      const d = RW[rwLang]; if (!wordEl) return;
+      $('rw-prefix').textContent = d.prefix; $('rw-sr').textContent = d.sr;
+      setWord(d.words[rwI]);
+    }
+    function rwNext() {
+      const L = $('landing');
+      if (!wordEl || rwBusy) return;
+      if (document.hidden || (typeof heroState !== 'undefined' && !heroState.visible)) { rwTimer = setTimeout(rwNext, 1000); return; }
+      const d = RW[rwLang], next = (rwI + 1) % d.words.length;
+      rwBusy = true;
+      G.to(wordEl.querySelectorAll('.ch'), { yPercent: -115, duration: .5, ease: EASE, stagger: .03, onComplete() {
+        rwI = next; setWord(d.words[rwI]);
+        G.fromTo(wordEl.querySelectorAll('.ch'), { yPercent: 115 }, { yPercent: 0, duration: .5, ease: EASE, stagger: .03, onComplete() { rwBusy = false; rwTimer = setTimeout(rwNext, 3000); } });
+      } });
+    }
+    window.rwSetLang = function (lang) {
+      if (!RW[lang]) return;
+      rwLang = lang; rwI = 0; rwBusy = false; clearTimeout(rwTimer);
+      if (G) G.killTweensOf(wordEl ? wordEl.querySelectorAll('.ch') : []);
+      rwRender();
+      if (rwStarted && G && !reduce()) rwTimer = setTimeout(rwNext, 3000);
+    };
+    rwRender();
+
+    // ── Hero intro (called from startHeroIntro in the main script) ──
+    window.heroIntroMotion = function () {
+      if (!G || reduce()) return;
+      G.fromTo('#landing .fade-up', { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: .75, ease: EASE, stagger: .07, delay: .2 });
+      if (wordEl) {
+        G.fromTo(wordEl.querySelectorAll('.ch'), { yPercent: 115 }, { yPercent: 0, duration: .75, ease: EASE, stagger: .04, delay: .3 });
+        rwStarted = true; rwTimer = setTimeout(rwNext, 3800);
+      }
+    };
+    if (window.__heroIntroPending) { window.__heroIntroPending = false; window.heroIntroMotion(); }
+
+    // ── Reveals: headings line by line, card images clip-wipe; first view only ──
+    function splitLines(el) {
+      if (el.dataset.split) return null;
+      const text = el.textContent.trim(); if (!text) return null;
+      el.dataset.split = '1'; el.textContent = '';
+      const spans = text.split(/\s+/).map(w => { const s = document.createElement('span'); s.style.display = 'inline-block'; s.textContent = w; el.append(s, ' '); return s; });
+      const lines = []; let top = null;
+      spans.forEach(s => { if (top === null || Math.abs(s.offsetTop - top) > 4) { lines.push([]); top = s.offsetTop; } lines[lines.length - 1].push(s.textContent); });
+      el.textContent = '';
+      return lines.map(words => { const m = document.createElement('span'); m.className = 'rv-mask'; const l = document.createElement('span'); l.className = 'rv-line'; l.textContent = words.join(' '); m.appendChild(l); el.appendChild(m); return l; });
+    }
+    function revealHeadings() {
+      if (!G || !ST || reduce()) return;
+      document.querySelectorAll('.section-head .h2, .closing-name').forEach(el => {
+        const lines = splitLines(el); if (!lines) return;
+        el.setAttribute('aria-label', lines.map(l => l.textContent).join(' '));
+        G.set(lines, { yPercent: 110 });
+        ST.create({ trigger: el, start: 'top 90%', once: true, onEnter: () => G.to(lines, { yPercent: 0, duration: .75, ease: EASE, stagger: .1 }) });
+      });
+    }
+    const seen = new Set();
+    function revealCards() {
+      if (!G || !ST || reduce()) return;
+      document.querySelectorAll('#listings-grid .property:not([data-rv])').forEach(card => {
+        card.dataset.rv = '1';
+        const id = card.dataset.id, media = card.querySelector('.tile-media');
+        if (!media || seen.has(id)) return;
+        G.set(media, { clipPath: 'inset(0% 0% 100% 0%)' });
+        ST.create({ trigger: card, start: 'top 92%', once: true, onEnter: () => { seen.add(id); G.to(media, { clipPath: 'inset(0% 0% 0% 0%)', duration: .75, ease: EASE, clearProps: 'clipPath' }); } });
+      });
+      ST.refresh();
+    }
+    const grid = $('listings-grid');
+    if (grid && G && ST && !reduce()) new MutationObserver(revealCards).observe(grid, { childList: true });
+    (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(() => { revealHeadings(); revealCards(); });
+
+    // ── Card photo grows into the panel photo (same-document View Transition) ──
+    const openOrig = window.openDetail;
+    window.openDetail = function (id) {
+      const card = document.querySelector('#listings-grid .property[data-id="' + id + '"]');
+      const img = card && !card.classList.contains('locked') && card.querySelector('.tile-media img');
+      const r = img && img.getBoundingClientRect();
+      const visible = r && r.bottom > 0 && r.top < innerHeight;
+      if (!document.startViewTransition || reduce() || !visible) { openOrig(id); buildBars(); return; }
+      img.style.viewTransitionName = 'pv';
+      const vt = document.startViewTransition(() => {
+        img.style.viewTransitionName = '';
+        openOrig(id); buildBars();
+        const g = $('gallery-main'); if (g) g.style.viewTransitionName = 'pv';
+      });
+      vt.finished.finally(() => { const g = $('gallery-main'); if (g) g.style.viewTransitionName = ''; img.style.viewTransitionName = ''; });
+    };
+
+    // ── Gallery: flat 4px progress bars, keyboard arrows, mouse drag (touch swipe already exists) ──
+    function markBars() {
+      const i = window._galleryIdx || 0;
+      document.querySelectorAll('.g-bars button').forEach((b, k) => { b.classList.toggle('on', k === i); if (k === i) b.setAttribute('aria-current', 'true'); else b.removeAttribute('aria-current'); });
+    }
+    function buildBars() {
+      const dm = $('detail-media'); if (!dm) return;
+      const old = dm.querySelector('.g-bars'); if (old) old.remove();
+      const n = (window._galleryImgs || []).length; if (n < 2) return;
+      const d = document.createElement('div'); d.className = 'g-bars'; d.setAttribute('role', 'group'); d.setAttribute('aria-label', 'Photos');
+      for (let k = 0; k < n; k++) {
+        const b = document.createElement('button'); b.type = 'button'; b.setAttribute('aria-label', 'Photo ' + (k + 1) + ' of ' + n);
+        b.addEventListener('click', e => { e.stopPropagation(); window.galleryGo(k, k >= (window._galleryIdx || 0) ? 1 : -1); });
+        d.appendChild(b);
+      }
+      dm.appendChild(d); markBars();
+    }
+    const ggOrig = window.galleryGo;
+    window.galleryGo = function (i, dir) { ggOrig(i, dir); markBars(); };
+    const cfOrig = window.closeFs;
+    window.closeFs = function () { cfOrig(); markBars(); };
+
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      if (e.target.closest && e.target.closest('input, textarea, select')) return;
+      const dir = e.key === 'ArrowRight' ? 1 : -1;
+      if ($('fs-overlay').classList.contains('open')) { fsNav(dir); return; }
+      if ($('detail-overlay').classList.contains('open') && (window._galleryImgs || []).length > 1) galleryNav(dir);
+    });
+    // mouse drag on the photo
+    (function () {
+      const dm = $('detail-media'); if (!dm) return;
+      let x0 = null, dx = 0, moved = false;
+      dm.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse' || e.button !== 0 || e.target.closest('button')) return; x0 = e.clientX; dx = 0; moved = false; });
+      window.addEventListener('pointermove', e => { if (x0 === null) return; dx = e.clientX - x0; if (Math.abs(dx) > 6) moved = true; });
+      window.addEventListener('pointerup', () => {
+        if (x0 === null) return;
+        if (moved && Math.abs(dx) > 50 && (window._galleryImgs || []).length > 1) galleryNav(dx < 0 ? 1 : -1);
+        if (moved) { const stop = ev => { ev.stopPropagation(); ev.preventDefault(); }; dm.addEventListener('click', stop, { capture: true, once: true }); setTimeout(() => dm.removeEventListener('click', stop, true), 0); }
+        x0 = null;
+      });
+    })();
+
+    window.addEventListener('load', () => { if (ST) ST.refresh(); });
+  })();
+</script>
 
 
 <!-- FULLSCREEN OVERLAY -->
-<div class="fs-overlay" id="fs-overlay">
+<div class="fs-overlay" id="fs-overlay" data-lenis-prevent>
   <button class="fs-close" onclick="closeFs()">×</button>
   <button class="fs-arrow left" onclick="fsNav(-1)" aria-label="Previous">‹</button>
   <div class="fs-stage"><img class="fs-main" id="fs-main" src="" alt="" draggable="false" /></div>
@@ -1938,7 +2277,7 @@
 </div>
 
 <!-- LEGAL PAGES OVERLAY -->
-<section class="legal-overlay" id="legal-overlay" aria-hidden="true">
+<section class="legal-overlay" id="legal-overlay" data-lenis-prevent aria-hidden="true">
   <div class="legal-logo"><img src="logo.svg" alt="Royal Estates Premium" /></div>
   <div class="legal-panel" id="legal-panel">
     <button class="contact-close" onclick="closeLegal()" aria-label="Close">×</button>
