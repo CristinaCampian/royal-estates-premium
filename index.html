@@ -907,6 +907,21 @@
     .np-pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
     .np-drawer:focus, .np-links a:focus:not(:focus-visible), .np-contact a:focus:not(:focus-visible) { outline: none; }
     @media (max-width: 640px) { .np-rule { margin: 0 20px; } .np-body { padding: 20px 20px 24px; } .np-links a { font-size: 2.25rem; } }
+
+    /* ── locked cards: own code field; unlock-all link ── */
+    .property.locked { cursor: default; }
+    .property .tile-placeholder.lock-ph { color: var(--color-porcelain); background: var(--dark); }
+    .property.locked .tile-media { background: var(--dark); }
+    .p-unlock { display: flex; align-items: center; border-bottom: 1px solid var(--ink); margin-top: 10px; max-width: 420px; }
+    .p-unlock input { flex: 1; min-width: 0; background: transparent; border: 0; border-radius: 0; font: 400 var(--text-main)/1.5 var(--font-body); letter-spacing: .12em; padding: 10px 0; color: var(--ink); }
+    .p-unlock input::placeholder { color: var(--mid); letter-spacing: 0; }
+    .p-unlock-btn { display: inline-flex; align-items: center; gap: 8px; background: none; border: 0; font: 400 var(--text-main)/1.5 var(--font-body); color: var(--ink); cursor: pointer; padding: 10px 0 10px 12px; }
+    .p-unlock-btn .arrow { width: 12px; height: 12px; transition: transform .5s var(--ease); }
+    .p-unlock-btn:hover .arrow, .p-unlock-btn:focus-visible .arrow { transform: translateX(4px); }
+    .p-unlock-btn:disabled { opacity: .5; cursor: wait; }
+    .property .pw-error { margin-top: 8px; }
+    .unlock-all-link { background: none; border: 0; cursor: pointer; margin-top: 16px; padding: 0; font-family: var(--font-body); }
+    .unlock-all-link[hidden] { display: none; }
     @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
   </style>
 </head>
@@ -951,9 +966,9 @@
             <li><a href="mailto:info@royalestates.pt">info@royalestates.pt <svg class="ext" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><path d="M2 10L10 2M4 2h6v6"/></svg></a></li>
           </ul>
         </div>
-        <div class="np-img" aria-hidden="true">
-          <div class="np-pic"><img src="assets/hero-poster.jpg" alt="" width="270" height="240" loading="lazy" decoding="async" /></div>
-          <div class="np-pic"><img src="assets/menu-image-2.jpg" alt="" width="270" height="240" loading="lazy" decoding="async" onerror="this.closest('.np-pic').remove()" /></div>
+        <div class="np-img">
+          <div class="np-pic"><img src="assets/hero-poster.jpg" alt="Algarve coastline" width="1280" height="720" loading="lazy" decoding="async" /></div>
+          <div class="np-pic"><img src="assets/menu-image-lisbon.jpg" alt="Lisbon street scene" width="1000" height="1250" loading="lazy" decoding="async" /></div>
         </div>
       </div>
     </div>
@@ -1016,6 +1031,7 @@
     <header class="section-head">
       <span class="eyebrow" data-i18n="tile_regions">Lisbon · Cascais · Algarve</span>
       <h2 class="h2" data-i18n="tile_collection">Properties Collection</h2>
+      <button type="button" class="t-link unlock-all-link" id="unlock-all-link" onclick="openContact('code')" hidden><span data-i18n="unlock_all">Unlock all properties</span> <svg class="arrow" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M1 6h10M6.5 1.5L11 6l-4.5 4.5"/></svg></button>
     </header>
     <main class="mosaic" id="listings-grid">
       <div class="loading-state"><p>Loading properties…</p></div>
@@ -1193,13 +1209,13 @@
     </div>
     <div class="contact-bottom">
       <div class="code-block" id="code-block">
-        <h3 class="t-display access-title" data-i18n="code_title">Access code</h3>
-        <p class="t-cap access-sub" data-i18n="code_sub">Enter your code to unlock every property.</p>
+        <h3 class="t-display access-title" data-i18n="code_title">Unlock all properties</h3>
+        <p class="t-cap access-sub" data-i18n="code_sub">Have a master code? Enter it here to unlock every property at once. A code for a single property goes on that property's card.</p>
         <div class="dv-lock-row">
-          <input type="password" id="global-code" placeholder="Access code" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter') unlockAll()" />
+          <input type="password" id="global-code" placeholder="Master code" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter') unlockAll()" />
           <button class="dv-unlock" onclick="unlockAll()"><span data-i18n="unlock">Unlock</span> →</button>
         </div>
-        <p class="pw-error" id="global-error" data-i18n="pw_error">Incorrect code.</p>
+        <p class="pw-error" id="global-error" role="alert">Incorrect code.</p>
       </div>
       <div class="access-form">
         <h3 class="t-display access-title" data-i18n="access_title">No code? Request access</h3>
@@ -1252,7 +1268,6 @@
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   const SUPABASE_URL  = 'https://mejkdoabupmfwcldysgd.supabase.co';
   const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1lamtkb2FidXBtZndjbGR5c2dkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMjAwNTQsImV4cCI6MjA5NjY5NjA1NH0.xX4Tmm9ZXtAt-uMtIcsjYxbuLHPPR569zl-z5nv5TWk';
-  let   ACCESS_CODE   = 'premium2025'; // fallback; the live value comes from site_settings (set in the admin)
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   let db = null; // created after first paint (the Supabase script is deferred)
@@ -1260,7 +1275,7 @@
   let allProperties = [];
   let currentLang = 'en';
   let activeFilter  = 'all';
-  let isUnlocked    = sessionStorage.getItem('rep_unlocked') === 'true';
+  let isUnlocked    = false;   // true after the master code (re-checked on the server on every reload)
 
   // ── LANDING HERO: photo slideshow + entrance ──
   const heroState = { slides: [], i: 0, timer: null, played: false, visible: true };
@@ -1343,35 +1358,90 @@
   // the hero text starts animating under the overlay a moment before it lifts, so the first meaningful paint does not wait for the welcome screen
   setTimeout(startHeroIntro, Math.max(0, 250 - performance.now()));
 
-  let accessCodeReady = null;
-  function loadAccessCode() {
-    return accessCodeReady = (async () => {
-      try {
-        const { data, error } = await db.from('site_settings').select('value').eq('key', 'access_code').maybeSingle();
-        if (!error && data) ACCESS_CODE = (data.value || '').trim(); // empty = global code switched off
-      } catch (e) { /* keep fallback */ }
-    })();
+  // ── ACCESS: codes are checked by the database (functions unlock_property / unlock_all), never in this page ──
+  const CODES_KEY = 'rep_codes', MASTER_KEY = 'rep_master';
+  const savedCodes = () => { try { return JSON.parse(sessionStorage.getItem(CODES_KEY) || '{}') || {}; } catch (e) { return {}; } };
+  const saveCodes = o => { try { sessionStorage.setItem(CODES_KEY, JSON.stringify(o)); } catch (e) {} };
+  const rpcMsg = err => (err && /too_many_attempts/.test(err.message || '')) ? t_('too_many') : (err ? t_('unlock_error') : t_('pw_error'));
+
+  // locked cards are only an id: nothing else about a locked listing reaches the browser until its code is accepted
+  function teaserRow(t) { return { id: t.id, created_at: t.created_at, is_locked: true, _teaser: true, title: '', images: [] }; }
+  async function fetchTeasers() {
+    let r = await db.from('locked_teasers').select('id,created_at');
+    if (!r.error) return r.data || [];
+    // migration step 1 not run yet: ask for the bare minimum columns, never full rows
+    r = await db.from('properties').select('id,created_at,details').eq('is_locked', true).eq('active', true);
+    return (r.data || []).filter(x => !(x.details && x.details.off_market)).map(x => ({ id: x.id, created_at: x.created_at }));
   }
-  // codes match without caring about capitals, spaces or dashes (phones capitalise and add spaces)
-  const normCode = v => String(v || '').toLowerCase().replace(/[\s\-_.]/g, '');
-  const sameCode = (a, b) => !!normCode(a) && normCode(a) === normCode(b);
+  function applyUnlocked(rows) {
+    rows.forEach(r => {
+      if (!r || r.id == null) return;
+      r._teaser = false;
+      const i = allProperties.findIndex(x => x.id === r.id);
+      if (i >= 0) allProperties[i] = r; else allProperties.push(r);
+      unlockedProperties.add(r.id);
+    });
+    allProperties.sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+  }
+  function refreshAfterUnlock() {
+    renderGrid(activeFilter === 'all' ? allProperties : allProperties.filter(p => p.type === activeFilter || p.region === activeFilter));
+    buildHeroSlides();
+  }
+  // one listing: its own code
+  async function unlockOne(id, code) {
+    const { data, error } = await db.rpc('unlock_property', { p_id: id, p_code: code });
+    if (error) return { ok: false, error };
+    if (!data) return { ok: false };
+    applyUnlocked([data]);
+    const c = savedCodes(); c[id] = code; saveCodes(c);
+    return { ok: true };
+  }
+  // everything: the master code
+  async function unlockEverything(code) {
+    const { data, error } = await db.rpc('unlock_all', { p_code: code });
+    if (error) return { ok: false, error };
+    if (!Array.isArray(data)) return { ok: false };
+    applyUnlocked(data);
+    isUnlocked = true;
+    try { sessionStorage.setItem(MASTER_KEY, code); } catch (e) {}
+    return { ok: true };
+  }
+  // after a reload in the same tab: re-check the remembered codes with the server
+  async function restoreSession() {
+    let changed = false;
+    let master = null; try { master = sessionStorage.getItem(MASTER_KEY); } catch (e) {}
+    if (master) {
+      const { data } = await db.rpc('unlock_all', { p_code: master });
+      if (Array.isArray(data)) { applyUnlocked(data); isUnlocked = true; changed = true; }
+      else { try { sessionStorage.removeItem(MASTER_KEY); } catch (e) {} }
+    }
+    const codes = savedCodes();
+    for (const id of Object.keys(codes)) {
+      if (unlockedProperties.has(Number(id))) continue;
+      const { data } = await db.rpc('unlock_property', { p_id: Number(id), p_code: codes[id] });
+      if (data) { applyUnlocked([data]); changed = true; } else delete codes[id];
+    }
+    saveCodes(codes);
+    if (changed) { refreshAfterUnlock(); openFromHash(); }
+  }
 
   async function init() {
-    loadAccessCode();
     // Preview builds (*.vercel.app, localhost) can show unfinished listings with ?drafts; production never does.
     const showDrafts = /\.vercel\.app$|^localhost$|^127\./.test(location.hostname) && new URLSearchParams(location.search).has('drafts');
-    let q = db.from('properties').select('*');
+    let q = db.from('properties').select('*').or('is_locked.is.null,is_locked.eq.false');   // public listings only
     if (!showDrafts) q = q.eq('active', true);
-    const { data, error } = await q.order('created_at', { ascending: false });
-    if (error) {
+    const [pub, teasers] = await Promise.all([q.order('created_at', { ascending: false }), fetchTeasers()]);
+    if (pub.error) {
       document.getElementById('listings-grid').innerHTML = '<div class="empty-state"><h3>Unable to load</h3><p>Please refresh the page.</p></div>';
       return;
     }
-    allProperties = data || [];
+    allProperties = (pub.data || []).concat(teasers.map(teaserRow));
+    allProperties.sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
     renderGrid(allProperties);
     buildHeroSlides();
     openFromHash();
     window.addEventListener('hashchange', openFromHash);
+    restoreSession();
   }
 
   function imgUrl(path) { return `${SUPABASE_URL}/storage/v1/object/public/property-images/${path}`; }
@@ -1396,6 +1466,8 @@
     if (!list.length) { el.innerHTML = '<div class="empty-state"><h3>No properties found</h3><p>Try a different filter.</p></div>'; return; }
     el.innerHTML = list.map(p => propertyHTML(p)).join('');
     lazyCards(el);
+    const ua = document.getElementById('unlock-all-link');
+    if (ua) ua.hidden = isUnlocked || !allProperties.some(p => p.is_locked && !unlockedProperties.has(p.id));
   }
   // card photos load only when they are about to scroll into view (the browser's own lazy-loading starts ~1-2 screens early, which pulls in every cover at once)
   const lazyIO = ('IntersectionObserver' in window) ? new IntersectionObserver(es => es.forEach(e => {
@@ -1433,6 +1505,19 @@
     const specsLine = [p.typology, p.area ? p.area + ' m²' : null].filter(Boolean).join(' · ');
     const onclick = `onclick="openDetail(${p.id})"`;
 
+    if (locked) {
+      return `
+    <div class="property locked" data-id="${p.id}">
+      <div class="tile-media"><div class="tile-placeholder lock-ph">${lockIcon.replace('<svg', '<svg width="34" height="34" aria-hidden="true"')}</div></div>
+      <h3 class="p-title">${t_('private_listing')}</h3>
+      <form class="p-unlock" onsubmit="return cardUnlock(event, ${p.id})" autocomplete="off">
+        <label class="sr-only" for="cu-${p.id}">${t_('pw_placeholder')}</label>
+        <input id="cu-${p.id}" type="password" placeholder="${t_('pw_placeholder')}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
+        <button type="submit" class="p-unlock-btn">${t_('unlock')}<svg class="arrow" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M1 6h10M6.5 1.5L11 6l-4.5 4.5"/></svg></button>
+      </form>
+      <p class="pw-error" role="alert"></p>
+    </div>`;
+    }
     const meta = [loc.city, !locked ? specsLine : ''].filter(Boolean).join(' · ');
     return `
     <div class="property${locked ? ' locked' : ''}" data-type="${p.type||''}" data-region="${p.region||''}" data-id="${p.id}" ${onclick} tabindex="0" role="link" onkeydown="if(event.key==='Enter'){openDetail(${p.id})}">
@@ -1768,7 +1853,7 @@
     renderGrid(filtered);
   }
 
-  let unlockedProperties = new Set(JSON.parse(sessionStorage.getItem('rep_unlocked_ids') || '[]'));
+  let unlockedProperties = new Set();   // ids opened with their own code (re-checked on the server on every reload)
 
   let pendingUnlockPropertyId = null;
 
@@ -1777,25 +1862,19 @@
     window._shareId = p.id;
     setHash(propHash(p));
     window._galleryImgs = [];
-    const cover = (p.images && p.images.length) ? p.images[0] : p.image_url;
     const lockIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="1"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
-    document.getElementById('detail-media').innerHTML = cover
-      ? `<img class="dv-grey" src="${imgUrl(cover)}" alt="" />`
-      : `<div class="dv-empty">${t_('private_listing')}</div>`;
+    document.getElementById('detail-media').innerHTML = `<div class="dv-empty">${t_('private_listing')}</div>`;
     document.getElementById('detail-panel').innerHTML = `
       <button class="contact-close" onclick="closeDetail()" aria-label="Close">×</button>
       <button class="detail-share" onclick="shareProperty(${p.id})" aria-label="${t_('share')}" title="${t_('share')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></button>
-      <h2 class="detail-title dv-blur">${propTitle(p)}</h2>
-      <p class="detail-location dv-blur">${p.location || ''}</p>
-      <p class="detail-price dv-blur">€ ●●● ●●●</p>
-      <div class="dv-ghost"><span></span><span></span><span></span></div>
+      <h2 class="detail-title">${t_('private_listing')}</h2>
       <div class="dv-lock">
         <p class="dv-lock-note">${lockIcon}<span>${t_('verified_note')}</span></p>
         <div class="dv-lock-row">
           <input type="password" id="pw-input" placeholder="${t_('pw_placeholder')}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter') checkPw()" />
           <button class="dv-unlock" onclick="checkPw()">${t_('unlock')} →</button>
         </div>
-        <p class="pw-error" id="pw-error">${t_('pw_error')}</p>
+        <p class="pw-error" id="pw-error" role="alert">${t_('pw_error')}</p>
       </div>`;
     document.getElementById('detail-panel').scrollTop = 0;
     const o = document.getElementById('detail-overlay');
@@ -1804,36 +1883,42 @@
     setTimeout(() => { const i = document.getElementById('pw-input'); if (i) i.focus(); }, 800);
   }
 
+  // unlock from the share-link panel
   async function checkPw() {
-    if (accessCodeReady) await accessCodeReady; // make sure the saved code has arrived before comparing
-    const input = document.getElementById('pw-input');
+    const input = document.getElementById('pw-input'), err = document.getElementById('pw-error');
     if (!input) return;
-    const val = input.value.trim();
-    const id = pendingUnlockPropertyId;
-    const prop = allProperties.find(p => p.id === id);
-    let ok = false;
-
-    // per-property password first, then the global access code
-    if (prop && prop.password && sameCode(val, prop.password)) {
-      unlockedProperties.add(id);
-      sessionStorage.setItem('rep_unlocked_ids', JSON.stringify([...unlockedProperties]));
-      ok = true;
-    } else if (ACCESS_CODE && sameCode(val, ACCESS_CODE)) {
-      isUnlocked = true;
-      sessionStorage.setItem('rep_unlocked', 'true');
-      ok = true;
-    }
-
-    if (ok) {
-      renderGrid(activeFilter === 'all' ? allProperties : allProperties.filter(p => p.type === activeFilter || p.region === activeFilter));
-      buildHeroSlides();
+    const val = input.value.trim(), id = pendingUnlockPropertyId;
+    if (!val || id == null) return;
+    const r = await unlockOne(id, val);
+    if (r.ok) {
+      refreshAfterUnlock();
       openDetail(id);
-      showToast('Listing unlocked');
+      showToast(t_('listing_unlocked'));
     } else {
-      document.getElementById('pw-error').classList.add('show');
-      input.value = '';
-      input.focus();
+      err.textContent = rpcMsg(r.error); err.classList.add('show');
+      input.value = ''; input.focus();
     }
+  }
+
+  // unlock from the code field on a locked card: opens only that listing
+  async function cardUnlock(ev, id) {
+    ev.preventDefault();
+    const form = ev.target, input = form.querySelector('input'), btn = form.querySelector('button');
+    const err = form.parentElement.querySelector('.pw-error');
+    const val = input.value.trim();
+    if (!val) { input.focus(); return false; }
+    btn.disabled = true;
+    const r = await unlockOne(id, val);
+    btn.disabled = false;
+    if (r.ok) {
+      refreshAfterUnlock();
+      showToast(t_('listing_unlocked'));
+      openDetail(id);
+    } else {
+      err.textContent = rpcMsg(r.error); err.classList.add('show');
+      input.value = ''; input.focus();
+    }
+    return false;
   }
 
   async function submitRequest() {
@@ -1864,34 +1949,22 @@
     }
   }
 
-  // one code unlocks every listing, whatever password each listing has of its own
+  // "Unlock all properties": the master code only
   async function unlockAll() {
-    if (accessCodeReady) await accessCodeReady;
     const input = document.getElementById('global-code');
     const err = document.getElementById('global-error');
     const typed = input.value.trim();
-    const own = typed ? allProperties.filter(p => p.password && sameCode(p.password, typed)) : [];
-    if (own.length && !(ACCESS_CODE && sameCode(typed, ACCESS_CODE))) {
-      own.forEach(p => unlockedProperties.add(p.id));
-      sessionStorage.setItem('rep_unlocked_ids', JSON.stringify([...unlockedProperties]));
+    if (!typed) { input.focus(); return; }
+    const r = await unlockEverything(typed);
+    if (r.ok) {
       input.value = '';
       err.classList.remove('show');
       closeContact();
-      renderGrid(activeFilter === 'all' ? allProperties : allProperties.filter(p => p.type === activeFilter || p.region === activeFilter));
-      buildHeroSlides();
+      refreshAfterUnlock();
       showToast(t_('all_unlocked'));
       setTimeout(skipToProperties, 450);
-    } else if (ACCESS_CODE && sameCode(typed, ACCESS_CODE)) {
-      isUnlocked = true;
-      sessionStorage.setItem('rep_unlocked', 'true');
-      input.value = '';
-      err.classList.remove('show');
-      closeContact();
-      renderGrid(activeFilter === 'all' ? allProperties : allProperties.filter(p => p.type === activeFilter || p.region === activeFilter));
-      buildHeroSlides();
-      showToast(t_('all_unlocked'));
-      setTimeout(skipToProperties, 450); // straight to the properties
     } else {
+      err.textContent = rpcMsg(r.error);
       err.classList.add('show');
       input.value = '';
       input.focus();
@@ -2005,7 +2078,7 @@
       access_title:'No code? Request access',
       access_sub:'This selection is shared on a private basis. Leave your details and we will be in touch directly within 48 hours.',
       label_first:'First name', label_last:'Last name', label_email:'Email', label_role:'Role', label_budget:'Budget range',
-      btn_request:'Request access', hero_cta:'Access the collection', all_unlocked:'Access granted — all listings unlocked', code_title:'Access code', code_sub:'Enter your code to unlock every property.',
+      btn_request:'Request access', hero_cta:'Access the collection', all_unlocked:'Access granted — all listings unlocked', code_title:'Unlock all properties', code_sub:'Have a master code? Enter it here to unlock every property at once. A code for a single property goes on that property\'s card.', unlock_all:'Unlock all properties', too_many:'Too many attempts. Please try again in a few minutes.', unlock_error:'Could not check the code. Please try again.', listing_unlocked:'Listing unlocked',
       contact_label:'Contact us', website_label:'Website', legal_label:'Legal',
       pw_eyebrow:'Private portfolio', pw_title:'Enter your access code',
       pw_sub:'Enter your access code to reveal the full details and pricing for this listing.',
@@ -2023,7 +2096,7 @@
       access_title:'Sem código? Solicite acesso',
       access_sub:'Esta seleção é partilhada em regime privado. Deixe os seus dados e entraremos em contacto direto nas próximas 48 horas.',
       label_first:'Nome', label_last:'Apelido', label_email:'Email', label_role:'Função', label_budget:'Intervalo de orçamento',
-      btn_request:'Solicitar acesso', hero_cta:'Aceder à coleção', all_unlocked:'Acesso concedido — todos os imóveis desbloqueados', code_title:'Código de acesso', code_sub:'Introduza o código para desbloquear todos os imóveis.',
+      btn_request:'Solicitar acesso', hero_cta:'Aceder à coleção', all_unlocked:'Acesso concedido — todos os imóveis desbloqueados', code_title:'Desbloquear todos os imóveis', code_sub:'Tem um código mestre? Introduza-o aqui para desbloquear todos os imóveis. O código de um imóvel individual introduz-se no cartão desse imóvel.', unlock_all:'Desbloquear todos os imóveis', too_many:'Demasiadas tentativas. Tente novamente dentro de alguns minutos.', unlock_error:'Não foi possível verificar o código. Tente novamente.', listing_unlocked:'Imóvel desbloqueado',
       contact_label:'Contacte-nos', website_label:'Website', legal_label:'Legal',
       pw_eyebrow:'Portfólio privado', pw_title:'Introduza o seu código de acesso',
       pw_sub:'Introduza o código de acesso para ver os detalhes completos e o preço deste imóvel.',

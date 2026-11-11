@@ -321,6 +321,7 @@
       <div class="nav-item active" onclick="showPage('dashboard', this)"><span class="dot"></span>Dashboard</div>
       <div class="nav-item" onclick="showPage('properties', this)"><span class="dot"></span>Properties</div>
       <div class="nav-item" onclick="addNewProperty(this)"><span class="dot"></span>Add property</div>
+      <div class="nav-item" onclick="showPage('codes', this)"><span class="dot"></span>Access codes</div>
       <div class="nav-item" onclick="showPage('requests', this)"><span class="dot"></span>Access requests</div>
       <div class="nav-item" onclick="showPage('enquiries', this)"><span class="dot"></span>Enquiries</div>
       <div class="nav-item" onclick="showPage('settings', this)"><span class="dot"></span>Settings</div>
@@ -354,14 +355,6 @@
       <div class="page-header">
         <div><h1 class="page-title">Properties</h1><p class="page-sub">Manage all listings</p></div>
         <button class="btn btn-primary" onclick="addNewProperty(document.querySelector('[onclick*=\"addNew\"]'))">+ Add property</button>
-      </div>
-      <div class="code-bar">
-        <div class="code-bar-label">
-          <label for="global-code-input">Global access code</label>
-          <span class="field-hint">Unlocks every listing on the site, including ones with their own code. Leave empty to turn it off.</span>
-        </div>
-        <input type="text" id="global-code-input" placeholder="e.g. premium2025" autocomplete="off" onkeydown="if(event.key==='Enter') saveGlobalCode()" />
-        <button class="btn btn-ghost" id="global-code-btn" onclick="saveGlobalCode()">Save code</button>
       </div>
       <div class="table-wrap" id="properties-table"></div>
     </div>
@@ -401,9 +394,8 @@
             <span class="field-hint">Manage tags in Settings</span>
           </div>
           <div class="field">
-            <label>Property password (optional)</label>
-            <input type="text" id="f-password" placeholder="Optional — this listing's own code" />
-            <span class="field-hint">Unlocks only this listing. The global access code always unlocks every listing.</span>
+            <label>Access code</label>
+            <span class="field-hint" style="font-size:15px">Locked listings get a random code of their own. See and copy it under <strong>Access codes</strong> in the menu.</span>
           </div>
           <div class="field">
             <label>Location (display) *</label>
@@ -624,6 +616,20 @@
       <div class="table-wrap" id="enquiries-table"></div>
     </div>
 
+    <!-- ACCESS CODES -->
+    <div class="page" id="page-codes">
+      <div class="page-header">
+        <div><h1 class="page-title">Access codes</h1><p class="page-sub">A listing's code unlocks only that listing. The master code unlocks every listing.</p></div>
+      </div>
+      <p class="field-hint" id="codes-msg" style="display:none;font-size:15px;margin-bottom:1rem"></p>
+      <div class="form-panel">
+        <div class="form-panel-title">Master code <span style="font-size:15px;color:var(--mid)">· unlocks all properties</span></div>
+        <div id="master-row" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap"></div>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>Listing</th><th>Status</th><th>Code</th><th></th></tr></thead><tbody id="codes-rows"></tbody></table></div>
+      <p class="field-hint" style="margin-top:1rem;font-size:14px">Capitals, spaces and dashes do not matter when a client types a code. Creating a new code replaces the old one immediately.</p>
+    </div>
+
     <!-- SETTINGS -->
     <div class="page" id="page-settings">
       <div class="page-header">
@@ -735,27 +741,64 @@
     properties = data || [];
     renderPropertiesTable();
     if (typeof renderOptimise === 'function') renderOptimise();
-    loadGlobalCode();
+    loadCodes();
   }
 
-  // ── GLOBAL ACCESS CODE (one code that unlocks every listing) ──
-  async function loadGlobalCode() {
-    const { data, error } = await db.from('site_settings').select('value').eq('key', 'access_code').maybeSingle();
-    const input = document.getElementById('global-code-input');
-    if (!error && data) input.value = data.value || '';
-    else if (error) input.placeholder = 'Run supabase-migration.sql to enable';
-  }
 
-  async function saveGlobalCode() {
-    const value = document.getElementById('global-code-input').value.trim();
-    const { error } = await db.from('site_settings').upsert({ key: 'access_code', value, updated_at: new Date().toISOString() }, { onConflict: 'key' });
-    if (error) {
-      showToast(/site_settings|relation|schema cache/i.test(error.message) ? 'Run the updated supabase-migration.sql first' : 'Could not save: ' + error.message);
-      return;
-    }
-    showToast(value ? 'Global access code saved' : 'Global access code turned off');
+  // ── ACCESS CODES (stored in property_access / access_secrets; only signed-in admins can read them) ──
+  let codeRows = {}, masterCode = null;
+  const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';   // no I, O, 0, 1
+  function genCode(n, grp) {
+    const b = new Uint8Array(n); crypto.getRandomValues(b);
+    let out = '';
+    for (let i = 0; i < n; i++) { out += CODE_ALPHABET[b[i] & 31]; if ((i + 1) % grp === 0 && i + 1 < n) out += '-'; }
+    return out;
   }
-
+  async function loadCodes() {
+    const a = await db.from('property_access').select('property_id,code');
+    const m = await db.from('access_secrets').select('value').eq('key', 'master_code').maybeSingle();
+    const msg = document.getElementById('codes-msg');
+    const err = a.error || m.error;
+    if (msg) { msg.style.display = err ? 'block' : 'none'; msg.textContent = err ? 'Codes are not available yet: run supabase/migration/01-additive.sql in the Supabase SQL editor first. (' + err.message + ')' : ''; }
+    codeRows = {}; (a.data || []).forEach(r => { codeRows[r.property_id] = r.code; });
+    masterCode = m.data ? m.data.value : null;
+    renderCodes();
+  }
+  function renderCodes() {
+    const body = document.getElementById('codes-rows'); if (!body) return;
+    const codeCell = c => c ? `<span style="font:500 17px/1.4 var(--font-body);letter-spacing:.1em;user-select:all">${escHtml(c)}</span>` : '<span style="color:var(--red)">No code yet</span>';
+    const locked = properties.filter(p => p.is_locked);
+    body.innerHTML = locked.map(p => {
+      const c = codeRows[p.id], off = p.details && p.details.off_market;
+      return `<tr><td>${escHtml(p.title)}</td><td>${off ? 'Off-market' : 'Locked'}${p.active ? '' : ' · inactive'}</td><td>${codeCell(c)}</td><td class="td-actions">
+        <button class="btn btn-ghost btn-sm" ${c ? '' : 'disabled'} onclick="copyCode(codeRows[${p.id}])">Copy</button>
+        <button class="btn btn-primary btn-sm" onclick="newCode(${p.id})">${c ? 'New code' : 'Create code'}</button></td></tr>`;
+    }).join('') || '<tr><td colspan="4" style="color:var(--mid)">No locked listings. Tick "Locked" on a listing to give it a code.</td></tr>';
+    const mr = document.getElementById('master-row');
+    if (mr) mr.innerHTML = `${codeCell(masterCode)}
+      <button class="btn btn-ghost btn-sm" ${masterCode ? '' : 'disabled'} onclick="copyCode(masterCode)">Copy</button>
+      <button class="btn btn-primary btn-sm" onclick="newMasterCode()">${masterCode ? 'New master code' : 'Create master code'}</button>`;
+  }
+  async function newCode(id) {
+    if (codeRows[id] && !confirm('Replace this listing\'s code? The current code stops working immediately.')) return;
+    const code = genCode(10, 5);
+    const { error } = await db.from('property_access').upsert({ property_id: id, code, updated_at: new Date().toISOString() }, { onConflict: 'property_id' });
+    if (error) { showToast('Could not save: ' + error.message); return; }
+    codeRows[id] = code; renderCodes(); showToast('New code saved');
+  }
+  async function newMasterCode() {
+    if (masterCode && !confirm('Replace the master code? The current one stops working immediately.')) return;
+    const value = genCode(12, 4);
+    const { error } = await db.from('access_secrets').upsert({ key: 'master_code', value, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+    if (error) { showToast('Could not save: ' + error.message); return; }
+    masterCode = value; renderCodes(); showToast('New master code saved');
+  }
+  async function copyCode(text) {
+    if (!text) return;
+    try { await navigator.clipboard.writeText(text); }
+    catch (e) { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (_) {} ta.remove(); }
+    showToast('Copied: ' + text);
+  }
 
   async function loadRequests() {
     const { data } = await db.from('access_requests').select('*').order('created_at', { ascending: false });
@@ -1309,7 +1352,6 @@
       title_pt:       formI18n.pt.title.trim() || null,
       feature_pt:     formI18n.pt.feature.trim() || null,
       youtube_id:  document.getElementById('f-youtube').value.trim() || null,
-      password:    document.getElementById('f-password').value.trim() || null,
       images:      allImagePaths.length ? allImagePaths : null,
       details:     buildDetails(),
       is_locked:   document.getElementById('f-locked').checked || document.getElementById('f-offmarket').checked,
@@ -1369,7 +1411,6 @@
     document.getElementById('f-year').value     = p.year || '';
     document.getElementById('f-price').value    = p.price || '';
     document.getElementById('f-youtube').value  = p.youtube_id || '';
-    document.getElementById('f-password').value = p.password || '';
     document.getElementById('f-locked').checked = p.is_locked;
     document.getElementById('f-active').checked = p.active;
 
@@ -1412,7 +1453,7 @@
   function resetForm() {
     document.getElementById('edit-id').value = '';
     document.getElementById('form-page-title').textContent = 'Add property';
-    ['f-title','f-location','f-typology','f-area','f-feature','f-year','f-price','f-desc','f-youtube','f-password'].forEach(id => document.getElementById(id).value = '');
+    ['f-title','f-location','f-typology','f-area','f-feature','f-year','f-price','f-desc','f-youtube'].forEach(id => document.getElementById(id).value = '');
     photoList = []; renderPhotoGrid();
     document.getElementById('f-type').value   = '';
     document.getElementById('f-label').value  = '';
