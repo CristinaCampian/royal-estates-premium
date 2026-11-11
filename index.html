@@ -19,10 +19,11 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="preconnect" href="https://mejkdoabupmfwcldysgd.supabase.co" crossorigin />
   <link rel="preload" href="fonts/Newsreader-300-400.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="fonts/Aboreto-400.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="preload" href="fonts/Inter-var.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="fonts/fonts.css" />
   <link rel="preload" href="assets/hero-poster.jpg" as="image" fetchpriority="high" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     /* ══ DESIGN TOKENS — Atlantic variant of the "porcelain + ink + one dark" system ══
@@ -894,6 +895,18 @@
       .bars i, .p-view .arrow, .property .tile-media img { transition: none !important; }
       ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
     }
+
+    /* ── menu refinements: wordmark, hairline, larger links, two pictures, focus ── */
+    .nav-brand { gap: 0; }
+    .nav-wordmark { font-family: 'Aboreto', Georgia, serif; font-weight: 400; font-size: 19px; line-height: 1; letter-spacing: .08em; text-transform: none; color: var(--ink); white-space: nowrap; }
+    .np-rule { height: 1px; margin: 0 24px; background: var(--color-ink-o10); }
+    .np-body { padding: 24px 24px 28px; gap: 24px; align-items: stretch; }
+    .np-links a { font-size: clamp(2.5rem, 2.3rem + .6vw, 2.75rem); line-height: 1.1; padding: 7px 0; }
+    .np-img { display: grid; grid-template-rows: none; grid-auto-rows: 1fr; gap: 12px; align-self: stretch; aspect-ratio: auto; overflow: visible; background: none; min-height: 0; }
+    .np-pic { position: relative; overflow: hidden; background: var(--color-stone); min-height: 0; }
+    .np-pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+    .np-drawer:focus, .np-links a:focus:not(:focus-visible), .np-contact a:focus:not(:focus-visible) { outline: none; }
+    @media (max-width: 640px) { .np-rule { margin: 0 20px; } .np-body { padding: 20px 20px 24px; } .np-links a { font-size: 2.25rem; } }
     @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
   </style>
 </head>
@@ -909,11 +922,12 @@
 <!-- FLOATING NAV PANEL: expands in place (state in data-nav-status) -->
 <nav class="navpanel" id="navpanel" data-nav-status="not-active" aria-label="Main">
   <div class="np-top">
-    <a class="nav-brand" href="#" onclick="window.scrollTo({top:0,behavior:'smooth'}); return false;" aria-label="Royal Estates Premium"><img src="logo.svg" alt="" width="28" height="26" /><span>Royal Estates</span></a>
+    <a class="nav-brand" href="#" onclick="window.scrollTo({top:0,behavior:'smooth'}); return false;" aria-label="Royal Estates Premium"><span class="nav-wordmark">Royal Estates</span></a>
     <button class="nav-toggle" id="np-toggle" type="button" aria-expanded="false" aria-controls="np-drawer" aria-label="Menu"><span class="bars" aria-hidden="true"><i></i><i></i></span></button>
   </div>
-  <div class="np-drawer" id="np-drawer" inert>
+  <div class="np-drawer" id="np-drawer" tabindex="-1" inert>
     <div class="np-inner">
+      <div class="np-rule" aria-hidden="true"></div>
       <div class="np-body">
         <div class="np-col">
           <ul class="np-links">
@@ -935,10 +949,12 @@
           <ul class="np-contact">
             <li><a href="tel:+351964480190">(+351) 964 480 190 <svg class="ext" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><path d="M2 10L10 2M4 2h6v6"/></svg></a></li>
             <li><a href="mailto:info@royalestates.pt">info@royalestates.pt <svg class="ext" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><path d="M2 10L10 2M4 2h6v6"/></svg></a></li>
-            <li><a href="https://www.google.com/maps/search/?api=1&query=Rua+Francisco+Rocha+Lt+50+2530-110+Lourinh%C3%A3" target="_blank" rel="noopener">Google Maps <svg class="ext" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><path d="M2 10L10 2M4 2h6v6"/></svg></a></li>
           </ul>
         </div>
-        <div class="np-img" aria-hidden="true"><img id="np-img" src="assets/hero-poster.jpg" alt="" width="270" height="338" loading="lazy" /></div>
+        <div class="np-img" aria-hidden="true">
+          <div class="np-pic"><img src="assets/hero-poster.jpg" alt="" width="270" height="240" loading="lazy" decoding="async" /></div>
+          <div class="np-pic"><img src="assets/menu-image-2.jpg" alt="" width="270" height="240" loading="lazy" decoding="async" onerror="this.closest('.np-pic').remove()" /></div>
+        </div>
       </div>
     </div>
   </div>
@@ -1239,8 +1255,7 @@
   let   ACCESS_CODE   = 'premium2025'; // fallback; the live value comes from site_settings (set in the admin)
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  const { createClient } = supabase;
-  const db = createClient(SUPABASE_URL, SUPABASE_ANON);
+  let db = null; // created after first paint (the Supabase script is deferred)
 
   let allProperties = [];
   let currentLang = 'en';
@@ -1307,8 +1322,8 @@
     if (window.heroIntroMotion) window.heroIntroMotion(); else window.__heroIntroPending = true;
   }
 
-  // ── WELCOME SCREEN: shown at least ~1.8s, and until the collection has loaded (max 6s) ──
-  const welcomeStart = Date.now();
+  // ── WELCOME SCREEN: an overlay that lifts after ~0.8s. It no longer waits for the listings, and the hero is already rendering underneath it ──
+  const WELCOME_MS = 800;
   let welcomeDone = false;
   function endWelcome() {
     if (welcomeDone) return;
@@ -1319,14 +1334,14 @@
       document.body.classList.remove('welcoming');
       return;
     }
-    setTimeout(() => {
-      w.classList.add('out');
-      document.body.classList.remove('welcoming');
-      setTimeout(startHeroIntro, 350);
-      setTimeout(() => w.remove(), 1100);
-    }, Math.max(0, 1800 - (Date.now() - welcomeStart)));
+    w.classList.add('out');
+    document.body.classList.remove('welcoming');
+    setTimeout(startHeroIntro, 0);
+    setTimeout(() => w.remove(), 1100);
   }
-  setTimeout(endWelcome, 6000);
+  setTimeout(endWelcome, Math.max(0, WELCOME_MS - performance.now()));
+  // the hero text starts animating under the overlay a moment before it lifts, so the first meaningful paint does not wait for the welcome screen
+  setTimeout(startHeroIntro, Math.max(0, 250 - performance.now()));
 
   let accessCodeReady = null;
   function loadAccessCode() {
@@ -1941,7 +1956,17 @@
       window.location.href = 'admin.html';
     }
   });
-  init().finally(endWelcome);
+  // first paint, then the Supabase client and the listings (nothing here blocks the hero)
+  document.addEventListener('DOMContentLoaded', () => {
+    let started = false;
+    const start = () => {
+      if (started) return; started = true;
+      db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+      init();
+    };
+    requestAnimationFrame(() => setTimeout(start, 0));
+    setTimeout(start, 400); // a background tab never paints, so don't wait for a frame forever
+  });
   if (document.documentElement.classList.contains('skip-welcome')) startHeroIntro(); // quick reload: no welcome screen, go straight in
   setTimeout(startHeroIntro, 7000); // safety net
 
@@ -2080,6 +2105,9 @@
     // ── Expanding nav panel (state: data-nav-status) ──
     const np = $('navpanel'), tg = $('np-toggle'), dr = $('np-drawer'), bd = $('np-backdrop');
     const isOpen = () => np && np.dataset.navStatus === 'active';
+    let usingKeyboard = false;
+    window.addEventListener('keydown', () => { usingKeyboard = true; }, true);
+    window.addEventListener('pointerdown', () => { usingKeyboard = false; }, true);
     if (np) {
       [...dr.querySelectorAll('.np-links li, .np-eyebrow, .np-contact li, .np-lang, .np-img img')].forEach((el, i) => el.style.setProperty('--i', i));
       np.setAttribute('data-lenis-prevent', '');
@@ -2089,7 +2117,12 @@
       np.dataset.navStatus = 'active';
       tg.setAttribute('aria-expanded', 'true');
       dr.inert = false;
-      setTimeout(() => { if (isOpen()) { const a = dr.querySelector('a'); if (a) a.focus({ preventScroll: true }); } }, reduce() ? 0 : 400);
+      setTimeout(() => {
+        if (!isOpen()) return;
+        // keyboard: first link (ring shows via :focus-visible); mouse/touch: the panel itself, no ring
+        if (usingKeyboard) { const a = dr.querySelector('a'); if (a) a.focus({ preventScroll: true }); }
+        else dr.focus({ preventScroll: true });
+      }, reduce() ? 0 : 400);
     };
     window.closeMenu = function (returnFocus) {
       if (!np || !isOpen()) return;

@@ -659,6 +659,18 @@
         </div>
 
       </div>
+
+      <!-- PHOTO OPTIMISATION (one-time tool) -->
+      <div class="form-panel" id="optimise-panel" style="margin-top:2rem">
+        <div class="form-panel-title">Optimise existing photos</div>
+        <p class="field-hint" style="font-size:15px;max-width:70ch;margin-bottom:1.2rem">
+          Downloads each photo of one listing, resizes it in this browser (about 2000px on the long side, WebP, quality 0.8) and uploads it back to the <strong>same path</strong>, so no listing needs editing.
+          Before a photo is replaced, its original is copied to <code>_backup/</code> in the same bucket and stays there until you delete it. One listing at a time; photos that are already small are left alone.
+          Browsers may show the old photo for up to an hour (cache).
+        </p>
+        <div class="table-wrap"><table><thead><tr><th>Listing</th><th>Photos</th><th>Backed up</th><th></th></tr></thead><tbody id="optimise-rows"><tr><td colspan="4" style="color:var(--mid)">Loading…</td></tr></tbody></table></div>
+        <pre id="optimise-log" style="margin-top:1rem;max-height:260px;overflow:auto;font-size:13px;line-height:1.5;background:var(--color-stone);padding:12px;white-space:pre-wrap;display:none"></pre>
+      </div>
     </div>
   </main>
 </div>
@@ -722,6 +734,7 @@
     const { data } = await db.from('properties').select('*').order('created_at', { ascending: false });
     properties = data || [];
     renderPropertiesTable();
+    if (typeof renderOptimise === 'function') renderOptimise();
     loadGlobalCode();
   }
 
@@ -1168,6 +1181,97 @@
       if (k === 1 && blob.size >= file.size && /^image\/(jpeg|webp|png)$/.test(file.type)) return keep();   // already small: don't make it bigger
       return { blob, type: blob.type, ext };
     } catch (e) { return keep(); }
+  }
+
+  // ── ONE-TIME TOOL: optimise existing listing photos (backup first, one listing at a time) ──
+  const BACKUP_DIR = '_backup';
+  let optimiseBusy = false, backupNames = new Set();
+  const escHtml = v => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const photoPathsOf = p => [...new Set([...(p.images || []), p.image_url].filter(x => x && !/^https?:/.test(x)))];
+  const optLog = (msg) => { const el = document.getElementById('optimise-log'); if (!el) return; el.style.display = 'block'; el.textContent += msg + '\n'; el.scrollTop = el.scrollHeight; };
+  const kb = n => Math.round(n / 1024) + ' KB';
+
+  async function renderOptimise() {
+    const body = document.getElementById('optimise-rows'); if (!body) return;
+    try {
+      const { data, error } = await db.storage.from(BUCKET).list(BACKUP_DIR, { limit: 1000 });
+      if (error) throw error;
+      backupNames = new Set((data || []).map(o => o.name));
+    } catch (e) { backupNames = new Set(); optLog('Could not list backups: ' + (e.message || e)); }
+    body.innerHTML = properties.map(p => {
+      const paths = photoPathsOf(p), backed = paths.filter(x => backupNames.has(x)).length;
+      const dis = optimiseBusy ? 'disabled' : '';
+      return `<tr><td>${escHtml(p.title)}</td><td>${paths.length}</td><td>${backed} / ${paths.length}</td><td class="td-actions">
+        <button class="btn btn-primary btn-sm" ${dis} onclick="optimiseListing(${p.id})" ${paths.length ? '' : 'disabled'}>Optimise</button>
+        <button class="btn btn-ghost btn-sm" ${dis} onclick="restoreListing(${p.id})" ${backed ? '' : 'disabled'}>Restore originals</button>
+        <button class="btn btn-danger btn-sm" ${dis} onclick="deleteBackups(${p.id})" ${backed ? '' : 'disabled'}>Delete backups</button></td></tr>`;
+    }).join('') || '<tr><td colspan="4" style="color:var(--mid)">No listings</td></tr>';
+  }
+
+  async function optimiseListing(id) {
+    if (optimiseBusy) return;
+    const p = properties.find(x => x.id === id); if (!p) return;
+    const paths = photoPathsOf(p);
+    if (!confirm('Optimise ' + paths.length + ' photo(s) of "' + p.title + '"?\nOriginals are backed up to _backup/ first.')) return;
+    optimiseBusy = true; renderOptimise();
+    optLog('— ' + p.title + ' (' + paths.length + ' photos)');
+    let before = 0, after = 0, done = 0, skipped = 0, failed = 0;
+    for (let i = 0; i < paths.length; i++) {
+      const path = paths[i], tag = '[' + (i + 1) + '/' + paths.length + '] ' + path;
+      try {
+        const dl = await db.storage.from(BUCKET).download(path);
+        if (dl.error) throw dl.error;
+        const orig = dl.data;
+        // 1) back up the original; if a backup already exists this photo was processed before: leave it alone
+        const bk = await db.storage.from(BUCKET).upload(BACKUP_DIR + '/' + path, orig, { contentType: orig.type || 'image/jpeg', cacheControl: '3600', upsert: false });
+        if (bk.error) {
+          if (/exist|duplicate/i.test(bk.error.message || '')) { optLog(tag + ': already has a backup, skipped'); skipped++; continue; }
+          throw bk.error;
+        }
+        // 2) resize in the browser
+        const file = new File([orig], path.split('/').pop(), { type: orig.type || 'image/jpeg' });
+        const out = await resizePhoto(file);
+        if (out.blob === file || out.blob.size >= orig.size * 0.9) {
+          await db.storage.from(BUCKET).remove([BACKUP_DIR + '/' + path]);   // nothing to gain: drop the unneeded backup
+          optLog(tag + ': already small (' + kb(orig.size) + '), left as is'); skipped++; continue;
+        }
+        // 3) overwrite the same path
+        const up = await db.storage.from(BUCKET).upload(path, out.blob, { contentType: out.type, cacheControl: '3600', upsert: true });
+        if (up.error) throw up.error;
+        before += orig.size; after += out.blob.size; done++;
+        optLog(tag + ': ' + kb(orig.size) + ' → ' + kb(out.blob.size));
+      } catch (e) { failed++; optLog(tag + ': FAILED – ' + (e.message || e) + ' (original untouched or backed up)'); }
+    }
+    optLog('Done: ' + done + ' optimised, ' + skipped + ' skipped, ' + failed + ' failed.' + (done ? ' Saved ' + kb(before - after) + ' (' + kb(before) + ' → ' + kb(after) + ').' : ''));
+    optimiseBusy = false; renderOptimise();
+  }
+
+  async function restoreListing(id) {
+    if (optimiseBusy) return;
+    const p = properties.find(x => x.id === id); if (!p) return;
+    const paths = photoPathsOf(p).filter(x => backupNames.has(x));
+    if (!paths.length || !confirm('Put the ' + paths.length + ' original photo(s) of "' + p.title + '" back?')) return;
+    optimiseBusy = true; renderOptimise(); optLog('— restoring ' + p.title);
+    for (const path of paths) {
+      try {
+        const dl = await db.storage.from(BUCKET).download(BACKUP_DIR + '/' + path);
+        if (dl.error) throw dl.error;
+        const up = await db.storage.from(BUCKET).upload(path, dl.data, { contentType: dl.data.type || 'image/jpeg', cacheControl: '3600', upsert: true });
+        if (up.error) throw up.error;
+        optLog(path + ': original restored');
+      } catch (e) { optLog(path + ': FAILED – ' + (e.message || e)); }
+    }
+    optimiseBusy = false; renderOptimise();
+  }
+
+  async function deleteBackups(id) {
+    if (optimiseBusy) return;
+    const p = properties.find(x => x.id === id); if (!p) return;
+    const paths = photoPathsOf(p).filter(x => backupNames.has(x));
+    if (!paths.length || !confirm('Permanently delete the ' + paths.length + ' backed-up original(s) of "' + p.title + '"?\nThis cannot be undone. Only do it once you have checked the optimised photos on the site.')) return;
+    const { error } = await db.storage.from(BUCKET).remove(paths.map(x => BACKUP_DIR + '/' + x));
+    optLog(error ? 'Delete failed: ' + error.message : p.title + ': ' + paths.length + ' backup(s) deleted');
+    renderOptimise();
   }
 
   async function saveProperty() {
