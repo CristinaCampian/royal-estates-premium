@@ -8,6 +8,7 @@ The SQL was tested on a real Postgres engine (PGlite) with a harness that simula
 | Step | What | File | Rollback |
 |---|---|---|---|
 | 1 | Additive only: admin list, private tables, functions, throttle, **new random codes** | `01-additive.sql` | `01-rollback.sql` |
+| 1b | `site_settings` writes: admins only (run right after step 1) | `02-admin-only-settings.sql` | `02-rollback.sql` |
 | 2 | Switch the front end over (deploy, no SQL) | this branch | redeploy the previous build |
 | 3 | Final lockdown: drop `password`, hide `access_code`, restrict anonymous reads | `03-lockdown.sql` | `03-rollback.sql` |
 
@@ -44,6 +45,13 @@ Photos: Level A (public bucket, random file names that are only revealed after u
 - Check: `select count(*) from public.property_access;` = number of locked listings; `select count(*) from public.admins;` = 1.
 - **Check the throttle sees real addresses** (important): on the preview site type a wrong code on a locked card once, then run `select client, ok, at from public.access_attempts order by id desc limit 3;` The `client` must be **your public IP address**. If it says `unknown`, tell me: the throttle is then inactive (nobody gets locked out, but guessing isn't limited).
 - Rollback: run `01-rollback.sql`.
+
+## Step 1b: `02-admin-only-settings.sql`
+
+- Replaces the `site_settings write` policy (`to authenticated using (true)`: any account that signed up could rewrite settings) with `is_admin()`. The read policy is untouched until step 3. The live admin keeps working (it signs in as the registered admin).
+- Check: signed in as admin, save a setting (or just open Settings); an ordinary signed-in account changes 0 rows.
+- Rollback: `02-rollback.sql`.
+- Still open after this (found in the pre-migration policy review): `properties`, `property_tags`, `property_types` have `ALL ... auth.role() = 'authenticated'` policies and `enquiries` can be READ by any signed-in account. With sign-ups off this is only reachable by existing accounts; restrict them to `is_admin()` as well before relying on step 3 (step 3 drops the public read of `properties` but those `ALL` policies stay).
 
 ## Step 2: front end
 
