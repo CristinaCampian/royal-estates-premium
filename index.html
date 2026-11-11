@@ -2018,11 +2018,23 @@
   function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3200); }
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') { closeMenu(); closeSim(); closeContact(); closeLegal(); closeDetail(); closeFs(); }
-    if (e.code === 'KeyA' && e.ctrlKey && e.altKey && e.shiftKey) {   // Ctrl+Alt+Shift+A (Ctrl+Shift+A is Chrome's tab search)
-      e.preventDefault();
-      window.location.href = 'admin.html';
-    }
   });
+  // Admin: press and release Ctrl+Shift together (no other key or click in between, not while typing in a field)
+  (function () {
+    let chord = false, dirty = false;
+    const isMod = k => k === 'Control' || k === 'Shift';
+    const typing = () => { const a = document.activeElement; return a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT' || a.isContentEditable); };
+    document.addEventListener('keydown', e => {
+      if (!isMod(e.key)) { dirty = true; chord = false; return; }
+      if (e.ctrlKey && e.shiftKey && !dirty && !e.altKey && !e.metaKey) chord = true;
+    });
+    document.addEventListener('keyup', e => {
+      if (isMod(e.key) && chord && !typing()) { chord = false; window.location.href = 'admin.html'; return; }
+      if (!e.ctrlKey && !e.shiftKey) { dirty = false; chord = false; }
+    });
+    document.addEventListener('pointerdown', () => { dirty = true; chord = false; });
+    window.addEventListener('blur', () => { dirty = false; chord = false; });
+  })();
   // first paint, then the Supabase client and the listings (nothing here blocks the hero)
   document.addEventListener('DOMContentLoaded', () => {
     let started = false;
