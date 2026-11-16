@@ -723,7 +723,8 @@
     .closing a, .footer-links a { color: var(--color-porcelain); }
     .closing a:hover, .footer-links a:hover { color: var(--color-linen); }
     .footer-bar { position: static; display: flex; background: var(--dark); color: var(--color-linen); height: auto; flex-wrap: wrap; gap: 12px 32px; padding: 24px max(var(--gutter), calc((100% - var(--page-max)) / 2 + var(--gutter))); border-top: 1px solid var(--color-porcelain-o20); font-size: 15px; letter-spacing: 0; }
-    .footer-mark { font-family: var(--font-display); font-size: 20px; letter-spacing: var(--tracking-heading); color: var(--color-porcelain); }
+    .footer-mark { font-family: 'Aboreto', Georgia, serif; font-weight: 400; font-size: 19px; line-height: 1; letter-spacing: .08em; text-transform: none; color: var(--color-porcelain); white-space: nowrap; }   /* same look as the navbar wordmark */
+    .closing .closing-name { font-family: 'Aboreto', Georgia, serif; font-weight: 400; font-size: 22px; line-height: 1.2; letter-spacing: .08em; text-transform: none; margin-bottom: 14px; }   /* same look as the navbar wordmark */
     .footer-links { font-family: var(--font-body); letter-spacing: 0; gap: 8px 28px; flex-wrap: wrap; }
     .footer-links a { transition: color .2s ease; }
     .footer-legal { font-family: var(--font-body); color: var(--color-linen); font-size: 14px; letter-spacing: 0; }
@@ -1070,7 +1071,7 @@
 <section class="closing" id="closing">
   <img class="closing-mark" src="logo.svg" alt="Royal Estates Premium" width="120" height="110" />
   <div class="closing-text">
-    <p class="closing-name">Royal Estates Lda</p>
+    <p class="closing-name">Royal Estates</p>
     <p>AMI 23635 · Licensed broker · Portugal</p>
     <p>Rua Francisco Rocha, Lt 50, R/C, 2530-110 Lourinhã</p>
     <p><a href="tel:+351964480190">(+351) 964 480 190</a> · <a href="mailto:info@royalestates.pt">info@royalestates.pt</a></p>
@@ -1089,6 +1090,7 @@
     <a href="#" onclick="openLegal('privacy'); return false;">Privacy</a>
     <a href="#" onclick="openLegal('terms'); return false;">Terms</a>
     <a href="#contact" id="contact-link" onclick="toggleContact(); return false;" data-i18n="nav_contact">Contact</a>
+    <a href="admin.html" class="footer-admin">Admin</a>
   </span>
 </footer>
 
