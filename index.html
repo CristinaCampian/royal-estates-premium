@@ -2079,22 +2079,15 @@
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') { closeMenu(); closeSim(); closeContact(); closeLegal(); closeDetail(); closeFs(); }
   });
-  // Admin: press and release Ctrl+Shift together (no other key or click in between, not while typing in a field)
-  (function () {
-    let chord = false, dirty = false;
-    const isMod = k => k === 'Control' || k === 'Shift';
-    const typing = () => { const a = document.activeElement; return a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT' || a.isContentEditable); };
-    document.addEventListener('keydown', e => {
-      if (!isMod(e.key)) { dirty = true; chord = false; return; }
-      if (e.ctrlKey && e.shiftKey && !dirty && !e.altKey && !e.metaKey) chord = true;
-    });
-    document.addEventListener('keyup', e => {
-      if (isMod(e.key) && chord && !typing()) { chord = false; window.location.href = 'admin.html'; return; }
-      if (!e.ctrlKey && !e.shiftKey) { dirty = false; chord = false; }
-    });
-    document.addEventListener('pointerdown', () => { dirty = true; chord = false; });
-    window.addEventListener('blur', () => { dirty = false; chord = false; });
-  })();
+  // Admin access: Ctrl+Alt+A. Ignored while typing in a field (input, textarea, select, contenteditable), so the code boxes, the enquiry form
+  // and AltGr characters such as @ and € are never affected.
+  document.addEventListener('keydown', e => {
+    if (e.code !== 'KeyA' || !e.ctrlKey || !e.altKey || e.shiftKey || e.metaKey || e.repeat) return;
+    const typing = [e.target, document.activeElement].some(x => x && x.nodeType === 1 && (x.tagName === 'INPUT' || x.tagName === 'TEXTAREA' || x.tagName === 'SELECT' || x.isContentEditable));
+    if (typing) return;
+    e.preventDefault();
+    window.location.href = 'admin.html';
+  });
   // first paint, then the Supabase client and the listings (nothing here blocks the hero)
   document.addEventListener('DOMContentLoaded', () => {
     let started = false;
