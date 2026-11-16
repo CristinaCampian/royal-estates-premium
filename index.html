@@ -532,7 +532,7 @@
       body:has(.detail-overlay.open) .share-fab { display: flex; }
       body:has(.fs-overlay.open) .share-fab { display: none; }
       .detail-share { display: none; }
-      .dv-panel .detail-eyebrow, .dv-panel .detail-title { padding-right: 48px; }
+      .dv-panel .detail-eyebrow, .dv-panel .detail-title { padding-right: 64px; }
       .dv-panel { padding-bottom: 96px; }
       /* header pair: the Menu is a square frame with the same width and height as the logo */
       /* header = stacked Aboreto wordmark + a square Menu exactly as tall as the wordmark (cap-top of ROYAL to baseline of ESTATES = 1.7em) */
@@ -671,7 +671,7 @@
     .landing .hero-count { right: var(--gutter); bottom: 28px; z-index: 2; font-family: var(--font-body); letter-spacing: 0; }
     .landing .landing-gold { position: absolute; left: 0; right: 0; bottom: 104px; margin: 0 auto; width: 100%; max-width: var(--page-max); padding: 0 var(--gutter); background: none; display: flex; flex-direction: column; justify-content: flex-start; gap: 12px; z-index: 2; pointer-events: none; }
     .landing .landing-gold a, .landing .landing-gold button { pointer-events: auto; }
-    .landing .hero-eyebrow { color: var(--color-linen); }
+    .landing .hero-eyebrow { color: var(--color-linen); font-family: 'Aboreto', serif; font-size: 15px; font-weight: 400; line-height: 1.2; letter-spacing: .24em; text-transform: uppercase; }
     .landing .hero-headline { font-size: var(--text-display); font-weight: 300; line-height: 1; letter-spacing: var(--tracking-display); max-width: 14em; }
     .landing .t-link { color: var(--color-porcelain); }
     .landing .landing-tan { position: absolute; left: 0; right: 0; bottom: 0; height: 72px; display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 0 var(--gutter); background: none; z-index: 2; }
@@ -751,6 +751,16 @@
     /* close button on the simulator / contact / legal overlays: solid white so it is visible on any colour behind it */
     .contact-close, .sim-close { background: #fff; color: var(--color-ink); }
     .contact-close:hover, .sim-close:hover { background: var(--color-porcelain); }
+    /* listing detail: the close and share buttons stay at the top-right while the listing scrolls (44px squares, solid white, no shadow).
+       --dv-sbw = the scrollbar width of whichever element scrolls, set when the listing opens, so they never sit on the scrollbar */
+    #detail-panel .contact-close, #detail-panel .detail-share { position: fixed; top: 12px; width: 44px; height: 44px; background: #fff; color: var(--color-ink); border-radius: 0; box-shadow: none; z-index: 60; }
+    #detail-panel .contact-close { right: calc(12px + var(--dv-sbw, 0px)); font-size: 1.6rem; }
+    #detail-panel .detail-share { right: calc(64px + var(--dv-sbw, 0px)); }
+    #detail-panel .contact-close:hover, #detail-panel .detail-share:hover { background: var(--color-porcelain); }
+    #detail-panel .detail-share svg { width: 20px; height: 20px; }
+    #detail-panel .detail-eyebrow { padding-right: 112px; }
+    @media (max-width: 640px) { #detail-panel .detail-eyebrow, #detail-panel .detail-title { padding-right: 64px; } }   /* phones: only the X is in the corner */
+    .dv-panel .detail-price-top { margin: 0; }
     .legal-panel { background: var(--color-stone); }
     .doc-title { font-size: var(--text-h1); line-height: 1.1; }
     .doc h2 { font-size: var(--text-h4); }
@@ -854,7 +864,7 @@
     .hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; background: var(--dark); }
     .landing-photo.has-video { cursor: default; }
     .landing-photo.has-video .slides, .landing-photo.has-video .tile-top, .landing-photo.has-video .tile-bottom, .landing-photo.has-video .hero-count, .landing-photo.has-video .empty-msg { display: none !important; }
-    .landing .hero-headline { max-width: none; }
+    .landing .hero-headline { max-width: none; font-family: var(--font-display); }   /* the rotating word is set in Newsreader */
     .rw-line { display: block; white-space: nowrap; }
     .rw-word { display: inline-block; overflow: hidden; vertical-align: bottom; padding-bottom: .2em; margin-bottom: -.2em; }
     .rw-word .ch { display: inline-block; will-change: transform; }
@@ -994,6 +1004,7 @@
 
   <div class="tile landing-photo empty" id="landing-photo" onclick="heroOpen()">
     <video class="hero-video" id="hero-video" autoplay muted loop playsinline preload="auto" poster="assets/hero-poster.jpg">
+      <source src="assets/hero-1440.mp4" type="video/mp4" media="(min-width: 1600px)">
       <source src="assets/hero-720.mp4" type="video/mp4" media="(max-width: 768px)">
       <source src="assets/hero-1080.mp4" type="video/mp4">
     </video>
@@ -1009,9 +1020,9 @@
   </div>
 
   <div class="tile landing-gold">
-    <span class="eyebrow hero-eyebrow fade-up">Curated residential portfolio</span>
+    <span class="eyebrow hero-eyebrow fade-up">Royal Estates</span>
     <div>
-      <h1 class="hero-headline" id="hero-headline"><span class="sr-only" id="rw-sr">For families, legacy, investors, Portugal</span><span class="rw-line" aria-hidden="true"><span class="rw-prefix" id="rw-prefix">For_</span><span class="rw-word" id="rw-word">families</span></span></h1>
+      <h1 class="hero-headline" id="hero-headline"><span class="sr-only" id="rw-sr">Villas, Penthouses, Quintas, Apartments</span><span class="rw-line" aria-hidden="true"><span class="rw-word" id="rw-word">Villas.</span></span></h1>
       <p class="hero-sub fade-up" id="hero-sub">Exceptional homes. Considered living.</p>
       <button class="hero-explore hero-explore-m fade-up" onclick="skipToProperties()" aria-label="Scroll to the properties"><svg viewBox="0 0 40 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="square" aria-hidden="true"><path d="M2 3l18 14L38 3"/></svg></button>
       <a class="t-link fade-up" href="#contact" onclick="openContact('code'); return false;"><span data-i18n="hero_cta">Access the collection</span> <svg class="arrow" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M1 6h10M6.5 1.5L11 6l-4.5 4.5"/></svg></a>
@@ -1456,7 +1467,7 @@
   }
 
   function imgUrl(path) { return `${SUPABASE_URL}/storage/v1/object/public/property-images/${path}`; }
-  function fmtPrice(p) { return p ? '€ ' + Number(p).toLocaleString('de-DE') : t_('price_request'); }
+  function fmtPrice(p) { const n = Number(p); return n > 0 && isFinite(n) ? '€ ' + n.toLocaleString(currentLang === 'pt' ? 'de-DE' : 'en-GB') : t_('price_request'); }   // EN € 1,800,000 · PT € 1.800.000
   function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
   function splitLocation(p) {
     if (p.location && p.location.includes('·')) {
@@ -1663,9 +1674,9 @@
       <button class="detail-share" onclick="shareProperty(${p.id})" aria-label="${t_('share')}" title="${t_('share')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></button>
       <p class="detail-eyebrow">${cap(p.type)}${p.label ? ' · ' + p.label : ''}</p>
       <h2 class="detail-title">${propTitle(p)}</h2>
+      <p class="p-price detail-price-top">${fmtPrice(p.price)}</p>
       <p class="detail-location">${p.location || ''}</p>
       ${specsHTML(p)}
-      <p class="detail-price">${fmtPrice(p.price)}</p>
       ${propDesc(p) ? `<p class="detail-desc">${propDesc(p)}</p>` : ''}
       ${sectionsHTML(p)}
       ${videoHTML}
@@ -1673,6 +1684,7 @@
       ${creditHTML(p)}
       <button class="detail-enquire" id="enquire-btn" onclick="toggleEnquiryForm(${p.id}, ${safeTitle})">Enquire about this property</button>
       <button class="detail-share-btn" onclick="shareProperty(${p.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg><span>${t_('share_btn')}</span></button>
+      <button class="detail-share-btn detail-sim-btn" onclick="openSimFor(${p.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M8 7h8M8 11h2M12 11h2M8 15h2M12 15h2M16 11v6"/></svg><span>${t_('menu_sim')}</span></button>
       <div class="enquiry-form" id="enquiry-form">
         <div class="enquiry-field"><label>Your name *</label><input type="text" id="enq-name" placeholder="Ana Ferreira" /></div>
         <div class="enquiry-field"><label>Email address *</label><input type="email" id="enq-email" placeholder="ana@email.com" /></div>
@@ -1688,7 +1700,15 @@
     o.scrollTop = 0;   // phones: the whole overlay scrolls, so it must be reset too or a listing opens part-way down
     o.classList.add('open');
     o.setAttribute('aria-hidden', 'false');
+    detailScrollbar();
   }
+  // keeps the fixed close/share buttons off the scrollbar of whichever element scrolls
+  function detailScrollbar() {
+    const o = document.getElementById('detail-overlay'), pn = document.getElementById('detail-panel');
+    const sc = window.innerWidth > 980 ? pn : o;
+    o.style.setProperty('--dv-sbw', Math.max(0, sc.offsetWidth - sc.clientWidth) + 'px');
+  }
+  window.addEventListener('resize', () => { if (document.getElementById('detail-overlay').classList.contains('open')) detailScrollbar(); });
   function ytId(input) {
     if (!input) return '';
     const s = input.trim();
@@ -1996,12 +2016,19 @@
   }
 
   // ── MOBILE MENU ──
-  function openSim() {
+  function openSim(price) {
     closeContact(); closeDetail(); closeLegal(); closeMenu();
     const o = document.getElementById('sim-overlay');
     o.classList.add('open'); o.setAttribute('aria-hidden', 'false');
     document.getElementById('sim-panel').scrollTop = 0;
     o.scrollTop = 0;
+    if (typeof price === 'number' || price === null) { if (window.simPrefill) window.simPrefill(price); }
+  }
+  // "Simulator" button in a listing: open the simulator with this listing's price, or plain when the price is hidden / on request
+  function openSimFor(id) {
+    const p = allProperties.find(x => x.id === id);
+    const n = p ? Number(p.price) : NaN;
+    openSim(n > 0 && isFinite(n) ? Math.round(n) : null);
   }
   function closeSim() {
     const o = document.getElementById('sim-overlay');
@@ -2103,7 +2130,7 @@
       all:'All', apartment:'Apartment', villa:'Villa', townhouse:'Townhouse',
       lisbon:'Lisbon', cascais:'Cascais', algarve:'Algarve',
       collection_label:'Collection', location_label:'Location',
-      hero_eyebrow:'Curated residential portfolio',
+      hero_eyebrow:'Royal Estates',
       hero_headline:'Exceptional homes.<br><em>Considered</em> living.',
       hero_sub:'A private selection of upper-tier properties across Lisbon, Cascais and the Algarve — vetted, priced with precision, and offered to a register of qualified buyers.',
       access_title:'No code? Request access',
@@ -2121,7 +2148,7 @@
       all:'Todos', apartment:'Apartamento', villa:'Moradia', townhouse:'Casa em banda',
       lisbon:'Lisboa', cascais:'Cascais', algarve:'Algarve',
       collection_label:'Coleção', location_label:'Localização',
-      hero_eyebrow:'Portfólio residencial selecionado',
+      hero_eyebrow:'Royal Estates',
       hero_headline:'Casas excecionais.<br><em>Vida</em> com critério.',
       hero_sub:'Uma seleção privada de imóveis de gama superior em Lisboa, Cascais e no Algarve — avaliados com rigor, com preço preciso e apresentados a um registo de compradores qualificados.',
       access_title:'Sem código? Solicite acesso',
@@ -2159,7 +2186,7 @@
     const sub = document.getElementById('hero-sub');
     if (eyebrow) eyebrow.textContent = t.hero_eyebrow;
     if (window.rwSetLang) window.rwSetLang(lang);
-    if (sub) sub.textContent = t.hero_headline.replace(/<br>/g, ' ');
+    if (sub) sub.textContent = t.hero_headline.replace(/<br>/g, ' ').replace(/<[^>]+>/g, '');   // plain text: the PT line carries <em> tags
 
     const fieldLabels = document.querySelectorAll('.access-form .field label');
     const lk = ['label_first','label_last','label_email','label_role','label_budget'];
@@ -2183,6 +2210,15 @@
   const LENIS_ENABLED = true;   // smooth scrolling: set to false to switch it off (one line)
   const LENIS_LERP    = 0.1;    // gentle; lower = floatier, higher = snappier
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  // ━━━━━━━━━━━━━━ HERO HEADLINE WORDS ━━━━━━━━━━━━━━
+  // The words that rotate under "ROYAL ESTATES" on the hero, one list per language. Edit, add or remove words here only;
+  // a full stop is added to each word automatically. The first word is the one shown with reduced motion.
+  const HERO_WORDS = {
+    en: ['Villas', 'Penthouses', 'Quintas', 'Apartments'],
+    pt: ['Moradias', 'Penthouses', 'Quintas', 'Apartamentos']
+  };
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   (function () {
     const $ = id => document.getElementById(id);
@@ -2258,17 +2294,15 @@
       const p = hv.play && hv.play(); if (p && p.catch) p.catch(() => {});   // autoplay blocked: the poster stays
     }
 
-    // ── Rotating headline: "For_ families / legacy / investors / Portugal" ──
-    const RW = {
-      en: { prefix: 'For_',  words: ['families', 'legacy', 'investors', 'Portugal'],   sr: 'For families, legacy, investors, Portugal' },
-      pt: { prefix: 'Para_', words: ['famílias', 'legado', 'investidores', 'Portugal'], sr: 'Para famílias, legado, investidores, Portugal' }
-    };
+    // ── Rotating headline: the words come from HERO_WORDS at the top of this script ──
+    const RW = {};
+    Object.keys(HERO_WORDS).forEach(l => { RW[l] = { words: HERO_WORDS[l].map(w => w + '.'), sr: HERO_WORDS[l].join(', ') }; });
     let rwLang = 'en', rwI = 0, rwBusy = false, rwTimer = null, rwStarted = false;
     const wordEl = $('rw-word');
     const setWord = w => { if (wordEl) wordEl.innerHTML = [...w].map(c => `<span class="ch">${c}</span>`).join(''); };
     function rwRender() {
       const d = RW[rwLang]; if (!wordEl) return;
-      $('rw-prefix').textContent = d.prefix; $('rw-sr').textContent = d.sr;
+      $('rw-sr').textContent = d.sr;
       setWord(d.words[rwI]);
     }
     function rwNext() {
@@ -2744,6 +2778,15 @@ function applyLang(){
   update();
 }
 window.simApplyLang=applyLang;
+var simDefaults=null, simPrefilled=false;
+window.simPrefill=function(price){
+  var pr=document.getElementById('price'), dn=document.getElementById('down'); if(!pr||!dn) return;
+  if(!simDefaults) simDefaults={price:pr.value, down:dn.value};
+  if(price>0){ pr.value=price; dn.value=Math.round(price*0.2/1000)*1000; simPrefilled=true; }
+  else if(simPrefilled){ pr.value=simDefaults.price; dn.value=simDefaults.down; simPrefilled=false; }
+  else return;
+  pr.dispatchEvent(new Event('input',{bubbles:true}));
+};
 
 var panel=$('sim-panel');
 panel.addEventListener('input',update);
