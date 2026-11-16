@@ -22,7 +22,8 @@
   <link rel="preload" href="fonts/Aboreto-400.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="preload" href="fonts/Inter-var.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="fonts/fonts.css" />
-  <link rel="preload" href="assets/hero-poster.jpg" as="image" fetchpriority="high" />
+  <link rel="preload" href="assets/hero-poster.jpg" as="image" fetchpriority="high" media="(min-width: 769px), (orientation: landscape)" />
+  <link rel="preload" href="assets/hero-portrait-poster.jpg" as="image" fetchpriority="high" media="(orientation: portrait) and (max-width: 768px)" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1012,11 +1013,13 @@
   </div>
 
   <div class="tile landing-photo empty" id="landing-photo" onclick="heroOpen()">
-    <video class="hero-video" id="hero-video" autoplay muted loop playsinline preload="auto" poster="assets/hero-poster.jpg">
+    <video class="hero-video" id="hero-video" autoplay muted loop playsinline preload="auto">
+      <source src="assets/hero-portrait.mp4" type="video/mp4" media="(orientation: portrait) and (max-width: 768px)">
       <source src="assets/hero-1440.mp4" type="video/mp4" media="(min-width: 1600px), (min-width: 769px) and (min-resolution: 1.5dppx)">
       <source src="assets/hero-720.mp4" type="video/mp4" media="(max-width: 768px)">
       <source src="assets/hero-1080.mp4" type="video/mp4">
     </video>
+    <script>(function () { var v = document.getElementById('hero-video'); if (v) v.setAttribute('poster', window.matchMedia('(orientation: portrait) and (max-width: 768px)').matches ? 'assets/hero-portrait-poster.jpg' : 'assets/hero-poster.jpg'); })();</script>
     <script>if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { var hv = document.getElementById('hero-video'); if (hv) hv.remove(); }</script>
     <div class="slides" id="hero-slides"></div>
     <div class="empty-msg" data-i18n="hero_private">A private collection</div>
