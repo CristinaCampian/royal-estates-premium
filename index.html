@@ -1477,6 +1477,7 @@
   function imgUrl(path) { return `${SUPABASE_URL}/storage/v1/object/public/property-images/${path}`; }
   function fmtPrice(p) { const n = Number(p); return n > 0 && isFinite(n) ? '€ ' + n.toLocaleString(currentLang === 'pt' ? 'de-DE' : 'en-GB') : t_('price_request'); }   // EN € 1,800,000 · PT € 1.800.000
   function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+  function typeLabel(t) { const k = String(t || '').toLowerCase(); return (['apartment', 'villa', 'townhouse'].includes(k) && (T[currentLang] || {})[k]) || cap(t); }
   function splitLocation(p) {
     if (p.location && p.location.includes('·')) {
       const parts = p.location.split('·').map(s => s.trim());
@@ -1536,7 +1537,7 @@
     const onclick = `onclick="openDetail(${p.id})"`;
 
     if (locked) {
-      const tlabel = [cap(p.type), p._area].filter(Boolean).join(' · ');
+      const tlabel = [typeLabel(p.type), p._area].filter(Boolean).join(' · ');
       const prev = p._preview ? `<img class="teaser-img" data-src="${imgUrl(p._preview)}" alt="" decoding="async" />` : '';
       return `
     <div class="property locked" data-type="${p.type || ''}" data-id="${p.id}">
@@ -1667,20 +1668,20 @@
           <button class="gallery-arrow left" onclick="galleryNav(-1)">‹</button>
           <button class="gallery-arrow right" onclick="galleryNav(1)">›</button>
           <span class="gallery-counter" id="gallery-counter">1 / ${gallery.length}</span>` : ''}
-        <button class="fullscreen-btn" onclick="openFs(window._galleryIdx)">⤢ Fullscreen</button>`;
+        <button class="fullscreen-btn" onclick="openFs(window._galleryIdx)">${t_('fullscreen_btn')}</button>`;
     } else {
       mediaHTML = `<div class="dv-empty">${p.location || ''}</div>`;
     }
 
     const vid = ytId(p.youtube_id);
-    const videoHTML = vid ? `<div><p class="detail-video-label">Video</p><div class="video-wrap"><iframe src="https://www.youtube.com/embed/${vid}?rel=0&modestbranding=1" allowfullscreen loading="lazy"></iframe></div></div>` : '';
+    const videoHTML = vid ? `<div><p class="detail-video-label">${t_('video_label')}</p><div class="video-wrap"><iframe src="https://www.youtube.com/embed/${vid}?rel=0&modestbranding=1" allowfullscreen loading="lazy"></iframe></div></div>` : '';
     const safeTitle = JSON.stringify(p.title || '').replace(/"/g, '&quot;');
 
     document.getElementById('detail-media').innerHTML = mediaHTML;
     document.getElementById('detail-panel').innerHTML = `
-      <button class="contact-close" onclick="closeDetail()" aria-label="Close">×</button>
+      <button class="contact-close" onclick="closeDetail()" aria-label="${t_('aria_close')}">×</button>
       <button class="detail-share" onclick="shareProperty(${p.id})" aria-label="${t_('share')}" title="${t_('share')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></button>
-      <p class="detail-eyebrow">${cap(p.type)}${p.label ? ' · ' + p.label : ''}</p>
+      <p class="detail-eyebrow">${typeLabel(p.type)}${p.label ? ' · ' + p.label : ''}</p>
       <h2 class="detail-title">${propTitle(p)}</h2>
       <p class="p-price detail-price-top">${fmtPrice(p.price)}</p>
       <p class="detail-location">${p.location || ''}</p>
@@ -1690,16 +1691,16 @@
       ${videoHTML}
       ${brochureHTML(p)}
       ${creditHTML(p)}
-      <button class="detail-enquire" id="enquire-btn" onclick="toggleEnquiryForm(${p.id}, ${safeTitle})">Enquire about this property</button>
+      <button class="detail-enquire" id="enquire-btn" onclick="toggleEnquiryForm(${p.id}, ${safeTitle})">${t_('enquire_btn')}</button>
       <button class="detail-outline-btn detail-sim-btn" onclick="openSimFor(${p.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M8 7h8M8 11h2M12 11h2M8 15h2M12 15h2M16 11v6"/></svg><span>${t_('menu_sim')}</span></button>
       <div class="enquiry-form" id="enquiry-form">
-        <div class="enquiry-field"><label>Your name *</label><input type="text" id="enq-name" placeholder="Ana Ferreira" /></div>
-        <div class="enquiry-field"><label>Email address *</label><input type="email" id="enq-email" placeholder="ana@email.com" /></div>
-        <div class="enquiry-field"><label>Phone (optional)</label><input type="tel" id="enq-phone" placeholder="+351 900 000 000" /></div>
-        <div class="enquiry-field"><label>Message (optional)</label><textarea id="enq-message" placeholder="I would like more information about this property…"></textarea></div>
+        <div class="enquiry-field"><label>${t_('enq_name')}</label><input type="text" id="enq-name" placeholder="Ana Ferreira" /></div>
+        <div class="enquiry-field"><label>${t_('enq_email')}</label><input type="email" id="enq-email" placeholder="ana@email.com" /></div>
+        <div class="enquiry-field"><label>${t_('enq_phone')}</label><input type="tel" id="enq-phone" placeholder="+351 900 000 000" /></div>
+        <div class="enquiry-field"><label>${t_('enq_message')}</label><textarea id="enq-message" placeholder="${t_('enq_message_ph')}"></textarea></div>
         <div class="enquiry-actions">
-          <button class="enquiry-submit" onclick="submitEnquiry()">Send enquiry</button>
-          <button class="enquiry-cancel" onclick="toggleEnquiryForm()">Cancel</button>
+          <button class="enquiry-submit" onclick="submitEnquiry()">${t_('enq_send')}</button>
+          <button class="enquiry-cancel" onclick="toggleEnquiryForm()">${t_('cancel_btn')}</button>
         </div>
       </div>`;
     document.getElementById('detail-panel').scrollTop = 0;
@@ -1874,15 +1875,15 @@
     const email   = document.getElementById('enq-email').value.trim();
     const phone   = document.getElementById('enq-phone').value.trim();
     const message = document.getElementById('enq-message').value.trim();
-    if (!name || !email) { showToast('Please fill in your name and email'); return; }
+    if (!name || !email) { showToast(t_('enq_fill')); return; }
     const { error } = await db.from('enquiries').insert([{
       property_id: currentEnquiryPropertyId,
       property:    currentEnquiryPropertyTitle,
       name, email, phone, message
     }]);
-    if (error) { showToast('Something went wrong — please try again'); return; }
+    if (error) { showToast(t_('enq_error')); return; }
     closeDetail();
-    showToast('Enquiry received — we will be in touch shortly');
+    showToast(t_('enq_ok'));
     currentEnquiryPropertyId    = null;
     currentEnquiryPropertyTitle = null;
   }
@@ -1905,12 +1906,12 @@
     setHash(propHash(p));
     window._galleryImgs = [];
     const lockIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="1"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
-    const dlabel = [cap(p.type), p._area].filter(Boolean).join(' · ');
+    const dlabel = [typeLabel(p.type), p._area].filter(Boolean).join(' · ');
     document.getElementById('detail-media').innerHTML = p._preview
       ? `<img class="teaser-img teaser-detail" src="${imgUrl(p._preview)}" alt="" /><div class="dv-empty teaser-over">${t_('private_listing')}</div>`
       : `<div class="dv-empty">${t_('private_listing')}</div>`;
     document.getElementById('detail-panel').innerHTML = `
-      <button class="contact-close" onclick="closeDetail()" aria-label="Close">×</button>
+      <button class="contact-close" onclick="closeDetail()" aria-label="${t_('aria_close')}">×</button>
       <button class="detail-share" onclick="shareProperty(${p.id})" aria-label="${t_('share')}" title="${t_('share')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></button>
       <h2 class="detail-title">${dlabel || t_('private_listing')}</h2>
       <div class="dv-lock">
@@ -2138,6 +2139,10 @@
       lisbon:'Lisbon', cascais:'Cascais', algarve:'Algarve',
       collection_label:'Collection', location_label:'Location',
       hero_eyebrow:'Royal Estates',
+      enquire_btn:'Enquire about this property', enq_name:'Your name *', enq_email:'Email address *', enq_phone:'Phone (optional)', enq_message:'Message (optional)',
+      enq_message_ph:'I would like more information about this property…', enq_send:'Send enquiry', cancel_btn:'Cancel', fullscreen_btn:'⤢ Fullscreen', video_label:'Video',
+      enq_fill:'Please fill in your name and email', enq_error:'Something went wrong — please try again', enq_ok:'Enquiry received — we will be in touch shortly',
+      aria_close:'Close', aria_photos:'Photos', aria_photo:'Photo', aria_of:'of', aria_prev:'Previous', aria_next:'Next',
       hero_headline:'Exceptional homes.<br><em>Considered</em> living.',
       hero_sub:'A private selection of upper-tier properties across Lisbon, Cascais and the Algarve — vetted, priced with precision, and offered to a register of qualified buyers.',
       access_title:'No code? Request access',
@@ -2156,6 +2161,10 @@
       lisbon:'Lisboa', cascais:'Cascais', algarve:'Algarve',
       collection_label:'Coleção', location_label:'Localização',
       hero_eyebrow:'Royal Estates',
+      enquire_btn:'Pedir informações sobre este imóvel', enq_name:'O seu nome *', enq_email:'Email *', enq_phone:'Telefone (opcional)', enq_message:'Mensagem (opcional)',
+      enq_message_ph:'Gostaria de receber mais informações sobre este imóvel…', enq_send:'Enviar pedido', cancel_btn:'Cancelar', fullscreen_btn:'⤢ Ecrã inteiro', video_label:'Vídeo',
+      enq_fill:'Preencha o seu nome e o seu email', enq_error:'Algo correu mal — tente novamente', enq_ok:'Pedido recebido — entraremos em contacto brevemente',
+      aria_close:'Fechar', aria_photos:'Fotografias', aria_photo:'Fotografia', aria_of:'de', aria_prev:'Anterior', aria_next:'Seguinte',
       hero_headline:'Casas excecionais.<br><em>Vida</em> com critério.',
       hero_sub:'Uma seleção privada de imóveis de gama superior em Lisboa, Cascais e no Algarve — avaliados com rigor, com preço preciso e apresentados a um registo de compradores qualificados.',
       access_title:'Sem código? Solicite acesso',
@@ -2204,6 +2213,8 @@
 
     if (heroState.slides.length) heroShow(heroState.i);
     if (window.simApplyLang) window.simApplyLang();
+    const fsClose = document.querySelector('#fs-overlay .fs-close'), fsL = document.querySelector('#fs-overlay .fs-arrow.left'), fsR = document.querySelector('#fs-overlay .fs-arrow.right');
+    if (fsClose) fsClose.setAttribute('aria-label', t.aria_close); if (fsL) fsL.setAttribute('aria-label', t.aria_prev); if (fsR) fsR.setAttribute('aria-label', t.aria_next);
 
     // Re-render listings so descriptions switch language
     const filtered = activeFilter === 'all' ? allProperties : allProperties.filter(p => (p.type||'').toLowerCase() === activeFilter || (p.region||'').toLowerCase() === activeFilter);
@@ -2407,9 +2418,9 @@
       const dm = $('detail-media'); if (!dm) return;
       const old = dm.querySelector('.g-bars'); if (old) old.remove();
       const n = (window._galleryImgs || []).length; if (n < 2) return;
-      const d = document.createElement('div'); d.className = 'g-bars'; d.setAttribute('role', 'group'); d.setAttribute('aria-label', 'Photos');
+      const d = document.createElement('div'); d.className = 'g-bars'; d.setAttribute('role', 'group'); d.setAttribute('aria-label', t_('aria_photos'));
       for (let k = 0; k < n; k++) {
-        const b = document.createElement('button'); b.type = 'button'; b.setAttribute('aria-label', 'Photo ' + (k + 1) + ' of ' + n);
+        const b = document.createElement('button'); b.type = 'button'; b.setAttribute('aria-label', t_('aria_photo') + ' ' + (k + 1) + ' ' + t_('aria_of') + ' ' + n);
         b.addEventListener('click', e => { e.stopPropagation(); window.galleryGo(k, k >= (window._galleryIdx || 0) ? 1 : -1); });
         d.appendChild(b);
       }
