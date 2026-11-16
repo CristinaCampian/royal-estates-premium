@@ -2,3 +2,6 @@
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Raw 4K source footage (100 MB): never commit or deploy it; the site uses the encoded hero-*.mp4 files
+assets/12404925_3840_2160_25fps.mp4
